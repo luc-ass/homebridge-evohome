@@ -91,17 +91,12 @@ function EvohomeThermostatAccessory(log, name, device, deviceId) {
 EvohomeThermostatAccessory.prototype = {
 	
 	getCurrentTemperature: function(callback) {
-		
 		var that = this;
 
-		// that.log("The current temperature for", this.name, "is", that.device.thermostat.indoorTemperature);
-		that.log("Asked for temperature of " + this.name);
-
+		// need to refresh data if outdated!!
 		var currentTemperature = this.device.thermostat.indoorTemperature;
-		that.log(currentTemperature + "°");
-		
-		callback(null, Number(currentTemperature)); // so this is how it works...
-
+		callback(null, Number(currentTemperature));
+		that.log("Current temperature of " + this.name + " is " + currentTemperature + "°");
 	},
 
 	getCurrentHeatingCoolingState: function(callback) {
@@ -155,8 +150,8 @@ EvohomeThermostatAccessory.prototype = {
 	setTargetTemperature: function(value, callback) {
 		var that = this;
 
-		that.log("Setting target temperature for", this.name, "to", value);
-		callback();
+		that.log("Setting target temperature for", this.name, "to", value + "°");
+		callback(null, Number(0));
 
 	},
 
@@ -164,8 +159,9 @@ EvohomeThermostatAccessory.prototype = {
 		var that = this;
 
 		// just trying this out... shoud give back 128
-		// callback(device.thermostat.outdoorTemperature);
-		callback(null, Number(10));
+		var targetTemperature = this.device.thermostat.changeableValues.heatSetpoint['value'];
+		that.log("Target temperature for", this.name, "is", targetTemperature + "°");
+		callback(null, Number(targetTemperature));
 
 	},
 
@@ -185,7 +181,7 @@ EvohomeThermostatAccessory.prototype = {
 				temperatureUnits = 0;
 		}
 
-		callback(temperatureUnits);
+		callback(null, Number(temperatureUnits));
 	},
 
 	setTemperatureDisplayUnits: function(value, callback) {
