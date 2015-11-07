@@ -1,0 +1,16 @@
+{
+  "name": "homebridge-evohome",
+  "version": "0.0.1",
+  "description": "MarantzAVR plugin for homebridge: https://github.com/luc-ass/homebridge-evohome",
+  "license": "ISC",
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
+  },
+  "dependencies": {
+    "evohome": ">=0.0.3"
+  }
+}
