@@ -166,6 +166,7 @@ EvohomeThermostatAccessory.prototype = {
 	},
 
 	getTemperatureDisplayUnits: function(callback) {
+        var that = this;
 		var temperatureUnits = 0;
 
 		switch(this.device.thermostat.units) {
