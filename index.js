@@ -171,11 +171,11 @@ EvohomeThermostatAccessory.prototype = {
 
 		switch(this.device.thermostat.units) {
 			case "Fahrenheit":
-				that.log("Temperature unit for", this.name, "is set to", device.thermostat.units);
+				that.log("Temperature unit for", this.name, "is set to", this.device.thermostat.units);
 				temperatureUnits = 1;
 				break;
 			case "Celsius":
-				that.log("Temperature unit for", this.name, "is set to", device.thermostat.units);
+				that.log("Temperature unit for", this.name, "is set to", this.device.thermostat.units);
 				temperatureUnits = 0;
 				break;
 			default:
