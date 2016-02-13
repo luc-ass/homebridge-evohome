@@ -43,7 +43,7 @@ EvohomePlatform.prototype = {
 
 		var that = this;
 		// create the myAccessories array
-		var myAccessories = [];
+		this.myAccessories = [];
 
 		evohome.login(that.username, that.password, that.appId).then(function(session) {
 			this.log("Logged into Evohome!");
@@ -64,12 +64,10 @@ EvohomePlatform.prototype = {
 					// create accessory
 					var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId);
 					// store accessory in myAccessories
-					myAccessories.push(accessory);
+					this.myAccessories.push(accessory);
 				}
-                                        
-                this.myAccessories = myAccessories;
 
-				callback(myAccessories);
+				callback(this.myAccessories);
                                         
                 setInterval(that.periodicUpdate.bind(this), this.cache_timeout * 1000);
 
