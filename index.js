@@ -107,8 +107,8 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                         this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemperature + "to: " + newCurrentTemperature);
                         var charCT = getCharacteristic(Characteristic.CurrentTemperature);
                         if(charCT) charCT.setValue(newCurrentTemperature);
- */
                     }
+*/
                 }
             }.bind(this)).fail(function(err){
                 this.log('Evohome Failed:', err);
