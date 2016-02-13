@@ -99,8 +99,9 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                 this.log("locations");
                                     
                 for(var i=0; i<this.myAccessories.length; ++i) {
-                    this.log("myAccessories " + i);
+                    this.log("myAccessories " + this.myAccessories[i].deviceId);
                     var device = locations[0].devices[this.myAccessories[i].deviceId];
+                    this.log("device = " + device);
                                     
                     // Check if temp has changed
                     var oldCurrentTemperature = this.myAccessories[i].device.thermostat.indoorTemperature;
