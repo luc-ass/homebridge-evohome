@@ -30,7 +30,7 @@ function EvohomePlatform(log, config){
 	this.password = config['password'];
 	this.appId = config['appId'];
     
-    this.cache_timeout = 45; // seconds
+    this.cache_timeout = 890; // seconds
 
 	this.log = log;
     
@@ -101,12 +101,11 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                                     
                     var currentTempChange = oldCurrentTemperature-newCurrentTemperature;
                                         
-                    if(currentTempChange && this.thermostatService) {
+                    if(abs(currentTempChange)>0 && this.thermostatService) {
+                        this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemperature + "to: " + newCurrentTemperature);
                         var charCT = getCharacteristic(Characteristic.CurrentTemperature);
                         if(charCT) charCT.setValue(newCurrentTemperature);
                     }
-                                        
-                    this.log.debug("Updating: " + device.name + " old-new = " + currentTempChange);
                 }
             }.bind(this)).fail(function(err){
                 this.log('Evohome Failed:', err);
