@@ -89,7 +89,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
     
     this.log("periodicUpdate");
 
-    if(!this.updating && this.myAccessories && this.session){
+    if(!this.updating && this.myAccessories){
         this.updating = true;
         
         this.log("updating");
