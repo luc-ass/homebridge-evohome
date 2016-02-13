@@ -96,9 +96,10 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
         
             session.getLocations().then(function(locations){
                                     
-                this.log("locations " + this.myAccessories.length);
+                this.log("locations");
                                     
                 for(var i=0; i<this.myAccessories.length; ++i) {
+                    this.log("myAccessories " + i);
                     var device = locations[0].devices[this.myAccessories[i].deviceId];
                                     
                     // Check if temp has changed
