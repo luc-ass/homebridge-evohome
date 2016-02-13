@@ -29,6 +29,8 @@ function EvohomePlatform(log, config){
 	this.username = config['username'];
 	this.password = config['password'];
 	this.appId = config['appId'];
+    
+    this.cache_timeout = 456; // seconds
 
 	this.log = log;
 }
@@ -64,6 +66,8 @@ EvohomePlatform.prototype = {
 				}
 
 				callback(myAccessories);
+                                        
+                setInterval(this.periodicUpdate.bind(session,myAccessories), this.cache_timeout * 1000);
 
 			}).fail(function(err){
 				that.log('Evohome Failed:', err);
@@ -76,6 +80,29 @@ EvohomePlatform.prototype = {
 		});
 	}
 };
+
+var updateing = false;
+EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
+    
+    if(!updating && myAccessories){
+        updateing = true;
+        
+        session._renew();
+        session.getLocations().then(function(locations){
+            for(var i=0; i<myAccessories.length; ++i) {
+                var device = locations[0].devices[myAccessories[i].deviceId];
+                                    
+                // Check if temp has changed
+                var oldCurrentTemperature = myAccessories[i].device.thermostat.indoorTemperature;
+                var newCurrentTemperature = this.device.thermostat.indoorTemperature;
+                
+                myAccessories.device = device;
+            }
+        }
+        
+        updating = false;
+    }
+}
 
 // give this function all the parameters needed
 function EvohomeThermostatAccessory(log, name, device, deviceId) {
