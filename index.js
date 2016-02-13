@@ -34,7 +34,7 @@ function EvohomePlatform(log, config){
 
 	this.log = log;
     
-    this.updateing = false;
+    this.updating = false;
 }
 
 EvohomePlatform.prototype = {
@@ -69,7 +69,7 @@ EvohomePlatform.prototype = {
 
 				callback(myAccessories);
                                         
-                setInterval(this.periodicUpdate.bind(session,myAccessories), this.cache_timeout * 1000);
+                setInterval(that.periodicUpdate.bind(session,myAccessories), that.cache_timeout * 1000);
 
 			}).fail(function(err){
 				that.log('Evohome Failed:', err);
@@ -88,7 +88,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
     var that = this;
     
     if(!that.updating && myAccessories){
-        that.updateing = true;
+        that.updating = true;
         
         session._renew();
         session.getLocations().then(function(locations){
