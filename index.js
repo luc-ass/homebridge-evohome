@@ -69,7 +69,7 @@ EvohomePlatform.prototype = {
 
 				callback(myAccessories);
                                         
-                setInterval(that.periodicUpdate.bind(session,myAccessories), that.cache_timeout * 1000);
+                setInterval(that.periodicUpdate.bind(this,session,myAccessories), that.cache_timeout * 1000);
 
 			}).fail(function(err){
 				that.log('Evohome Failed:', err);
