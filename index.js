@@ -87,11 +87,18 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
     
     var that = this;
     
+    that.log("periodicUpdate");
+    
     if(!that.updating && myAccessories){
         that.updating = true;
         
+        that.log("updating");
+        
         session._renew();
         session.getLocations().then(function(locations){
+                                    
+            that.log("locations");
+                                    
             for(var i=0; i<myAccessories.length; ++i) {
                 var device = locations[0].devices[myAccessories[i].deviceId];
                                     
