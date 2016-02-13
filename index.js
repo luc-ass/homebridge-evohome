@@ -47,8 +47,6 @@ EvohomePlatform.prototype = {
 
 		evohome.login(that.username, that.password, that.appId).then(function(session) {
 			this.log("Logged into Evohome!");
-            
-            this.session = session;
 
 			session.getLocations().then(function(locations){
 				this.log('You have', locations.length, 'location(s). Only the first one will be used!');
@@ -96,23 +94,26 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
         
         this.log("updating");
         
-        this.session._renew();
-        this.session.getLocations().then(function(locations){
+        evohome.login(this.username, this.password, this.appId).then(function(session) {
+        
+            session.getLocations().then(function(locations){
                                     
-            this.log("locations");
+                this.log("locations");
                                     
-            for(var i=0; i<this.myAccessories.length; ++i) {
-                var device = locations[0].devices[this.myAccessories[i].deviceId];
+                for(var i=0; i<this.myAccessories.length; ++i) {
+                    var device = locations[0].devices[this.myAccessories[i].deviceId];
                                     
-                // Check if temp has changed
-                var oldCurrentTemperature = this.myAccessories[i].device.thermostat.indoorTemperature;
-                var newCurrentTemperature = this.device.thermostat.indoorTemperature;
+                    // Check if temp has changed
+                    var oldCurrentTemperature = this.myAccessories[i].device.thermostat.indoorTemperature;
+                    var newCurrentTemperature = this.device.thermostat.indoorTemperature;
                                     
-                var currentTempChange = oldCurrentTemperature-newCurrentTemperature;
+                    var currentTempChange = oldCurrentTemperature-newCurrentTemperature;
                                     
-                this.log("Updating: " + device.name + " old-new = " + currentTempChange);
-                
-            }
+                    this.log("Updating: " + device.name + " old-new = " + currentTempChange);
+                }
+            }.bind(this)).fail(function(err){
+                this.log('Evohome Failed:', err);
+            });
         }.bind(this)).fail(function(err){
             this.log('Evohome Failed:', err);
         });
