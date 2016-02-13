@@ -30,9 +30,11 @@ function EvohomePlatform(log, config){
 	this.password = config['password'];
 	this.appId = config['appId'];
     
-    this.cache_timeout = 456; // seconds
+    this.cache_timeout = 45; // seconds
 
 	this.log = log;
+    
+    this.updateing = false;
 }
 
 EvohomePlatform.prototype = {
@@ -81,11 +83,12 @@ EvohomePlatform.prototype = {
 	}
 };
 
-var updateing = false;
 EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
     
-    if(!updating && myAccessories){
-        updateing = true;
+    var that = this;
+    
+    if(!that.updating && myAccessories){
+        that.updateing = true;
         
         session._renew();
         session.getLocations().then(function(locations){
@@ -98,9 +101,11 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                 
                 myAccessories.device = device;
             }
-        }
+        }).fail(function(err){
+            that.log('Evohome Failed:', err);
+        });
         
-        updating = false;
+        that.updating = false;
     }
 }
 
