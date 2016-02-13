@@ -46,7 +46,7 @@ EvohomePlatform.prototype = {
 		var myAccessories = [];
 
 		evohome.login(that.username, that.password, that.appId).then(function(session) {
-			that.log("Logged into Evohome!");
+			this.log("Logged into Evohome!");
 
 			session.getLocations().then(function(locations){
 				this.log('You have', locations.length, 'location(s). Only the first one will be used!');
@@ -71,7 +71,7 @@ EvohomePlatform.prototype = {
                                         
                 setInterval(that.periodicUpdate.bind(session,myAccessories,this), that.cache_timeout * 1000);
 
-			}).fail(function(err){
+			}.bind(this)).fail(function(err){
 				that.log('Evohome Failed:', err);
 			});
 
