@@ -49,7 +49,7 @@ EvohomePlatform.prototype = {
 			that.log("Logged into Evohome!");
 
 			session.getLocations().then(function(locations){
-				that.log('You have', locations.length, 'location(s). Only the first one will be used!');
+				this.log('You have', locations.length, 'location(s). Only the first one will be used!');
 				that.log('You have', locations[0].devices.length, 'device(s).')
 
 				// iterate through the devices
@@ -69,23 +69,23 @@ EvohomePlatform.prototype = {
 
 				callback(myAccessories);
                                         
-                setInterval(that.periodicUpdate.bind(session,myAccessories,that), that.cache_timeout * 1000);
+                setInterval(that.periodicUpdate.bind(session,myAccessories,this), that.cache_timeout * 1000);
 
 			}).fail(function(err){
 				that.log('Evohome Failed:', err);
 			});
 
 
-		}).fail(function(err) {
+		}.bind(this)).fail(function(err) {
 			// tell me if login did not work!
 			that.log("Error during Login:", err);
 		});
 	}
 };
 
-EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories,that) {
+EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
     
-    that.log("periodicUpdate");
+    this.log("periodicUpdate");
     
     if(!that.updating && myAccessories){
         that.updating = true;
