@@ -252,29 +252,29 @@ EvohomeThermostatAccessory.prototype = {
 
 		// Required Characteristics /////////////////////////////////////////////////////////////
   		// this.addCharacteristic(Characteristic.CurrentHeatingCoolingState); READ
-  		thermostatService
+  		this.thermostatService
         	.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
         	.on('get', this.getCurrentHeatingCoolingState.bind(this));
 
   		// this.addCharacteristic(Characteristic.TargetHeatingCoolingState); READ WRITE
-  		thermostatService
+  		this.thermostatService
   			.getCharacteristic(Characteristic.TargetHeatingCoolingState)
   			.on('get', this.getTargetHeatingCooling.bind(this))
   			.on('set', this.setTargetHeatingCooling.bind(this));
 
   		// this.addCharacteristic(Characteristic.CurrentTemperature); READ
-  		thermostatService
+  		this.thermostatService
   			.getCharacteristic(Characteristic.CurrentTemperature)
   			.on('get', this.getCurrentTemperature.bind(this));
 
   		// this.addCharacteristic(Characteristic.TargetTemperature); READ WRITE
-  		thermostatService
+  		this.thermostatService
   			.getCharacteristic(Characteristic.TargetTemperature)
   			.on('get', this.getTargetTemperature.bind(this))
   			.on('set', this.setTargetTemperature.bind(this));
 
   		// this.addCharacteristic(Characteristic.TemperatureDisplayUnits); READ WRITE
-  		thermostatService
+  		this.thermostatService
   			.getCharacteristic(Characteristic.TemperatureDisplayUnits)
   			.on('get', this.getTemperatureDisplayUnits.bind(this));
   		
@@ -285,7 +285,7 @@ EvohomeThermostatAccessory.prototype = {
   		// this.addOptionalCharacteristic(Characteristic.HeatingThresholdTemperature);
   		// this.addOptionalCharacteristic(Characteristic.Name);
 
-        return [informationService, thermostatService];
+        return [informationService, this.thermostatService];
 
     }
 }
