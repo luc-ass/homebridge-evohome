@@ -95,6 +95,8 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                 for(var i=0; i<this.myAccessories.length; ++i) {
                     var device = locations[0].devices[this.myAccessories[i].deviceId];
                                         
+                    if(device) this.myAccessories[i].device = device;
+/*
                     // Check if temp has changed
                     var oldCurrentTemperature = this.myAccessories[i].device.thermostat.indoorTemperature;
                     var newCurrentTemperature = device.thermostat.indoorTemperature;
@@ -105,6 +107,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                         this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemperature + "to: " + newCurrentTemperature);
                         var charCT = getCharacteristic(Characteristic.CurrentTemperature);
                         if(charCT) charCT.setValue(newCurrentTemperature);
+ */
                     }
                 }
             }.bind(this)).fail(function(err){
