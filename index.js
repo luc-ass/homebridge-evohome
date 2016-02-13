@@ -84,34 +84,29 @@ EvohomePlatform.prototype = {
 };
 
 EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
-    
-    this.log("periodicUpdate");
 
     if(!this.updating && this.myAccessories){
         this.updating = true;
-        
-        this.log("updating");
         
         evohome.login(this.username, this.password, this.appId).then(function(session) {
         
             session.getLocations().then(function(locations){
                                     
-                this.log("locations");
-                                    
                 for(var i=0; i<this.myAccessories.length; ++i) {
-                    this.log("myAccessories " + this.myAccessories[i].deviceId);
                     var device = locations[0].devices[this.myAccessories[i].deviceId];
                                         
-                    this.log("this.myAccessories[i].device = " + this.myAccessories[i].device);
-                    this.log("this.myAccessories[i].device.indoorTemperature = " + this.myAccessories[i].device.indoorTemperature);
-                                    
                     // Check if temp has changed
                     var oldCurrentTemperature = this.myAccessories[i].device.thermostat.indoorTemperature;
                     var newCurrentTemperature = device.thermostat.indoorTemperature;
                                     
                     var currentTempChange = oldCurrentTemperature-newCurrentTemperature;
-                                    
-                    this.log("Updating: " + device.name + " old-new = " + currentTempChange);
+                                        
+                    if(currentTempChange && this.thermostatService) {
+                        var charCT = getCharacteristic(Characteristic.CurrentTemperature);
+                        if(charCT) charCT.setValue(newCurrentTemperature);
+                    }
+                                        
+                    this.log.debug("Updating: " + device.name + " old-new = " + currentTempChange);
                 }
             }.bind(this)).fail(function(err){
                 this.log('Evohome Failed:', err);
@@ -253,7 +248,7 @@ EvohomeThermostatAccessory.prototype = {
         	.setCharacteristic(Characteristic.SerialNumber, "123456"); // need to stringify the this.serial
 
         // Thermostat Service
-        var thermostatService = new Service.Thermostat("Honeywell Thermostat");
+        this.thermostatService = new Service.Thermostat("Honeywell Thermostat");
 
 		// Required Characteristics /////////////////////////////////////////////////////////////
   		// this.addCharacteristic(Characteristic.CurrentHeatingCoolingState); READ
