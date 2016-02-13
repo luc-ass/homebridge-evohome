@@ -94,21 +94,29 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                                     
                 for(var i=0; i<this.myAccessories.length; ++i) {
                     var device = locations[0].devices[this.myAccessories[i].deviceId];
+
+                    if(device) {
+                        // Check if temp has changed
+                        var oldCurrentTemp = this.myAccessories[i].device.thermostat.indoorTemperature;
+                        var newCurrentTemp = device.thermostat.indoorTemperature;
                                         
-                    if(device) this.myAccessories[i].device = device;
-/*
-                    // Check if temp has changed
-                    var oldCurrentTemperature = this.myAccessories[i].device.thermostat.indoorTemperature;
-                    var newCurrentTemperature = device.thermostat.indoorTemperature;
-                                    
-                    var currentTempChange = oldCurrentTemperature-newCurrentTemperature;
+                        if(oldCurrentTemp!=newCurrentTemp && this.thermostatService) {
+                            this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + "to: " + newCurrentTemp);
+                            var charCT = getCharacteristic(Characteristic.CurrentTemperature);
+                            if(charCT) charCT.setValue(newCurrentTemperature);
+                        }
                                         
-                    if(abs(currentTempChange)>0 && this.thermostatService) {
-                        this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemperature + "to: " + newCurrentTemperature);
-                        var charCT = getCharacteristic(Characteristic.CurrentTemperature);
-                        if(charCT) charCT.setValue(newCurrentTemperature);
+                        var oldTargetTemp = this.myAccessories[i].device.thermostat.changeableValues.heatSetpoint['value'];
+                        var newTargetTemp = device.thermostat.changeableValues.heatSetpoint['value'];
+                                        
+                        if(oldTargetTemp!=newTargetTemp && this.thermostatService) {
+                            this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + "to: " + newTargetTemp);
+                            var charTT = getCharacteristic(Characteristic.TargetTemperature);
+                            if(charTT) charCT.setValue(TargetTemperature);
+                        }
+                        
+                        this.myAccessories[i].device = device;
                     }
-*/
                 }
             }.bind(this)).fail(function(err){
                 this.log('Evohome Failed:', err);
