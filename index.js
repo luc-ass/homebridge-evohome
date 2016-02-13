@@ -98,6 +98,10 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                 // Check if temp has changed
                 var oldCurrentTemperature = myAccessories[i].device.thermostat.indoorTemperature;
                 var newCurrentTemperature = this.device.thermostat.indoorTemperature;
+                                    
+                var currentTempChange = oldCurrentTemperature-newCurrentTemperature;
+                                    
+                that.log("Updating: " + device.name + " old-new = " + currentTempChange);
                 
                 myAccessories.device = device;
             }
