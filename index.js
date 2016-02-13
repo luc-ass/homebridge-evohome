@@ -50,12 +50,12 @@ EvohomePlatform.prototype = {
 
 			session.getLocations().then(function(locations){
 				this.log('You have', locations.length, 'location(s). Only the first one will be used!');
-				that.log('You have', locations[0].devices.length, 'device(s).')
+				this.log('You have', locations[0].devices.length, 'device(s).')
 
 				// iterate through the devices
 				for (var deviceId in locations[0].devices) {
 					// print name of the device
-					that.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + locations[0].devices[deviceId].thermostat.indoorTemperature + "°)");
+					this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + locations[0].devices[deviceId].thermostat.indoorTemperature + "°)");
 					
 					// store device in var
 					var device = locations[0].devices[deviceId];
@@ -69,7 +69,7 @@ EvohomePlatform.prototype = {
 
 				callback(myAccessories);
                                         
-                setInterval(that.periodicUpdate.bind(session,myAccessories,this), that.cache_timeout * 1000);
+                setInterval(that.periodicUpdate.bind(this), this.cache_timeout * 1000);
 
 			}.bind(this)).fail(function(err){
 				that.log('Evohome Failed:', err);
@@ -110,7 +110,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                 
                 myAccessories.device = device;
             }
-        }).fail(function(err){
+        }.bind(this)).fail(function(err){
             that.log('Evohome Failed:', err);
         });
         
