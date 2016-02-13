@@ -47,6 +47,8 @@ EvohomePlatform.prototype = {
 
 		evohome.login(that.username, that.password, that.appId).then(function(session) {
 			this.log("Logged into Evohome!");
+            
+            this.session = session;
 
 			session.getLocations().then(function(locations){
 				this.log('You have', locations.length, 'location(s). Only the first one will be used!');
@@ -66,6 +68,8 @@ EvohomePlatform.prototype = {
 					// store accessory in myAccessories
 					myAccessories.push(accessory);
 				}
+                                        
+                this.myAccessories = myAccessories;
 
 				callback(myAccessories);
                                         
@@ -86,7 +90,7 @@ EvohomePlatform.prototype = {
 EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
     
     this.log("periodicUpdate");
-    this.log(session);
+    this.log(this.session);
     if(!this.updating && myAccessories){
         that.updating = true;
         
