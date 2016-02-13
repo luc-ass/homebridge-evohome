@@ -90,35 +90,34 @@ EvohomePlatform.prototype = {
 EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
     
     this.log("periodicUpdate");
-    this.log(this.session);
-    if(!this.updating && myAccessories){
-        that.updating = true;
+
+    if(!this.updating && this.myAccessories && this.session){
+        this.updating = true;
         
-        that.log("updating");
+        this.log("updating");
         
-        session._renew();
-        session.getLocations().then(function(locations){
+        this.session._renew();
+        this.session.getLocations().then(function(locations){
                                     
-            that.log("locations");
+            this.log("locations");
                                     
-            for(var i=0; i<myAccessories.length; ++i) {
-                var device = locations[0].devices[myAccessories[i].deviceId];
+            for(var i=0; i<this.myAccessories.length; ++i) {
+                var device = locations[0].devices[this.myAccessories[i].deviceId];
                                     
                 // Check if temp has changed
-                var oldCurrentTemperature = myAccessories[i].device.thermostat.indoorTemperature;
+                var oldCurrentTemperature = this.myAccessories[i].device.thermostat.indoorTemperature;
                 var newCurrentTemperature = this.device.thermostat.indoorTemperature;
                                     
                 var currentTempChange = oldCurrentTemperature-newCurrentTemperature;
                                     
-                that.log("Updating: " + device.name + " old-new = " + currentTempChange);
+                this.log("Updating: " + device.name + " old-new = " + currentTempChange);
                 
-                myAccessories.device = device;
             }
         }.bind(this)).fail(function(err){
-            that.log('Evohome Failed:', err);
+            this.log('Evohome Failed:', err);
         });
         
-        that.updating = false;
+        this.updating = false;
     }
 }
 
