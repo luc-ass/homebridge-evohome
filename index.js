@@ -100,11 +100,11 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                         var oldCurrentTemp = this.myAccessories[i].device.thermostat.indoorTemperature;
                         var newCurrentTemp = device.thermostat.indoorTemperature;
                                         
-                        this.log("ct: " + oldCurrentTemp + ", " + newCurrentTemp);
+                        var service = this.myAccessories[i].thermostatService;
                                         
-                        if(oldCurrentTemp!=newCurrentTemp && this.thermostatService) {
+                        if(oldCurrentTemp!=newCurrentTemp && service) {
                             this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + "to: " + newCurrentTemp);
-                            var charCT = getCharacteristic(Characteristic.CurrentTemperature);
+                            var charCT = service.getCharacteristic(Characteristic.CurrentTemperature);
                             if(charCT) charCT.setValue(newCurrentTemperature);
                         }
                                         
@@ -113,9 +113,9 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                                         
                         this.log("tt: " + oldTargetTemp + ", " + newTargetTemp);
                                         
-                        if(oldTargetTemp!=newTargetTemp && this.thermostatService) {
+                        if(oldTargetTemp!=newTargetTemp && service) {
                             this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + "to: " + newTargetTemp);
-                            var charTT = getCharacteristic(Characteristic.TargetTemperature);
+                            var charTT = service.getCharacteristic(Characteristic.TargetTemperature);
                             if(charTT) charCT.setValue(TargetTemperature);
                         }
                         
