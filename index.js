@@ -111,8 +111,6 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                         var oldTargetTemp = this.myAccessories[i].device.thermostat.changeableValues.heatSetpoint['value'];
                         var newTargetTemp = device.thermostat.changeableValues.heatSetpoint['value'];
                                         
-                        this.log("tt: " + oldTargetTemp + ", " + newTargetTemp);
-                                        
                         if(oldTargetTemp!=newTargetTemp && service) {
                             this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + "to: " + newTargetTemp);
                             var charTT = service.getCharacteristic(Characteristic.TargetTemperature);
