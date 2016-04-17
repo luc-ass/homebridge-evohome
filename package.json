@@ -1,16 +1,60 @@
 {
-  "name": "homebridge-evohome",
-  "version": "0.0.1",
+  "_args": [
+    [
+      "git+https://git@github.com/luc-ass/homebridge-evohome",
+      ""
+    ]
+  ],
+  "_from": "git+https://git@github.com/luc-ass/homebridge-evohome.git",
+  "_id": "homebridge-evohome@0.0.1",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/homebridge-evohome",
+  "_phantomChildren": {},
+  "_requested": {
+    "hosted": {
+      "directUrl": "https://git@raw.githubusercontent.com/luc-ass/homebridge-evohome/master/package.json",
+      "gitUrl": "git://git@github.com/luc-ass/homebridge-evohome.git",
+      "httpsUrl": "git+https://git@github.com/luc-ass/homebridge-evohome.git",
+      "shortcut": "github:luc-ass/homebridge-evohome",
+      "ssh": "git@github.com:luc-ass/homebridge-evohome.git",
+      "sshUrl": "git+ssh://git@github.com/luc-ass/homebridge-evohome.git",
+      "type": "github"
+    },
+    "name": null,
+    "raw": "git+https://git@github.com/luc-ass/homebridge-evohome",
+    "rawSpec": "git+https://git@github.com/luc-ass/homebridge-evohome",
+    "scope": null,
+    "spec": "git+https://git@github.com/luc-ass/homebridge-evohome.git",
+    "type": "hosted"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "git+https://git@github.com/luc-ass/homebridge-evohome.git#a2c797a302f0b03ab8b4df70c02032afa847f7dc",
+  "_shasum": "d2244317e48e44a59f1125928061a07ee4538178",
+  "_shrinkwrap": null,
+  "_spec": "git+https://git@github.com/luc-ass/homebridge-evohome",
+  "_where": "",
+  "dependencies": {
+    "lodash": "~2.4.1",
+    "q": "~1.0.1",
+    "request": "~2.34.0"
+  },
   "description": "MarantzAVR plugin for homebridge: https://github.com/luc-ass/homebridge-evohome",
-  "license": "ISC",
+  "devDependencies": {},
+  "engines": {
+    "homebridge": ">=0.2.0",
+    "node": ">=0.12.0"
+  },
+  "gitHead": "a2c797a302f0b03ab8b4df70c02032afa847f7dc",
   "keywords": [
     "homebridge-plugin"
   ],
-  "engines": {
-    "node": ">=0.12.0",
-    "homebridge": ">=0.2.0"
-  },
-  "dependencies": {
-    "evohome": ">=0.0.3"
-  }
+  "license": "ISC",
+  "name": "homebridge-evohome",
+  "optionalDependencies": {},
+  "readme": "# homebridge-evohome\n\nThis ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!\n\n# Installation\n\nThis plugin is not yet on NPM. Insatllation only via GitHub at the moment...\n\n1. Install homebridge using: npm install -g homebridge <br>\n2. Install this plugin using npm install -g git+https://git@github.com/luc-ass/homebridge-evohome\n3. Update your configuration file. See sample-config below for a sample. \n\n# Configuration\n\nConfiguration sample:\n\n```\n\"platform\": [\n        {\n            \"platform\": \"Evohome\",\n            \"name\" : \"Evohome\",\n            \"username\" : \"username/email\",\n            \"password\" : \"password\",\n            \"appId\" : \"91db1612-73fd-4500-91b2-e63b069b185c\"\n        }\n    ]\n```\n\n- platform: Evohome\n- name: can be anything you want\n- username: your Honeywell e-mail\n- password: your Honeywell password\n- appId: \"91db1612-73fd-4500-91b2-e63b069b185c\" no need to change this\n\n# Roadmap\n\n- ~~get temperature~~\n- ~~update temperature~~\n- ~~get device name~~\n- set target temperature\n",
+  "readmeFilename": "README.md",
+  "version": "0.1.0"
 }

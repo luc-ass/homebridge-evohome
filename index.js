@@ -14,8 +14,9 @@
 
 'use strict';
 
-var evohome = require('evohome');
+var evohome = require('./lib/evohome.js');
 var Service, Characteristic;
+var config;
 
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
@@ -28,13 +29,13 @@ function EvohomePlatform(log, config){
 
 	this.username = config['username'];
 	this.password = config['password'];
-	this.appId = config['appId'];
+	this.appId = config['appId'] || "91db1612-73fd-4500-91b2-e63b069b185c";
     
-    this.cache_timeout = 890; // seconds
+  this.cache_timeout = 890; // seconds
 
 	this.log = log;
     
-    this.updating = false;
+  this.updating = false;
 }
 
 EvohomePlatform.prototype = {
@@ -62,7 +63,7 @@ EvohomePlatform.prototype = {
 					// store name of device
 					var name = locations[0].devices[deviceId].name + " Thermostat";
 					// create accessory
-					var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId);
+					var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, this.username, this.password, this.appId);
 					// store accessory in myAccessories
 					this.myAccessories.push(accessory);
 				}
@@ -134,12 +135,16 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
 }
 
 // give this function all the parameters needed
-function EvohomeThermostatAccessory(log, name, device, deviceId) {
+function EvohomeThermostatAccessory(log, name, device, deviceId, username, password, appId) {
 	this.name = name;
 	this.device = device;
 	this.model = device.thermostatModelType;
 	this.serial = device.deviceID;
 	this.deviceId = deviceId;
+	
+	this.username = username;
+	this.password = password;
+	this.appId = appId;
 
 	this.log = log;
 }
@@ -203,13 +208,28 @@ EvohomeThermostatAccessory.prototype = {
 
 	},
 
-	setTargetTemperature: function(value, callback) {
-		var that = this;
-
-		that.log("Setting target temperature for", this.name, "to", value + "°");
-		callback(null, Number(0));
-
-	},
+   setTargetTemperature: function(value, callback) {
+	  var that = this;
+	            
+    that.log("Setting target temperature for", this.name, "to", value + "°");
+    var minutes = 10; // The number of minutes the new target temperature will be effective
+        // TODO:
+        // verify that the task did succeed
+		
+    evohome.login(this.username, this.password, this.appId).then(function (session) {
+      session.setHeatSetpoint(that.serial, value, minutes).then(function (taskId) {
+        that.log("Successfully changed temperature!");
+        that.log(taskId);
+        // returns taskId if successful
+        // nothing else here...
+        callback(null, Number(1));
+      });
+    }).fail(function (err) {
+      that.log('Evohome Failed:', err);
+      callback(null, Number(0));
+    });
+    callback(null, Number(0));
+  },
 
 	getTargetTemperature: function(callback) {
 		var that = this;
