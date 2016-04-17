@@ -41,7 +41,7 @@
     "q": "~1.0.1",
     "request": "~2.34.0"
   },
-  "description": "MarantzAVR plugin for homebridge: https://github.com/luc-ass/homebridge-evohome",
+  "description": "Evohome plugin for homebridge: https://github.com/luc-ass/homebridge-evohome",
   "devDependencies": {},
   "engines": {
     "homebridge": ">=0.2.0",
