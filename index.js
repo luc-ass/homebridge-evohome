@@ -104,7 +104,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                         var service = this.myAccessories[i].thermostatService;
                                         
                         if(oldCurrentTemp!=newCurrentTemp && service) {
-                            this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + "to: " + newCurrentTemp);
+                            this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
                             var charCT = service.getCharacteristic(Characteristic.CurrentTemperature);
                             if(charCT) charCT.setValue(newCurrentTemp);
                             else this.log("No Characteristic.CurrentTemperature found " + service);
@@ -114,7 +114,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                         var newTargetTemp = device.thermostat.changeableValues.heatSetpoint['value'];
                                         
                         if(oldTargetTemp!=newTargetTemp && service) {
-                            this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + "to: " + newTargetTemp);
+                            this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
                             var charTT = service.getCharacteristic(Characteristic.TargetTemperature);
                             if(charTT) charCT.setValue(newTargetTemp);
                             else this.log("No Characteristic.TargetTemperature found " + service);
