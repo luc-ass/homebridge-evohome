@@ -37,4 +37,4 @@ Configuration sample:
 - ~~get temperature~~
 - ~~update temperature~~
 - ~~get device name~~
-- set target temperature
+- ~~set target temperature~~ (credits to zizzex)
