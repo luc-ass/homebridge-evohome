@@ -38,3 +38,7 @@ Configuration sample:
 - ~~update temperature~~
 - ~~get device name~~
 - ~~set target temperature~~ (credits to zizzex)
+
+# Notes
+
+It seems to be vitally important to set the right system time, especially on raspi!
