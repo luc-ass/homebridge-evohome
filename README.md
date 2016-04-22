@@ -1,5 +1,7 @@
 # homebridge-evohome
 
+***!Attention: The old Version (<0.1.1) is no longer working due to a change in the API-URL. Please update.***
+
 This ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!
 
 # Installation
@@ -38,6 +40,8 @@ Configuration sample:
 - ~~update temperature~~
 - ~~get device name~~
 - ~~set target temperature~~ (credits to zizzex)
+- change temperature until next scheduled event (now 10 minutes)
+- add "global device" to add Away/Energy saving etc.
 
 # Notes
 
