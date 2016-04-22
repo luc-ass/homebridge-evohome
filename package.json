@@ -56,5 +56,5 @@
   "optionalDependencies": {},
   "readme": "# homebridge-evohome\n\nThis ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!\n\n# Installation\n\nThis plugin is not yet on NPM. Insatllation only via GitHub at the moment...\n\n1. Install homebridge using: npm install -g homebridge <br>\n2. Install this plugin using npm install -g git+https://git@github.com/luc-ass/homebridge-evohome\n3. Update your configuration file. See sample-config below for a sample. \n\n# Configuration\n\nConfiguration sample:\n\n```\n\"platform\": [\n        {\n            \"platform\": \"Evohome\",\n            \"name\" : \"Evohome\",\n            \"username\" : \"username/email\",\n            \"password\" : \"password\",\n            \"appId\" : \"91db1612-73fd-4500-91b2-e63b069b185c\"\n        }\n    ]\n```\n\n- platform: Evohome\n- name: can be anything you want\n- username: your Honeywell e-mail\n- password: your Honeywell password\n- appId: \"91db1612-73fd-4500-91b2-e63b069b185c\" no need to change this\n\n# Roadmap\n\n- ~~get temperature~~\n- ~~update temperature~~\n- ~~get device name~~\n- set target temperature\n",
   "readmeFilename": "README.md",
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
