@@ -42,6 +42,7 @@ Configuration sample:
 - ~~set target temperature~~ (credits to zizzex)
 - change temperature until next scheduled event (now 10 minutes)
 - add "global device" to add Away/Energy saving etc.
+- add "DOMESTIC_HOT_WATER" with matching characteristics
 
 # Notes
 
