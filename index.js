@@ -57,15 +57,17 @@ EvohomePlatform.prototype = {
 				for (var deviceId in locations[0].devices) {
 					// print name of the device
 					this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + locations[0].devices[deviceId].thermostat.indoorTemperature + "°)");
-					
+
 					// store device in var
 					var device = locations[0].devices[deviceId];
 					// store name of device
 					var name = locations[0].devices[deviceId].name + " Thermostat";
-					// create accessory
-					var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, this.username, this.password, this.appId);
-					// store accessory in myAccessories
-					this.myAccessories.push(accessory);
+					// create accessory (only if it is "EMEA_ZONE")
+					if (device.thermostatModelType = "EMEA_ZONE") {
+						var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, this.username, this.password, this.appId);
+						// store accessory in myAccessories
+						this.myAccessories.push(accessory);
+					}
 				}
 
 				callback(this.myAccessories);
