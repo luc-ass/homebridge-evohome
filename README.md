@@ -4,6 +4,8 @@
 
 This ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!
 
+Up until now this plugin will only add your Thermostats to Homebridge. Other devices such as domestic hot water or the central unit itself with modes such as away or vacation will probably follow in the future once the basic problems are fixed.
+
 # Installation
 
 This plugin is not yet on NPM. Insatllation only via GitHub at the moment...
