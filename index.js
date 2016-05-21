@@ -234,9 +234,17 @@ EvohomeThermostatAccessory.prototype = {
 	getTargetTemperature: function(callback) {
 		var that = this;
 
-		// just trying this out... shoud give back 128
-		var targetTemperature = this.device.thermostat.changeableValues.heatSetpoint['value'];
-		that.log("Target temperature for", this.name, "is", targetTemperature + "°");
+		// gives back the target temperature of thermostat
+		// crashes the plugin IF there is no value defined (like 
+		// with DOMESTIC_HOT_WATER) so we need to chek if it
+		// is defined first
+		if (this.device.thermostat.changeableValues.heatSetpoint['value']){
+			var targetTemperature = this.device.thermostat.changeableValues.heatSetpoint['value'];
+			that.log("Target temperature for", this.name, "is", targetTemperature + "°");
+		} else {
+			var targetTemperature = 0;
+			that.log("Target temperature is not defined. Perhaps the device does not supprot this value. Set target temperature to 0°");
+		}
 		callback(null, Number(targetTemperature));
 
 	},
