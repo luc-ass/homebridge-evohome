@@ -240,11 +240,11 @@ EvohomeThermostatAccessory.prototype = {
 		// is defined first
 		if (this.model = "EMEA_ZONE"){
 			var targetTemperature = this.device.thermostat.changeableValues.heatSetpoint['value'];
-			that.log("Device type is:", this.model, ". Target temperature should be there.")
+			that.log("Device type is:", this.model, ". Target temperature should be there.");
 			that.log("Target temperature for", this.name, "is", targetTemperature + "°");
 		} else {
 			var targetTemperature = 0;
-			that.log("Device type is:", this.model, ". Target temperature is probably not there.")
+			that.log("Device type is:", this.model, ". Target temperature is probably not there.");
 			that.log("Will set target temperature for", this.name, "to " + targetTemperature + "°");
 		}
 		callback(null, Number(targetTemperature));
