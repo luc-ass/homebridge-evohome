@@ -238,12 +238,14 @@ EvohomeThermostatAccessory.prototype = {
 		// crashes the plugin IF there is no value defined (like 
 		// with DOMESTIC_HOT_WATER) so we need to chek if it
 		// is defined first
-		if (this.device.thermostat.changeableValues.heatSetpoint['value']){
+		if (this.model = "EMEA_ZONE"){
 			var targetTemperature = this.device.thermostat.changeableValues.heatSetpoint['value'];
+			that.log("Device type is:", this.model, ". Target temperature should be there.")
 			that.log("Target temperature for", this.name, "is", targetTemperature + "°");
 		} else {
 			var targetTemperature = 0;
-			that.log("Target temperature is not defined. Perhaps the device does not supprot this value. Set target temperature to 0°");
+			that.log("Device type is:", this.model, ". Target temperature is probably not there.")
+			that.log("Will set target temperature for", this.name, "to " + targetTemperature + "°");
 		}
 		callback(null, Number(targetTemperature));
 
