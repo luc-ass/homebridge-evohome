@@ -19,7 +19,7 @@ This plugin is not yet on NPM. Insatllation only via GitHub at the moment...
 Configuration sample:
 
 ```
-"platform": [
+"platforms": [
         {
             "platform": "Evohome",
             "name" : "Evohome",
