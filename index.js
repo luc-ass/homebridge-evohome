@@ -58,16 +58,24 @@ EvohomePlatform.prototype = {
 					// print name of the device
 					this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + locations[0].devices[deviceId].thermostat.indoorTemperature + "°)");
 
-					// store device in var
-					var device = locations[0].devices[deviceId];
-					// store name of device
-					var name = locations[0].devices[deviceId].name + " Thermostat";
-					// create accessory (only if it is "EMEA_ZONE")
-					if (device.thermostatModelType = "EMEA_ZONE") {
-						var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, this.username, this.password, this.appId);
-						// store accessory in myAccessories
-						this.myAccessories.push(accessory);
-					}
+                                        if(locations[0].devices[deviceId].name  == "") {
+                                                // Device name is empty
+                                                // Probably Hot Water
+                                                // Do not store
+                                               	this.log("Found blank device name, probably stored hot water. Ignoring device for now.");
+                                        }
+                                        else {
+						// store device in var
+						var device = locations[0].devices[deviceId];
+						// store name of device
+						var name = locations[0].devices[deviceId].name + " Thermostat";
+						// create accessory (only if it is "EMEA_ZONE")
+						if (device.thermostatModelType = "EMEA_ZONE") {
+							var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, this.username, this.password, this.appId);
+							// store accessory in myAccessories
+							this.myAccessories.push(accessory);
+						}
+                                        }
 				}
 
 				callback(this.myAccessories);
@@ -290,7 +298,10 @@ EvohomeThermostatAccessory.prototype = {
         	.setCharacteristic(Characteristic.SerialNumber, "123456"); // need to stringify the this.serial
 
         // Thermostat Service
-        this.thermostatService = new Service.Thermostat("Honeywell Thermostat");
+        //this.thermostatService = new Service.Thermostat("Honeywell Thermostat");
+	// Remove the old way above because it creates all devices as "Honeywell Thermostat" so I have no idea which thermostat it is.
+	// This new way creates each thermostat as its own room name, as pulled from Evohome
+	this.thermostatService = new Service.Thermostat(this.name);
 
 		// Required Characteristics /////////////////////////////////////////////////////////////
   		// this.addCharacteristic(Characteristic.CurrentHeatingCoolingState); READ
