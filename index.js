@@ -120,7 +120,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                             else this.log("No Characteristic.CurrentTemperature found " + service);
                         }
                                         
-                        var oldTargetTemp = this.myAccessories[i].device.thermostat.changeableValues.heatSetpoint['value'];     
+                        var oldTargetTemp = this.myAccessories[i].device.thermostat.changeableValues.heatSetpoint['value'];
                         var newTargetTemp = device.thermostat.changeableValues.heatSetpoint['value'];
                                         
                         if(oldTargetTemp!=newTargetTemp && service) {
@@ -129,7 +129,6 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                             if(charTT) charCT.setValue(newTargetTemp);
                             else this.log("No Characteristic.TargetTemperature found " + service);
                         }
-                        
                         this.myAccessories[i].device = device;
                     }
                 }
@@ -324,7 +323,8 @@ EvohomeThermostatAccessory.prototype = {
   			.getCharacteristic(Characteristic.CurrentTemperature)
   			.on('get', this.getCurrentTemperature.bind(this));
 	    	
-	    	this.Characteristic.CurrentTemperature.minimumValue = 0;
+        this.thermostatService
+            .getCharacteristic(Characteristic.CurrentTemperature).minimumValue = 0;
 
   		// this.addCharacteristic(Characteristic.TargetTemperature); READ WRITE
   		this.thermostatService
@@ -332,7 +332,8 @@ EvohomeThermostatAccessory.prototype = {
   			.on('get', this.getTargetTemperature.bind(this))
   			.on('set', this.setTargetTemperature.bind(this));
 	    
-	    	this.Characteristic.TargetTemperature.minimumValue = 0;
+        this.thermostatService
+            .getCharacteristic(Characteristic.TargetTemperature).minimumValue = 0;
 
   		// this.addCharacteristic(Characteristic.TemperatureDisplayUnits); READ WRITE
   		this.thermostatService
