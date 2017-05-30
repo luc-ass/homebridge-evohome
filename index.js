@@ -31,7 +31,10 @@ function EvohomePlatform(log, config){
 	this.password = config['password'];
 	this.appId = config['appId'] || "91db1612-73fd-4500-91b2-e63b069b185c";
     
-  this.cache_timeout = 890; // seconds
+    this.minTemp = config['minTemp'] || 15.0;
+    this.maxTemp = config['maxTemp'] || 25.0;
+    
+    this.cache_timeout = 10;//890; // seconds
 
 	this.log = log;
     
@@ -120,6 +123,16 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                             else this.log("No Characteristic.CurrentTemperature found " + service);
                         }
                                         
+                        var oldMode = this.myAccessories[i].device.thermostat.changeableValues.mode;
+                        var newMode = device.thermostat.changeableValues.mode;
+                                        
+                        if(oldMode!=newMode && service) {
+                            this.log("Updating: " + device.name + " modeChange from: " + oldMode + " to: " + newMode);
+                            var charMode = service.getCharacteristic(Characteristic.TargetHeatingCoolingState);
+                            if(charMode) charMode.setValue(newMode == "Off" ? 0 : 1); // No cooling/auto state
+                            else this.log("No Characteristic.TargetHeatingCoolingState found " + service);
+                        }
+                                        
                         var oldTargetTemp = this.myAccessories[i].device.thermostat.changeableValues.heatSetpoint['value'];
                         var newTargetTemp = device.thermostat.changeableValues.heatSetpoint['value'];
                                         
@@ -180,7 +193,12 @@ EvohomeThermostatAccessory.prototype = {
 		// HEAT = 1
 		// COOL = 2
 		// AUTO = 3
-		callback(null, Number(1));
+        
+        var mode = this.device.thermostat.changeableValues.mode == "Off" ? 0 : 1;
+        
+        that.log("currentHeatingCooling = " + mode);
+        
+		callback(null, Number(mode));
 
 	},
 
@@ -206,6 +224,8 @@ EvohomeThermostatAccessory.prototype = {
 
 	getTargetHeatingCooling: function(callback) {
 		var that = this;
+        
+        that.log("getTargetHeatingCooling");
 
 		// TODO:
 		// fixed until it can be requested from Evohome...
@@ -213,7 +233,12 @@ EvohomeThermostatAccessory.prototype = {
 		// HEAT = 1
 		// COOL = 2
 		// AUTO = 3
-		callback(null, Number(1));
+        
+        var mode = this.device.thermostat.changeableValues.mode == "Off" ? 0 : 1;
+        
+        that.log("currentTargetHeatingCooling = " + mode);
+        
+		callback(null, Number(mode));
 
 	},
 
@@ -242,17 +267,19 @@ EvohomeThermostatAccessory.prototype = {
 
 	getTargetTemperature: function(callback) {
 		var that = this;
+        
+        var targetTemperature = 0;
 
 		// gives back the target temperature of thermostat
 		// crashes the plugin IF there is no value defined (like 
 		// with DOMESTIC_HOT_WATER) so we need to chek if it
 		// is defined first
 		if (this.model = "EMEA_ZONE"){
-			var targetTemperature = this.device.thermostat.changeableValues.heatSetpoint['value'];
+            targetTemperature = this.device.thermostat.changeableValues.heatSetpoint['value'];
 			that.log("Device type is: " + this.model + ". Target temperature should be there.");
 			that.log("Target temperature for", this.name, "is", targetTemperature + "°");
 		} else {
-			var targetTemperature = 0;
+			targetTemperature = 0;
 			that.log("Device type is: " + this.model + ". Target temperature is probably NOT there (this is normal).");
 			that.log("Will set target temperature for", this.name, "to " + targetTemperature + "°");
 		}
@@ -322,9 +349,13 @@ EvohomeThermostatAccessory.prototype = {
   		this.thermostatService
   			.getCharacteristic(Characteristic.CurrentTemperature)
   			.on('get', this.getCurrentTemperature.bind(this));
-	    	
-        this.thermostatService
-            .getCharacteristic(Characteristic.CurrentTemperature).minimumValue = 0;
+
+        this.thermostatService.getCharacteristic(Characteristic.CurrentTemperature)
+        .setProps({
+                  minValue: this.minTemp,
+                  maxValue: this.maxTemp,
+                  minStep: 0.5
+                  });
 
   		// this.addCharacteristic(Characteristic.TargetTemperature); READ WRITE
   		this.thermostatService
@@ -332,8 +363,12 @@ EvohomeThermostatAccessory.prototype = {
   			.on('get', this.getTargetTemperature.bind(this))
   			.on('set', this.setTargetTemperature.bind(this));
 	    
-        this.thermostatService
-            .getCharacteristic(Characteristic.TargetTemperature).minimumValue = 0;
+        this.thermostatService.getCharacteristic(Characteristic.TargetTemperature)
+        .setProps({
+                  minValue: this.minTemp,
+                  maxValue: this.maxTemp,
+                  minStep: 0.5
+                  });
 
   		// this.addCharacteristic(Characteristic.TemperatureDisplayUnits); READ WRITE
   		this.thermostatService
