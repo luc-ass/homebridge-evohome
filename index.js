@@ -34,7 +34,7 @@ function EvohomePlatform(log, config){
     this.minTemp = config['minTemp'] || 15.0;
     this.maxTemp = config['maxTemp'] || 25.0;
     
-    this.cache_timeout = 10;//890; // seconds
+    this.cache_timeout = 890; // seconds
 
 	this.log = log;
     
