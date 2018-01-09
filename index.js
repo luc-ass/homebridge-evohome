@@ -7,10 +7,8 @@
 //     "name" : "Evohome",
 //     "username" : "username/email",
 //     "password" : "password",
-//     "appId" : "91db1612-73fd-4500-91b2-e63b069b185c"
 // }
 //
-// not yet sure wether application-id-hex (appID) is really changing so I put it here as default.
 
 'use strict';
 
@@ -29,7 +27,7 @@ function EvohomePlatform(log, config){
 
 	this.username = config['username'];
 	this.password = config['password'];
-	this.appId = config['appId'] || "91db1612-73fd-4500-91b2-e63b069b185c";
+	this.temperatureUnit = config['temperatureUnit'];
     
   this.cache_timeout = 890; // seconds
 
@@ -46,41 +44,57 @@ EvohomePlatform.prototype = {
 		// create the myAccessories array
 		this.myAccessories = [];
 
-		evohome.login(that.username, that.password, that.appId).then(function(session) {
+		evohome.login(that.username, that.password).then(function(session) {
 			this.log("Logged into Evohome!");
 
 			session.getLocations().then(function(locations){
 				this.log('You have', locations.length, 'location(s). Only the first one will be used!');
 				this.log('You have', locations[0].devices.length, 'device(s).')
+				
+				session.getThermostats(locations[0].locationID).then(function(thermostats){
+				
+				for(var zoneId in thermostats) {
+				    this.log(thermostats[zoneId].name + ": " + thermostats[zoneId].temperatureStatus.temperature + "°");
+				}
 
 				// iterate through the devices
 				for (var deviceId in locations[0].devices) {
-					// print name of the device
-					this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + locations[0].devices[deviceId].thermostat.indoorTemperature + "°)");
+				    for(var thermoId in thermostats) {
+				        if(locations[0].devices[deviceId].zoneId == thermostats[thermoId].zoneId) {
+				            // print name of the device
+					        this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + thermostats[thermoId].temperatureStatus.temperature + "°)");
 
-                                        if(locations[0].devices[deviceId].name  == "") {
-                                                // Device name is empty
-                                                // Probably Hot Water
-                                                // Do not store
-                                               	this.log("Found blank device name, probably stored hot water. Ignoring device for now.");
-                                        }
-                                        else {
-						// store device in var
-						var device = locations[0].devices[deviceId];
-						// store name of device
-						var name = locations[0].devices[deviceId].name + " Thermostat";
-						// create accessory (only if it is "EMEA_ZONE")
-						if (device.thermostatModelType = "EMEA_ZONE") {
-							var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, this.username, this.password, this.appId);
-							// store accessory in myAccessories
-							this.myAccessories.push(accessory);
-						}
-                                        }
+                            if(locations[0].devices[deviceId].name  == "") {
+                                // Device name is empty
+                                // Probably Hot Water
+                                // Do not store
+                                this.log("Found blank device name, probably stored hot water. Ignoring device for now.");
+                            }
+                            else {
+						    // store device in var
+						    var device = locations[0].devices[deviceId];
+						    // store thermostat in var
+						    var thermostat = thermostats[thermoId];
+						    // store name of device
+						    var name = locations[0].devices[deviceId].name + " Thermostat";
+						    // create accessory (only if it is "HeatingZone")
+						    if (device.modelType = "HeatingZone") {
+							    var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, thermostat, this.temperatureUnit, this.username, this.password);
+							    // store accessory in myAccessories
+							    this.myAccessories.push(accessory);
+						    }
+                            }
+				        }
+				    }
 				}
 
 				callback(this.myAccessories);
                                         
                 setInterval(that.periodicUpdate.bind(this), this.cache_timeout * 1000);
+                
+                }.bind(this)).fail(function(err){
+                    that.log('Evohome failed:', err);
+                });
 
 			}.bind(this)).fail(function(err){
 				that.log('Evohome Failed:', err);
@@ -99,7 +113,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
     if(!this.updating && this.myAccessories){
         this.updating = true;
         
-        evohome.login(this.username, this.password, this.appId).then(function(session) {
+        evohome.login(this.username, this.password).then(function(session) {
         
             session.getLocations().then(function(locations){
                                     
@@ -144,16 +158,18 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
 }
 
 // give this function all the parameters needed
-function EvohomeThermostatAccessory(log, name, device, deviceId, username, password, appId) {
+function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, temperatureUnit, username, password) {
 	this.name = name;
 	this.device = device;
-	this.model = device.thermostatModelType;
+	this.model = device.modelType;
 	this.serial = device.deviceID;
 	this.deviceId = deviceId;
 	
+	this.thermostat = thermostat;
+	this.temperatureUnit = temperatureUnit;
+	
 	this.username = username;
 	this.password = password;
-	this.appId = appId;
 
 	this.log = log;
 }
@@ -164,7 +180,7 @@ EvohomeThermostatAccessory.prototype = {
 		var that = this;
 
 		// need to refresh data if outdated!!
-		var currentTemperature = this.device.thermostat.indoorTemperature;
+		var currentTemperature = this.thermostat.temperatureStatus.temperature;
 		callback(null, Number(currentTemperature));
 		that.log("Current temperature of " + this.name + " is " + currentTemperature + "°");
 	},
@@ -225,7 +241,7 @@ EvohomeThermostatAccessory.prototype = {
         // TODO:
         // verify that the task did succeed
 		
-    evohome.login(this.username, this.password, this.appId).then(function (session) {
+    evohome.login(this.username, this.password).then(function (session) {
       session.setHeatSetpoint(that.serial, value, minutes).then(function (taskId) {
         that.log("Successfully changed temperature!");
         that.log(taskId);
@@ -247,8 +263,8 @@ EvohomeThermostatAccessory.prototype = {
 		// crashes the plugin IF there is no value defined (like 
 		// with DOMESTIC_HOT_WATER) so we need to chek if it
 		// is defined first
-		if (this.model = "EMEA_ZONE"){
-			var targetTemperature = this.device.thermostat.changeableValues.heatSetpoint['value'];
+		if (this.model = "HeatingZone"){
+			var targetTemperature = this.thermostat.setpointStatus.targetHeatingTemperature;
 			that.log("Device type is: " + this.model + ". Target temperature should be there.");
 			that.log("Target temperature for", this.name, "is", targetTemperature + "°");
 		} else {
@@ -264,13 +280,11 @@ EvohomeThermostatAccessory.prototype = {
         var that = this;
 		var temperatureUnits = 0;
 
-		switch(this.device.thermostat.units) {
+		switch(this.temperatureUnit) {
 			case "Fahrenheit":
-				that.log("Temperature unit for", this.name, "is set to", this.device.thermostat.units);
 				temperatureUnits = 1;
 				break;
 			case "Celsius":
-				that.log("Temperature unit for", this.name, "is set to", this.device.thermostat.units);
 				temperatureUnits = 0;
 				break;
 			default:
