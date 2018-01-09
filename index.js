@@ -52,15 +52,11 @@ EvohomePlatform.prototype = {
 				this.log('You have', locations[0].devices.length, 'device(s).')
 				
 				session.getThermostats(locations[0].locationID).then(function(thermostats){
-				
-				for(var zoneId in thermostats) {
-				    this.log(thermostats[zoneId].name + ": " + thermostats[zoneId].temperatureStatus.temperature + "°");
-				}
 
 				// iterate through the devices
 				for (var deviceId in locations[0].devices) {
 				    for(var thermoId in thermostats) {
-				        if(locations[0].devices[deviceId].zoneId == thermostats[thermoId].zoneId) {
+				        if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
 				            // print name of the device
 					        this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + thermostats[thermoId].temperatureStatus.temperature + "°)");
 
@@ -116,36 +112,54 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
         evohome.login(this.username, this.password).then(function(session) {
         
             session.getLocations().then(function(locations){
-                                    
-                for(var i=0; i<this.myAccessories.length; ++i) {
-                    var device = locations[0].devices[this.myAccessories[i].deviceId];
-
-                    if(device) {
-                        // Check if temp has changed
-                        var oldCurrentTemp = this.myAccessories[i].device.thermostat.indoorTemperature;
-                        var newCurrentTemp = device.thermostat.indoorTemperature;
+            
+                session.getThermostats(locations[0].locationID).then(function(thermostats){
+                
+                
+                for (var deviceId in locations[0].devices) {
+				    for(var thermoId in thermostats) {
+				        if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
+				            for(var i=0; i<this.myAccessories.length; ++i) {
+				                if(this.myAccessories[i].device.zoneID == locations[0].devices[deviceId].zoneId) {
+				                
+				            var device = locations[0].devices[deviceId];
+				            var thermostat = thermostats[thermoId];
+				            
+                            if(device) {
+                                // Check if temp has changed
+                                var oldCurrentTemp = this.myAccessories[i].thermostat.temperatureStatus.temperature;
+                                var newCurrentTemp = thermostat.temperatureStatus.temperature;
                                         
-                        var service = this.myAccessories[i].thermostatService;
+                                var service = this.myAccessories[i].thermostatService;
                                         
-                        if(oldCurrentTemp!=newCurrentTemp && service) {
-                            this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
-                            var charCT = service.getCharacteristic(Characteristic.CurrentTemperature);
-                            if(charCT) charCT.setValue(newCurrentTemp);
-                            else this.log("No Characteristic.CurrentTemperature found " + service);
-                        }
+                                if(oldCurrentTemp!=newCurrentTemp && service) {
+                                    this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
+                                    var charCT = service.getCharacteristic(Characteristic.CurrentTemperature);
+                                    if(charCT) charCT.setValue(newCurrentTemp);
+                                   else this.log("No Characteristic.CurrentTemperature found " + service);
+                                }
                                         
-                        var oldTargetTemp = this.myAccessories[i].device.thermostat.changeableValues.heatSetpoint['value'];
-                        var newTargetTemp = device.thermostat.changeableValues.heatSetpoint['value'];
+                                var oldTargetTemp = this.myAccessories[i].thermostat.setpointStatus.targetHeatTemperature;
+                                var newTargetTemp = thermostat.setpointStatus.targetHeatTemperature;
                                         
-                        if(oldTargetTemp!=newTargetTemp && service) {
-                            this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
-                            var charTT = service.getCharacteristic(Characteristic.TargetTemperature);
-                            if(charTT) charCT.setValue(newTargetTemp);
-                            else this.log("No Characteristic.TargetTemperature found " + service);
-                        }
-                        this.myAccessories[i].device = device;
-                    }
-                }
+                                if(oldTargetTemp!=newTargetTemp && service) {
+                                    this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
+                                    var charTT = service.getCharacteristic(Characteristic.TargetTemperature);
+                                    if(charTT) charCT.setValue(newTargetTemp);
+                                    else this.log("No Characteristic.TargetTemperature found " + service);
+                                }
+                               this.myAccessories[i].device = device;
+				            }
+				                
+				                }
+				            }
+				        }
+				    }
+				}
+                
+                }.bind(this)).fail(function(err){
+                    this.log('Evohome Failed:', err);
+                });
             }.bind(this)).fail(function(err){
                 this.log('Evohome Failed:', err);
             });
@@ -242,7 +256,7 @@ EvohomeThermostatAccessory.prototype = {
         // verify that the task did succeed
 		
     evohome.login(this.username, this.password).then(function (session) {
-      session.setHeatSetpoint(that.serial, value, minutes).then(function (taskId) {
+      session.setHeatSetpoint(that.device.zoneID, value, minutes).then(function (taskId) {
         that.log("Successfully changed temperature!");
         that.log(taskId);
         // returns taskId if successful
@@ -264,7 +278,7 @@ EvohomeThermostatAccessory.prototype = {
 		// with DOMESTIC_HOT_WATER) so we need to chek if it
 		// is defined first
 		if (this.model = "HeatingZone"){
-			var targetTemperature = this.thermostat.setpointStatus.targetHeatingTemperature;
+			var targetTemperature = this.thermostat.setpointStatus.targetHeatTemperature;
 			that.log("Device type is: " + this.model + ". Target temperature should be there.");
 			that.log("Target temperature for", this.name, "is", targetTemperature + "°");
 		} else {
