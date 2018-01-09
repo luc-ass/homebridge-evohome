@@ -25,7 +25,6 @@ Configuration sample:
             "name" : "Evohome",
             "username" : "username/email",
             "password" : "password",
-            "appId" : "91db1612-73fd-4500-91b2-e63b069b185c"
         }
     ]
 ```
