@@ -120,7 +120,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
 				    for(var thermoId in thermostats) {
 				        if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
 				            for(var i=0; i<this.myAccessories.length; ++i) {
-				                if(this.myAccessories[i].device.zoneID == locations[0].devices[deviceId].zoneId) {
+				                if(this.myAccessories[i].device.zoneID == locations[0].devices[deviceId].zoneID) {
 				                
 				            var device = locations[0].devices[deviceId];
 				            var thermostat = thermostats[thermoId];
@@ -149,6 +149,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                                     else this.log("No Characteristic.TargetTemperature found " + service);
                                 }
                                this.myAccessories[i].device = device;
+                               this.myAccessories[i].thermostat = thermostat;
 				            }
 				                
 				                }
