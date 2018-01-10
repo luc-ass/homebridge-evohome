@@ -145,7 +145,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                                 if(oldTargetTemp!=newTargetTemp && service) {
                                     this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
                                     var charTT = service.getCharacteristic(Characteristic.TargetTemperature);
-                                    if(charTT) charCT.setValue(newTargetTemp);
+                                    if(charTT) charTT.setValue(newTargetTemp);
                                     else this.log("No Characteristic.TargetTemperature found " + service);
                                 }
                                this.myAccessories[i].device = device;
