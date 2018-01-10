@@ -261,6 +261,8 @@ EvohomeThermostatAccessory.prototype = {
         that.log("Successfully changed temperature!");
         that.log(taskId);
         // returns taskId if successful
+        that.thermostat.setpointStatus.targetHeatTemperature = value;
+        // set target temperature here also to prevent from setting temperature two times
         // nothing else here...
         callback(null, Number(1));
       });
