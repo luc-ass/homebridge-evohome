@@ -29,7 +29,7 @@ function EvohomePlatform(log, config){
 	this.password = config['password'];
 	this.temperatureUnit = config['temperatureUnit'];
     
-  this.cache_timeout = 890; // seconds
+  this.cache_timeout = 300; // seconds
 
 	this.log = log;
     
