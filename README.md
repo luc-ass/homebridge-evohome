@@ -25,6 +25,7 @@ Configuration sample:
             "name" : "Evohome",
             "username" : "username/email",
             "password" : "password",
+            "temperatureUnit" : "Celsius"
         }
     ]
 ```
@@ -33,7 +34,7 @@ Configuration sample:
 - name: can be anything you want
 - username: your Honeywell e-mail
 - password: your Honeywell password
-- appId: "91db1612-73fd-4500-91b2-e63b069b185c" (optional)
+- temperatureUnit: Celsius / Fahrenheit
 
 # Roadmap
 
