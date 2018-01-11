@@ -134,23 +134,17 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                                         
                                 if(oldCurrentTemp!=newCurrentTemp && service) {
                                     this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
-                                    var charCT = service.getCharacteristic(Characteristic.CurrentTemperature);
-                                    if(charCT) charCT.setValue(newCurrentTemp);
-                                   else this.log("No Characteristic.CurrentTemperature found " + service);
                                 }
                                         
                                 var oldTargetTemp = this.myAccessories[i].thermostat.setpointStatus.targetHeatTemperature;
                                 var newTargetTemp = thermostat.setpointStatus.targetHeatTemperature;
                                 
-                               this.myAccessories[i].device = device;
-                               this.myAccessories[i].thermostat = thermostat;
-                                        
                                 if(oldTargetTemp!=newTargetTemp && service) {
                                     this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
-                                    var charTT = service.getCharacteristic(Characteristic.TargetTemperature);
-                                    if(charTT) charTT.setValue(newTargetTemp);
-                                    else this.log("No Characteristic.TargetTemperature found " + service);
                                 }
+
+                                this.myAccessories[i].device = device;
+                                this.myAccessories[i].thermostat = thermostat;
 				            }
 				                
 				                }
