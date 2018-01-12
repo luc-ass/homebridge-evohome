@@ -7,10 +7,8 @@
 //     "name" : "Evohome",
 //     "username" : "username/email",
 //     "password" : "password",
-//     "appId" : "91db1612-73fd-4500-91b2-e63b069b185c"
 // }
 //
-// not yet sure wether application-id-hex (appID) is really changing so I put it here as default.
 
 'use strict';
 
@@ -29,12 +27,9 @@ function EvohomePlatform(log, config){
 
 	this.username = config['username'];
 	this.password = config['password'];
-	this.appId = config['appId'] || "91db1612-73fd-4500-91b2-e63b069b185c";
+	this.temperatureUnit = config['temperatureUnit'];
     
-    this.minTemp = config['minTemp'] || 15.0;
-    this.maxTemp = config['maxTemp'] || 25.0;
-    
-    this.cache_timeout = 890; // seconds
+  this.cache_timeout = 300; // seconds
 
 	this.log = log;
     
@@ -49,41 +44,53 @@ EvohomePlatform.prototype = {
 		// create the myAccessories array
 		this.myAccessories = [];
 
-		evohome.login(that.username, that.password, that.appId).then(function(session) {
+		evohome.login(that.username, that.password).then(function(session) {
 			this.log("Logged into Evohome!");
 
 			session.getLocations().then(function(locations){
 				this.log('You have', locations.length, 'location(s). Only the first one will be used!');
 				this.log('You have', locations[0].devices.length, 'device(s).')
+				
+				session.getThermostats(locations[0].locationID).then(function(thermostats){
 
 				// iterate through the devices
 				for (var deviceId in locations[0].devices) {
-					// print name of the device
-					this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + locations[0].devices[deviceId].thermostat.indoorTemperature + "°)");
+				    for(var thermoId in thermostats) {
+				        if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
+				            // print name of the device
+					        this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + thermostats[thermoId].temperatureStatus.temperature + "°)");
 
-                                        if(locations[0].devices[deviceId].name  == "") {
-                                                // Device name is empty
-                                                // Probably Hot Water
-                                                // Do not store
-                                               	this.log("Found blank device name, probably stored hot water. Ignoring device for now.");
-                                        }
-                                        else {
-						// store device in var
-						var device = locations[0].devices[deviceId];
-						// store name of device
-						var name = locations[0].devices[deviceId].name + " Thermostat";
-						// create accessory (only if it is "EMEA_ZONE")
-						if (device.thermostatModelType = "EMEA_ZONE") {
-							var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, this.username, this.password, this.appId);
-							// store accessory in myAccessories
-							this.myAccessories.push(accessory);
-						}
-                                        }
+                            if(locations[0].devices[deviceId].name  == "") {
+                                // Device name is empty
+                                // Probably Hot Water
+                                // Do not store
+                                this.log("Found blank device name, probably stored hot water. Ignoring device for now.");
+                            }
+                            else {
+						    // store device in var
+						    var device = locations[0].devices[deviceId];
+						    // store thermostat in var
+						    var thermostat = thermostats[thermoId];
+						    // store name of device
+						    var name = locations[0].devices[deviceId].name + " Thermostat";
+						    // create accessory (only if it is "HeatingZone")
+						    if (device.modelType = "HeatingZone") {
+							    var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, thermostat, this.temperatureUnit, this.username, this.password);
+							    // store accessory in myAccessories
+							    this.myAccessories.push(accessory);
+						    }
+                            }
+				        }
+				    }
 				}
 
 				callback(this.myAccessories);
                                         
                 setInterval(that.periodicUpdate.bind(this), this.cache_timeout * 1000);
+                
+                }.bind(this)).fail(function(err){
+                    that.log('Evohome failed:', err);
+                });
 
 			}.bind(this)).fail(function(err){
 				that.log('Evohome Failed:', err);
@@ -102,49 +109,53 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
     if(!this.updating && this.myAccessories){
         this.updating = true;
         
-        evohome.login(this.username, this.password, this.appId).then(function(session) {
+        evohome.login(this.username, this.password).then(function(session) {
         
             session.getLocations().then(function(locations){
-                                    
-                for(var i=0; i<this.myAccessories.length; ++i) {
-                    var device = locations[0].devices[this.myAccessories[i].deviceId];
+            
+                session.getThermostats(locations[0].locationID).then(function(thermostats){
+                
+                
+                for (var deviceId in locations[0].devices) {
+				    for(var thermoId in thermostats) {
+				        if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
+				            for(var i=0; i<this.myAccessories.length; ++i) {
+				                if(this.myAccessories[i].device.zoneID == locations[0].devices[deviceId].zoneID) {
+				                
+				            var device = locations[0].devices[deviceId];
+				            var thermostat = thermostats[thermoId];
+				            
+                            if(device) {
+                                // Check if temp has changed
+                                var oldCurrentTemp = this.myAccessories[i].thermostat.temperatureStatus.temperature;
+                                var newCurrentTemp = thermostat.temperatureStatus.temperature;
+                                        
+                                var service = this.myAccessories[i].thermostatService;
+                                        
+                                if(oldCurrentTemp!=newCurrentTemp && service) {
+                                    this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
+                                }
+                                        
+                                var oldTargetTemp = this.myAccessories[i].thermostat.setpointStatus.targetHeatTemperature;
+                                var newTargetTemp = thermostat.setpointStatus.targetHeatTemperature;
+                                
+                                if(oldTargetTemp!=newTargetTemp && service) {
+                                    this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
+                                }
 
-                    if(device) {
-                        // Check if temp has changed
-                        var oldCurrentTemp = this.myAccessories[i].device.thermostat.indoorTemperature;
-                        var newCurrentTemp = device.thermostat.indoorTemperature;
-                                        
-                        var service = this.myAccessories[i].thermostatService;
-                                        
-                        if(oldCurrentTemp!=newCurrentTemp && service) {
-                            this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
-                            var charCT = service.getCharacteristic(Characteristic.CurrentTemperature);
-                            if(charCT) charCT.setValue(newCurrentTemp);
-                            else this.log("No Characteristic.CurrentTemperature found " + service);
-                        }
-                                        
-                        var oldMode = this.myAccessories[i].device.thermostat.changeableValues.mode;
-                        var newMode = device.thermostat.changeableValues.mode;
-                                        
-                        if(oldMode!=newMode && service) {
-                            this.log("Updating: " + device.name + " modeChange from: " + oldMode + " to: " + newMode);
-                            var charMode = service.getCharacteristic(Characteristic.TargetHeatingCoolingState);
-                            if(charMode) charMode.setValue(newMode == "Off" ? 0 : 1); // No cooling/auto state
-                            else this.log("No Characteristic.TargetHeatingCoolingState found " + service);
-                        }
-                                        
-                        var oldTargetTemp = this.myAccessories[i].device.thermostat.changeableValues.heatSetpoint['value'];
-                        var newTargetTemp = device.thermostat.changeableValues.heatSetpoint['value'];
-                                        
-                        if(oldTargetTemp!=newTargetTemp && service) {
-                            this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
-                            var charTT = service.getCharacteristic(Characteristic.TargetTemperature);
-                            if(charTT) charCT.setValue(newTargetTemp);
-                            else this.log("No Characteristic.TargetTemperature found " + service);
-                        }
-                        this.myAccessories[i].device = device;
-                    }
-                }
+                                this.myAccessories[i].device = device;
+                                this.myAccessories[i].thermostat = thermostat;
+				            }
+				                
+				                }
+				            }
+				        }
+				    }
+				}
+                
+                }.bind(this)).fail(function(err){
+                    this.log('Evohome Failed:', err);
+                });
             }.bind(this)).fail(function(err){
                 this.log('Evohome Failed:', err);
             });
@@ -157,16 +168,18 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
 }
 
 // give this function all the parameters needed
-function EvohomeThermostatAccessory(log, name, device, deviceId, username, password, appId) {
+function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, temperatureUnit, username, password) {
 	this.name = name;
 	this.device = device;
-	this.model = device.thermostatModelType;
+	this.model = device.modelType;
 	this.serial = device.deviceID;
 	this.deviceId = deviceId;
 	
+	this.thermostat = thermostat;
+	this.temperatureUnit = temperatureUnit;
+	
 	this.username = username;
 	this.password = password;
-	this.appId = appId;
 
 	this.log = log;
 }
@@ -177,7 +190,7 @@ EvohomeThermostatAccessory.prototype = {
 		var that = this;
 
 		// need to refresh data if outdated!!
-		var currentTemperature = this.device.thermostat.indoorTemperature;
+		var currentTemperature = this.thermostat.temperatureStatus.temperature;
 		callback(null, Number(currentTemperature));
 		that.log("Current temperature of " + this.name + " is " + currentTemperature + "°");
 	},
@@ -244,19 +257,58 @@ EvohomeThermostatAccessory.prototype = {
 
    setTargetTemperature: function(value, callback) {
 	  var that = this;
-	            
-    that.log("Setting target temperature for", this.name, "to", value + "°");
-    var minutes = 10; // The number of minutes the new target temperature will be effective
-        // TODO:
-        // verify that the task did succeed
 		
-    evohome.login(this.username, this.password, this.appId).then(function (session) {
-      session.setHeatSetpoint(that.serial, value, minutes).then(function (taskId) {
-        that.log("Successfully changed temperature!");
-        that.log(taskId);
-        // returns taskId if successful
-        // nothing else here...
-        callback(null, Number(1));
+    evohome.login(this.username, this.password).then(function (session) {
+      session.getSchedule(that.device.zoneID).then(function (schedule) {
+        
+        var date = new Date();
+        var weekdayNumber = date.getDay();
+        var weekday = new Array(7);
+        weekday[0]="Monday";
+        weekday[1]="Tuesday";
+        weekday[2]="Wednesday";
+        weekday[3]="Thursday";
+        weekday[4]="Friday";
+        weekday[5]="Saturday";
+        weekday[6]="Sunday";
+        
+        var currenttime = date.toLocaleTimeString();
+        var proceed = true;
+        var nextScheduleTime = "";
+        
+        for(var scheduleId in schedule) {
+          if(schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
+            var switchpoints = schedule[scheduleId].switchpoints;
+            for(var switchpointId in switchpoints) {
+              if(proceed == true) {
+                if(currenttime >= switchpoints[switchpointId].timeOfDay) {
+                  proceed = true;
+                } else if (currenttime < switchpoints[switchpointId].timeOfDay) {
+                  proceed = false;
+                  nextScheduleTime = switchpoints[switchpointId].timeOfDay;
+                }
+              }
+            }
+            if(proceed == true) {
+                nextScheduleTime = "00:00:00";
+            }
+          }
+        }
+        
+        that.log("Setting target temperature for", that.name, "to", value + "° until " + nextScheduleTime);
+
+        session.setHeatSetpoint(that.device.zoneID, value, nextScheduleTime).then(function (taskId) {
+          that.log("Successfully changed temperature!");
+          that.log(taskId);
+          // returns taskId if successful
+          that.thermostat.setpointStatus.targetHeatTemperature = value;
+          // set target temperature here also to prevent from setting temperature two times
+          // nothing else here...
+          callback(null, Number(1));
+        });
+      }).fail(function(err) {
+          that.log('Evohome failed:', err);
+          callback(null, Number(0));
       });
     }).fail(function (err) {
       that.log('Evohome Failed:', err);
@@ -274,8 +326,8 @@ EvohomeThermostatAccessory.prototype = {
 		// crashes the plugin IF there is no value defined (like 
 		// with DOMESTIC_HOT_WATER) so we need to chek if it
 		// is defined first
-		if (this.model = "EMEA_ZONE"){
-            targetTemperature = this.device.thermostat.changeableValues.heatSetpoint['value'];
+		if (this.model = "HeatingZone"){
+			var targetTemperature = this.thermostat.setpointStatus.targetHeatTemperature;
 			that.log("Device type is: " + this.model + ". Target temperature should be there.");
 			that.log("Target temperature for", this.name, "is", targetTemperature + "°");
 		} else {
@@ -291,13 +343,11 @@ EvohomeThermostatAccessory.prototype = {
         var that = this;
 		var temperatureUnits = 0;
 
-		switch(this.device.thermostat.units) {
+		switch(this.temperatureUnit) {
 			case "Fahrenheit":
-				that.log("Temperature unit for", this.name, "is set to", this.device.thermostat.units);
 				temperatureUnits = 1;
 				break;
 			case "Celsius":
-				that.log("Temperature unit for", this.name, "is set to", this.device.thermostat.units);
 				temperatureUnits = 0;
 				break;
 			default:
@@ -348,27 +398,23 @@ EvohomeThermostatAccessory.prototype = {
   		// this.addCharacteristic(Characteristic.CurrentTemperature); READ
   		this.thermostatService
   			.getCharacteristic(Characteristic.CurrentTemperature)
-  			.on('get', this.getCurrentTemperature.bind(this));
-
-        this.thermostatService.getCharacteristic(Characteristic.CurrentTemperature)
-        .setProps({
-                  minValue: this.minTemp,
-                  maxValue: this.maxTemp,
-                  minStep: 0.5
-                  });
+  			.on('get', this.getCurrentTemperature.bind(this))
+  			.setProps({
+  			  minValue: 5,
+  			  maxValue: 35,
+  			  minStep: 0.5
+  			});
 
   		// this.addCharacteristic(Characteristic.TargetTemperature); READ WRITE
   		this.thermostatService
   			.getCharacteristic(Characteristic.TargetTemperature)
   			.on('get', this.getTargetTemperature.bind(this))
-  			.on('set', this.setTargetTemperature.bind(this));
-	    
-        this.thermostatService.getCharacteristic(Characteristic.TargetTemperature)
-        .setProps({
-                  minValue: this.minTemp,
-                  maxValue: this.maxTemp,
-                  minStep: 0.5
-                  });
+  			.on('set', this.setTargetTemperature.bind(this))
+  			.setProps({
+  			  minValue: 5,
+  			  maxValue: 35,
+  			  minStep: 0.5
+  			});
 
   		// this.addCharacteristic(Characteristic.TemperatureDisplayUnits); READ WRITE
   		this.thermostatService
