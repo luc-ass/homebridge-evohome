@@ -17,6 +17,7 @@ var Service, Characteristic;
 var config;
 var FakeGatoHistoryService;
 var inherits = require('util').inherits;
+const moment = require('moment');
 var CustomCharacteristic = {};
 
 module.exports = function(homebridge) {
@@ -65,7 +66,7 @@ function EvohomePlatform(log, config){
     this.password = config['password'];
     this.temperatureUnit = config['temperatureUnit'];
     
-    this.cache_timeout = 300; // seconds
+    this.cache_timeout = 30; // seconds
     
     this.log = log;
     
@@ -183,8 +184,10 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                                                 this.myAccessories[i].thermostat = thermostat;
                                                                      
                                                 var loggingService = this.myAccessories[i].loggingService;
-                                                                     
-                                                loggingService.addEntry({time: moment().unix(), currentTemp:newCurrentTemp, setTemp:newTargetTemp, valvePosition:50}); // valve pos 50%???
+                                                
+                                                //this.log("populating loggingService: " + loggingService);
+                                                //this.log(moment().unix() + " " + newCurrentTemp + " " + newTargetTemp);
+                                                loggingService.addEntry({time:moment().unix(), currentTemp:newCurrentTemp, setTemp:newTargetTemp, valvePosition:50}); // valve pos 50%???
                                             }
                                                                                                                                           
                                         }
@@ -213,7 +216,7 @@ function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, tem
     this.displayName = name; // fakegato
     this.device = device;
     this.model = device.modelType;
-    this.serial = device.deviceID;
+    this.serial = deviceId;
     this.deviceId = deviceId;
     
     this.thermostat = thermostat;
@@ -398,12 +401,15 @@ getServices: function() {
     // Information Service
     var informationService = new Service.AccessoryInformation();
     
+    //var serial = 123456 + this.deviceId;
+    var strSerial = this.serial.toString();
+    
     informationService
     .setCharacteristic(Characteristic.Identify, this.name)
     .setCharacteristic(Characteristic.Manufacturer, "Honeywell")
     .setCharacteristic(Characteristic.Model, this.model)
     .setCharacteristic(Characteristic.Name, this.name)
-    .setCharacteristic(Characteristic.SerialNumber, "123456"); // need to stringify the this.serial
+    .setCharacteristic(Characteristic.SerialNumber, strSerial); // need to stringify the this.serial
     
     // Thermostat Service
     //this.thermostatService = new Service.Thermostat("Honeywell Thermostat");
