@@ -15,8 +15,11 @@
 var evohome = require('./lib/evohome.js');
 var Service, Characteristic;
 var config;
+var FakeGatoHistoryService;
 
 module.exports = function(homebridge) {
+    FakeGatoHistoryService = require('fakegato-history')(homebridge);
+
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
     
@@ -45,63 +48,64 @@ accessories: function(callback) {
     this.myAccessories = [];
     
     evohome.login(that.username, that.password).then(function(session) {
-                                                     this.log("Logged into Evohome!");
+        this.log("Logged into Evohome!");
                                                      
-                                                     session.getLocations().then(function(locations){
-                                                                                 this.log('You have', locations.length, 'location(s). Only the first one will be used!');
-                                                                                 this.log('You have', locations[0].devices.length, 'device(s).')
+        session.getLocations().then(function(locations){
+            this.log('You have', locations.length, 'location(s). Only the first one will be used!');
+            this.log('You have', locations[0].devices.length, 'device(s).')
                                                                                  
-                                                                                 session.getThermostats(locations[0].locationID).then(function(thermostats){
+            session.getThermostats(locations[0].locationID).then(function(thermostats){
                                                                                                                                       
-                                                                                                                                      // iterate through the devices
-                                                                                                                                      for (var deviceId in locations[0].devices) {
-                                                                                                                                      for(var thermoId in thermostats) {
-                                                                                                                                      if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
-                                                                                                                                      // print name of the device
-                                                                                                                                      this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + thermostats[thermoId].temperatureStatus.temperature + "°)");
+                // iterate through the devices
+                for (var deviceId in locations[0].devices) {
+                    for(var thermoId in thermostats) {
+                        if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
+                            // print name of the device
+                            this.log(deviceId + ": " + locations[0].devices[deviceId].name + " (" + thermostats[thermoId].temperatureStatus.temperature + "°)");
                                                                                                                                       
-                                                                                                                                      if(locations[0].devices[deviceId].name  == "") {
-                                                                                                                                      // Device name is empty
-                                                                                                                                      // Probably Hot Water
-                                                                                                                                      // Do not store
-                                                                                                                                      this.log("Found blank device name, probably stored hot water. Ignoring device for now.");
-                                                                                                                                      }
-                                                                                                                                      else {
-                                                                                                                                      // store device in var
-                                                                                                                                      var device = locations[0].devices[deviceId];
-                                                                                                                                      // store thermostat in var
-                                                                                                                                      var thermostat = thermostats[thermoId];
-                                                                                                                                      // store name of device
-                                                                                                                                      var name = locations[0].devices[deviceId].name + " Thermostat";
-                                                                                                                                      // create accessory (only if it is "HeatingZone")
-                                                                                                                                      if (device.modelType = "HeatingZone") {
-                                                                                                                                      var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, thermostat, this.temperatureUnit, this.username, this.password);
-                                                                                                                                      // store accessory in myAccessories
-                                                                                                                                      this.myAccessories.push(accessory);
-                                                                                                                                      }
-                                                                                                                                      }
-                                                                                                                                      }
-                                                                                                                                      }
-                                                                                                                                      }
+                            if(locations[0].devices[deviceId].name  == "") {
+                                // Device name is empty
+                                // Probably Hot Water
+                                // Do not store
+                                this.log("Found blank device name, probably stored hot water. Ignoring device for now.");
+                            }
+                            else {
+                                // store device in var
+                                var device = locations[0].devices[deviceId];
+                                // store thermostat in var
+                                var thermostat = thermostats[thermoId];
+                                // store name of device
+                                var name = locations[0].devices[deviceId].name + " Thermostat";
+                                // create accessory (only if it is "HeatingZone")
+                                if (device.modelType = "HeatingZone") {
+                                    var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, thermostat, this.temperatureUnit, this.username, this.password);
+                                                                 
+                                    // store accessory in myAccessories
+                                    this.myAccessories.push(accessory);
+                            }
+                        }
+                    }
+                }
+            }
                                                                                                                                       
-                                                                                                                                      callback(this.myAccessories);
+            callback(this.myAccessories);
                                                                                                                                       
-                                                                                                                                      setInterval(that.periodicUpdate.bind(this), this.cache_timeout * 1000);
+            setInterval(that.periodicUpdate.bind(this), this.cache_timeout * 1000);
                                                                                                                                       
-                                                                                                                                      }.bind(this)).fail(function(err){
-                                                                                                                                                         that.log('Evohome failed:', err);
-                                                                                                                                                         });
+        }.bind(this)).fail(function(err){
+            that.log('Evohome failed:', err);
+        });
                                                                                  
-                                                                                 }.bind(this)).fail(function(err){
-                                                                                                    that.log('Evohome Failed:', err);
-                                                                                                    });
+        }.bind(this)).fail(function(err){
+            that.log('Evohome Failed:', err);
+        });
                                                      
                                                      
-                                                     }.bind(this)).fail(function(err) {
-                                                                        // tell me if login did not work!
-                                                                        that.log("Error during Login:", err);
-                                                                        });
-}
+        }.bind(this)).fail(function(err) {
+            // tell me if login did not work!
+            that.log("Error during Login:", err);
+        });
+    }
 };
 
 EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
@@ -111,58 +115,59 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
         
         evohome.login(this.username, this.password).then(function(session) {
                                                          
-                                                         session.getLocations().then(function(locations){
+            session.getLocations().then(function(locations){
                                                                                      
-                                                                                     session.getThermostats(locations[0].locationID).then(function(thermostats){
+                session.getThermostats(locations[0].locationID).then(function(thermostats){
+                                                                     
+                    for (var deviceId in locations[0].devices) {
+                        for(var thermoId in thermostats) {
+                            if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
+                                for(var i=0; i<this.myAccessories.length; ++i) {
+                                    if(this.myAccessories[i].device.zoneID == locations[0].devices[deviceId].zoneID) {
                                                                                                                                           
+                                            var device = locations[0].devices[deviceId];
+                                            var thermostat = thermostats[thermoId];
                                                                                                                                           
-                                                                                                                                          for (var deviceId in locations[0].devices) {
-                                                                                                                                          for(var thermoId in thermostats) {
-                                                                                                                                          if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
-                                                                                                                                          for(var i=0; i<this.myAccessories.length; ++i) {
-                                                                                                                                          if(this.myAccessories[i].device.zoneID == locations[0].devices[deviceId].zoneID) {
+                                            if(device) {
+                                                // Check if temp has changed
+                                                var oldCurrentTemp = this.myAccessories[i].thermostat.temperatureStatus.temperature;
+                                                var newCurrentTemp = thermostat.temperatureStatus.temperature;
                                                                                                                                           
-                                                                                                                                          var device = locations[0].devices[deviceId];
-                                                                                                                                          var thermostat = thermostats[thermoId];
+                                                var service = this.myAccessories[i].thermostatService;
                                                                                                                                           
-                                                                                                                                          if(device) {
-                                                                                                                                          // Check if temp has changed
-                                                                                                                                          var oldCurrentTemp = this.myAccessories[i].thermostat.temperatureStatus.temperature;
-                                                                                                                                          var newCurrentTemp = thermostat.temperatureStatus.temperature;
+                                                if(oldCurrentTemp!=newCurrentTemp && service) {
+                                                    this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
+                                                }
                                                                                                                                           
-                                                                                                                                          var service = this.myAccessories[i].thermostatService;
+                                                var oldTargetTemp = this.myAccessories[i].thermostat.setpointStatus.targetHeatTemperature;
+                                                var newTargetTemp = thermostat.setpointStatus.targetHeatTemperature;
                                                                                                                                           
-                                                                                                                                          if(oldCurrentTemp!=newCurrentTemp && service) {
-                                                                                                                                          this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
-                                                                                                                                          }
+                                                if(oldTargetTemp!=newTargetTemp && service) {
+                                                    this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
+                                                }
                                                                                                                                           
-                                                                                                                                          var oldTargetTemp = this.myAccessories[i].thermostat.setpointStatus.targetHeatTemperature;
-                                                                                                                                          var newTargetTemp = thermostat.setpointStatus.targetHeatTemperature;
+                                                this.myAccessories[i].device = device;
+                                                this.myAccessories[i].thermostat = thermostat;
+                                                                     
+                                                this.myAccessories[i].loggingService.addEntry({time: moment().unix(), currentTemp:newCurrentTemp, setTemp:newTargetTemp, valvePosition:50}); // valve pos 50%???
+                                            }
                                                                                                                                           
-                                                                                                                                          if(oldTargetTemp!=newTargetTemp && service) {
-                                                                                                                                          this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
-                                                                                                                                          }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                                                                                                                                           
-                                                                                                                                          this.myAccessories[i].device = device;
-                                                                                                                                          this.myAccessories[i].thermostat = thermostat;
-                                                                                                                                          }
-                                                                                                                                          
-                                                                                                                                          }
-                                                                                                                                          }
-                                                                                                                                          }
-                                                                                                                                          }
-                                                                                                                                          }
-                                                                                                                                          
-                                                                                                                                          }.bind(this)).fail(function(err){
-                                                                                                                                                             this.log('Evohome Failed:', err);
-                                                                                                                                                             });
-                                                                                     }.bind(this)).fail(function(err){
-                                                                                                        this.log('Evohome Failed:', err);
-                                                                                                        });
-                                                         }.bind(this)).fail(function(err){
-                                                                            this.log('Evohome Failed:', err);
-                                                                            });
-        
+                    }.bind(this)).fail(function(err){
+                        this.log('Evohome Failed:', err);
+                    });
+                }.bind(this)).fail(function(err){
+                    this.log('Evohome Failed:', err);
+                });
+            }.bind(this)).fail(function(err){
+                this.log('Evohome Failed:', err);
+            });
+    
         this.updating = false;
     }
 }
@@ -182,6 +187,8 @@ function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, tem
     this.password = password;
     
     this.log = log;
+    
+    this.loggingService = new FakeGatoHistoryService("thermo", this);
 }
 
 EvohomeThermostatAccessory.prototype = {
@@ -247,61 +254,60 @@ setTargetTemperature: function(value, callback) {
     var that = this;
     
     evohome.login(this.username, this.password).then(function (session) {
-                                                     session.getSchedule(that.device.zoneID).then(function (schedule) {
+        session.getSchedule(that.device.zoneID).then(function (schedule) {
+            var date = new Date();
+            var weekdayNumber = date.getDay();
+            var weekday = new Array(7);
+            weekday[0]="Monday";
+            weekday[1]="Tuesday";
+            weekday[2]="Wednesday";
+            weekday[3]="Thursday";
+            weekday[4]="Friday";
+            weekday[5]="Saturday";
+            weekday[6]="Sunday";
                                                                                                   
-                                                                                                  var date = new Date();
-                                                                                                  var weekdayNumber = date.getDay();
-                                                                                                  var weekday = new Array(7);
-                                                                                                  weekday[0]="Monday";
-                                                                                                  weekday[1]="Tuesday";
-                                                                                                  weekday[2]="Wednesday";
-                                                                                                  weekday[3]="Thursday";
-                                                                                                  weekday[4]="Friday";
-                                                                                                  weekday[5]="Saturday";
-                                                                                                  weekday[6]="Sunday";
+            var currenttime = date.toLocaleTimeString();
+            var proceed = true;
+            var nextScheduleTime = "";
                                                                                                   
-                                                                                                  var currenttime = date.toLocaleTimeString();
-                                                                                                  var proceed = true;
-                                                                                                  var nextScheduleTime = "";
+            for(var scheduleId in schedule) {
+                if(schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
+                    var switchpoints = schedule[scheduleId].switchpoints;
+                    for(var switchpointId in switchpoints) {
+                        if(proceed == true) {
+                            if(currenttime >= switchpoints[switchpointId].timeOfDay) {
+                                proceed = true;
+                            } else if (currenttime < switchpoints[switchpointId].timeOfDay) {
+                                proceed = false;
+                                nextScheduleTime = switchpoints[switchpointId].timeOfDay;
+                            }
+                        }
+                    }
+                    if(proceed == true) {
+                        nextScheduleTime = "00:00:00";
+                    }
+                }
+            }
                                                                                                   
-                                                                                                  for(var scheduleId in schedule) {
-                                                                                                  if(schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
-                                                                                                  var switchpoints = schedule[scheduleId].switchpoints;
-                                                                                                  for(var switchpointId in switchpoints) {
-                                                                                                  if(proceed == true) {
-                                                                                                  if(currenttime >= switchpoints[switchpointId].timeOfDay) {
-                                                                                                  proceed = true;
-                                                                                                  } else if (currenttime < switchpoints[switchpointId].timeOfDay) {
-                                                                                                  proceed = false;
-                                                                                                  nextScheduleTime = switchpoints[switchpointId].timeOfDay;
-                                                                                                  }
-                                                                                                  }
-                                                                                                  }
-                                                                                                  if(proceed == true) {
-                                                                                                  nextScheduleTime = "00:00:00";
-                                                                                                  }
-                                                                                                  }
-                                                                                                  }
+            that.log("Setting target temperature for", that.name, "to", value + "° until " + nextScheduleTime);
                                                                                                   
-                                                                                                  that.log("Setting target temperature for", that.name, "to", value + "° until " + nextScheduleTime);
-                                                                                                  
-                                                                                                  session.setHeatSetpoint(that.device.zoneID, value, nextScheduleTime).then(function (taskId) {
-                                                                                                                                                                            that.log("Successfully changed temperature!");
-                                                                                                                                                                            that.log(taskId);
-                                                                                                                                                                            // returns taskId if successful
-                                                                                                                                                                            that.thermostat.setpointStatus.targetHeatTemperature = value;
-                                                                                                                                                                            // set target temperature here also to prevent from setting temperature two times
-                                                                                                                                                                            // nothing else here...
-                                                                                                                                                                            callback(null, Number(1));
-                                                                                                                                                                            });
-                                                                                                  }).fail(function(err) {
-                                                                                                          that.log('Evohome failed:', err);
-                                                                                                          callback(null, Number(0));
-                                                                                                          });
-                                                     }).fail(function (err) {
-                                                             that.log('Evohome Failed:', err);
-                                                             callback(null, Number(0));
-                                                             });
+            session.setHeatSetpoint(that.device.zoneID, value, nextScheduleTime).then(function (taskId) {
+                that.log("Successfully changed temperature!");
+                that.log(taskId);
+                // returns taskId if successful
+                that.thermostat.setpointStatus.targetHeatTemperature = value;
+                // set target temperature here also to prevent from setting temperature two times
+                // nothing else here...
+                callback(null, Number(1));
+            });
+        }).fail(function(err) {
+            that.log('Evohome failed:', err);
+            callback(null, Number(0));
+        });
+    }).fail(function (err) {
+        that.log('Evohome Failed:', err);
+        callback(null, Number(0));
+    });
     callback(null, Number(0));
 },
     
