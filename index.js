@@ -16,12 +16,45 @@ var evohome = require('./lib/evohome.js');
 var Service, Characteristic;
 var config;
 var FakeGatoHistoryService;
+var inherits = require('util').inherits;
+var CustomCharacteristic = {};
 
 module.exports = function(homebridge) {
     FakeGatoHistoryService = require('fakegato-history')(homebridge);
 
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
+    
+    CustomCharacteristic.ValvePosition = function() {
+        Characteristic.call(this, 'Valve position', 'E863F12E-079E-48FF-8F27-9C2605A29F52');
+        this.setProps({
+                      format: Characteristic.Formats.UINT8,
+                      unit: Characteristic.Units.PERCENTAGE,
+                      perms: [Characteristic.Perms.READ]
+                      });
+        this.value = this.getDefaultValue();
+    };
+    inherits(CustomCharacteristic.ValvePosition, Characteristic);
+    
+    CustomCharacteristic.ProgramCommand = function() {
+        Characteristic.call(this, 'Program command', 'E863F12C-079E-48FF-8F27-9C2605A29F52');
+        this.setProps({
+                      format: Characteristic.Formats.DATA,
+                      perms: [Characteristic.Perms.WRITE]
+                      });
+        this.value = this.getDefaultValue();
+    };
+    inherits(CustomCharacteristic.ProgramCommand, Characteristic);
+    
+    CustomCharacteristic.ProgramData = function() {
+        Characteristic.call(this, 'Program data', 'E863F12F-079E-48FF-8F27-9C2605A29F52');
+        this.setProps({
+                      format: Characteristic.Formats.DATA,
+                      perms: [Characteristic.Perms.READ]
+                      });
+        this.value = this.getDefaultValue();
+    };
+    inherits(CustomCharacteristic.ProgramData, Characteristic);
     
     homebridge.registerPlatform("homebridge-evohome", "Evohome", EvohomePlatform);
 }
@@ -149,7 +182,9 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
                                                 this.myAccessories[i].device = device;
                                                 this.myAccessories[i].thermostat = thermostat;
                                                                      
-                                                this.myAccessories[i].loggingService.addEntry({time: moment().unix(), currentTemp:newCurrentTemp, setTemp:newTargetTemp, valvePosition:50}); // valve pos 50%???
+                                                var loggingService = this.myAccessories[i].loggingService;
+                                                                     
+                                                loggingService.addEntry({time: moment().unix(), currentTemp:newCurrentTemp, setTemp:newTargetTemp, valvePosition:50}); // valve pos 50%???
                                             }
                                                                                                                                           
                                         }
@@ -175,6 +210,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
 // give this function all the parameters needed
 function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, temperatureUnit, username, password) {
     this.name = name;
+    this.displayName = name; // fakegato
     this.device = device;
     this.model = device.modelType;
     this.serial = device.deviceID;
@@ -420,7 +456,11 @@ getServices: function() {
     // this.addOptionalCharacteristic(Characteristic.HeatingThresholdTemperature);
     // this.addOptionalCharacteristic(Characteristic.Name);
     
-    return [informationService, this.thermostatService];
+    this.thermostatService.addCharacteristic(CustomCharacteristic.ValvePosition);
+    this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramCommand);
+    this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramData);
+    
+    return [informationService, this.thermostatService, this.loggingService];
     
 }
 }
