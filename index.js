@@ -15,12 +15,49 @@
 var evohome = require('./lib/evohome.js');
 var Service, Characteristic;
 var config;
+var FakeGatoHistoryService;
+var inherits = require('util').inherits;
+const moment = require('moment');
+var CustomCharacteristic = {};
 
 module.exports = function(homebridge) {
-  Service = homebridge.hap.Service;
-  Characteristic = homebridge.hap.Characteristic;
-  
-  homebridge.registerPlatform("homebridge-evohome", "Evohome", EvohomePlatform);
+    FakeGatoHistoryService = require('fakegato-history')(homebridge);
+
+    Service = homebridge.hap.Service;
+    Characteristic = homebridge.hap.Characteristic;
+    
+    CustomCharacteristic.ValvePosition = function() {
+        Characteristic.call(this, 'Valve position', 'E863F12E-079E-48FF-8F27-9C2605A29F52');
+        this.setProps({
+                      format: Characteristic.Formats.UINT8,
+                      unit: Characteristic.Units.PERCENTAGE,
+                      perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+                      });
+        this.value = this.getDefaultValue();
+    };
+    inherits(CustomCharacteristic.ValvePosition, Characteristic);
+    
+    CustomCharacteristic.ProgramCommand = function() {
+        Characteristic.call(this, 'Program command', 'E863F12C-079E-48FF-8F27-9C2605A29F52');
+        this.setProps({
+                      format: Characteristic.Formats.DATA,
+                      perms: [Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
+                      });
+        this.value = this.getDefaultValue();
+    };
+    inherits(CustomCharacteristic.ProgramCommand, Characteristic);
+    
+    CustomCharacteristic.ProgramData = function() {
+        Characteristic.call(this, 'Program data', 'E863F12F-079E-48FF-8F27-9C2605A29F52');
+        this.setProps({
+                      format: Characteristic.Formats.DATA,
+                      perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
+                      });
+        this.value = this.getDefaultValue();
+    };
+    inherits(CustomCharacteristic.ProgramData, Characteristic);
+    
+    homebridge.registerPlatform("homebridge-evohome", "Evohome", EvohomePlatform);
 }
 
 function EvohomePlatform(log, config){
@@ -33,10 +70,11 @@ function EvohomePlatform(log, config){
 
     this.log = log;
     
-  this.updating = false;
+    this.updating = false;
 }
 
 EvohomePlatform.prototype = {
+
     accessories: function(callback) {
         this.log("Logging into Evohome...");
 
@@ -83,7 +121,7 @@ EvohomePlatform.prototype = {
                         }
                     }
                 }
-
+                
                 callback(this.myAccessories);
                                         
                 setInterval(that.periodicUpdate.bind(this), this.cache_timeout * 1000);
@@ -104,64 +142,67 @@ EvohomePlatform.prototype = {
 };
 
 EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
-
+    
     if(!this.updating && this.myAccessories){
         this.updating = true;
         
         evohome.login(this.username, this.password).then(function(session) {
-        
+                                                         
             session.getLocations().then(function(locations){
-            
+                                                                                     
                 session.getThermostats(locations[0].locationID).then(function(thermostats){
-                
-                
-                for (var deviceId in locations[0].devices) {
-                    for(var thermoId in thermostats) {
-                        if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
-                            for(var i=0; i<this.myAccessories.length; ++i) {
-                                if(this.myAccessories[i].device.zoneID == locations[0].devices[deviceId].zoneID) {
                                 
-                                    var device = locations[0].devices[deviceId];
-                                    var thermostat = thermostats[thermoId];
-                                    
-                                    if(device) {
-                                        // Check if temp has changed
-                                        var oldCurrentTemp = this.myAccessories[i].thermostat.temperatureStatus.temperature;
-                                        var newCurrentTemp = thermostat.temperatureStatus.temperature;
-                                                
-                                        var service = this.myAccessories[i].thermostatService;
-                                                
-                                        if(oldCurrentTemp!=newCurrentTemp && service) {
-                                            this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
-                                        }
-                                                
-                                        var oldTargetTemp = this.myAccessories[i].thermostat.setpointStatus.targetHeatTemperature;
-                                        var newTargetTemp = thermostat.setpointStatus.targetHeatTemperature;
-                                        
-                                        if(oldTargetTemp!=newTargetTemp && service) {
-                                            this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
+                    for (var deviceId in locations[0].devices) {
+                        for(var thermoId in thermostats) {
+                            if(locations[0].devices[deviceId].zoneID == thermostats[thermoId].zoneId) {
+                                for(var i=0; i<this.myAccessories.length; ++i) {
+                                    if(this.myAccessories[i].device.zoneID == locations[0].devices[deviceId].zoneID) {
+
+                                        var device = locations[0].devices[deviceId];
+                                        var thermostat = thermostats[thermoId];
+
+                                        if(device) {
+                                            // Check if temp has changed
+                                            var oldCurrentTemp = this.myAccessories[i].thermostat.temperatureStatus.temperature;
+                                            var newCurrentTemp = thermostat.temperatureStatus.temperature;
+
+                                            var service = this.myAccessories[i].thermostatService;
+
+                                            if(oldCurrentTemp!=newCurrentTemp && service) {
+                                                this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
+                                            }
+
+                                            var oldTargetTemp = this.myAccessories[i].thermostat.setpointStatus.targetHeatTemperature;
+                                            var newTargetTemp = thermostat.setpointStatus.targetHeatTemperature;
+
+                                            if(oldTargetTemp!=newTargetTemp && service) {
+                                                this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
+                                            }
+
+                                            this.myAccessories[i].device = device;
+                                            this.myAccessories[i].thermostat = thermostat;
+
+                                            var loggingService = this.myAccessories[i].loggingService;
+
+                                            //this.log("populating loggingService: " + loggingService);
+                                            //this.log(moment().unix() + " " + newCurrentTemp + " " + newTargetTemp);
+                                            loggingService.addEntry({time:moment().unix(), currentTemp:newCurrentTemp, setTemp:newTargetTemp, valvePosition:50}); // valve pos 50%???
+
                                         }
 
-                                        this.myAccessories[i].device = device;
-                                        this.myAccessories[i].thermostat = thermostat;
                                     }
-                                
                                 }
                             }
                         }
                     }
-                }
-                
+
                 }.bind(this)).fail(function(err){
                     this.log('Evohome Failed:', err);
                 });
             }.bind(this)).fail(function(err){
                 this.log('Evohome Failed:', err);
             });
-        }.bind(this)).fail(function(err){
-            this.log('Evohome Failed:', err);
-        });
-        
+    
         this.updating = false;
     }
 }
@@ -169,9 +210,12 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
 // give this function all the parameters needed
 function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, temperatureUnit, username, password) {
     this.name = name;
+
+    this.displayName = name; // fakegato
     this.device = device;
     this.model = device.modelType;
-    this.serial = device.deviceID;
+    this.serial = deviceId;
+
     this.deviceId = deviceId;
     
     this.thermostat = thermostat;
@@ -181,6 +225,8 @@ function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, tem
     this.password = password;
 
     this.log = log;
+    
+    this.loggingService = new FakeGatoHistoryService("thermo", this);
 }
 
 EvohomeThermostatAccessory.prototype = {
@@ -349,18 +395,22 @@ EvohomeThermostatAccessory.prototype = {
         callback();
     },
 
+   
     getServices: function() {
         var that = this;
 
         // Information Service
         var informationService = new Service.AccessoryInformation();
 
+        //var serial = 123456 + this.deviceId;
+        var strSerial = this.serial.toString();
+
         informationService
-            .setCharacteristic(Characteristic.Identify, this.name)
-            .setCharacteristic(Characteristic.Manufacturer, "Honeywell")
-            .setCharacteristic(Characteristic.Model, this.model)
-            .setCharacteristic(Characteristic.Name, this.name)
-            .setCharacteristic(Characteristic.SerialNumber, "123456"); // need to stringify the this.serial
+        .setCharacteristic(Characteristic.Identify, this.name)
+        .setCharacteristic(Characteristic.Manufacturer, "Honeywell")
+        .setCharacteristic(Characteristic.Model, this.model)
+        .setCharacteristic(Characteristic.Name, this.name)
+        .setCharacteristic(Characteristic.SerialNumber, strSerial); // need to stringify the this.serial
 
         // Thermostat Service
         //this.thermostatService = new Service.Thermostat("Honeywell Thermostat");
@@ -372,40 +422,40 @@ EvohomeThermostatAccessory.prototype = {
         // this.addCharacteristic(Characteristic.CurrentHeatingCoolingState); READ
         this.thermostatService
         .getCharacteristic(Characteristic.CurrentHeatingCoolingState)
-            .on('get', this.getCurrentHeatingCoolingState.bind(this));
+        .on('get', this.getCurrentHeatingCoolingState.bind(this));
 
         // this.addCharacteristic(Characteristic.TargetHeatingCoolingState); READ WRITE
         this.thermostatService
-            .getCharacteristic(Characteristic.TargetHeatingCoolingState)
-            .on('get', this.getTargetHeatingCooling.bind(this))
-            .on('set', this.setTargetHeatingCooling.bind(this));
+        .getCharacteristic(Characteristic.TargetHeatingCoolingState)
+        .on('get', this.getTargetHeatingCooling.bind(this))
+        .on('set', this.setTargetHeatingCooling.bind(this));
 
         // this.addCharacteristic(Characteristic.CurrentTemperature); READ
         this.thermostatService
-            .getCharacteristic(Characteristic.CurrentTemperature)
-            .on('get', this.getCurrentTemperature.bind(this))
-            .setProps({
-            minValue: 5,
-            maxValue: 35,
-            minStep: 0.5
-            });
+        .getCharacteristic(Characteristic.CurrentTemperature)
+        .on('get', this.getCurrentTemperature.bind(this))
+        .setProps({
+                  minValue: 5,
+                  maxValue: 35,
+                  minStep: 0.5
+                  });
 
         // this.addCharacteristic(Characteristic.TargetTemperature); READ WRITE
         this.thermostatService
-            .getCharacteristic(Characteristic.TargetTemperature)
-            .on('get', this.getTargetTemperature.bind(this))
-            .on('set', this.setTargetTemperature.bind(this))
-            .setProps({
-            minValue: 5,
-            maxValue: 35,
-            minStep: 0.5
-            });
+        .getCharacteristic(Characteristic.TargetTemperature)
+        .on('get', this.getTargetTemperature.bind(this))
+        .on('set', this.setTargetTemperature.bind(this))
+        .setProps({
+                  minValue: 5,
+                  maxValue: 35,
+                  minStep: 0.5
+                  });
 
         // this.addCharacteristic(Characteristic.TemperatureDisplayUnits); READ WRITE
         this.thermostatService
-            .getCharacteristic(Characteristic.TemperatureDisplayUnits)
-            .on('get', this.getTemperatureDisplayUnits.bind(this));
-        
+        .getCharacteristic(Characteristic.TemperatureDisplayUnits)
+        .on('get', this.getTemperatureDisplayUnits.bind(this));
+
         // Optional Characteristics /////////////////////////////////////////////////////////////
         // this.addOptionalCharacteristic(Characteristic.CurrentRelativeHumidity);
         // this.addOptionalCharacteristic(Characteristic.TargetRelativeHumidity);
@@ -413,7 +463,11 @@ EvohomeThermostatAccessory.prototype = {
         // this.addOptionalCharacteristic(Characteristic.HeatingThresholdTemperature);
         // this.addOptionalCharacteristic(Characteristic.Name);
 
-        return [informationService, this.thermostatService];
+        this.thermostatService.addCharacteristic(CustomCharacteristic.ValvePosition);
+        this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramCommand);
+        this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramData);
+
+        return [informationService, this.thermostatService, this.loggingService];
 
     }
 }
