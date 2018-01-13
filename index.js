@@ -202,6 +202,9 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
             }.bind(this)).fail(function(err){
                 this.log('Evohome Failed:', err);
             });
+        }.bind(this)).fail(function(err){
+            this.log('Evohome Failed:', err);
+        });
     
         this.updating = false;
     }
