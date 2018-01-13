@@ -31,7 +31,7 @@ module.exports = function(homebridge) {
         this.setProps({
                       format: Characteristic.Formats.UINT8,
                       unit: Characteristic.Units.PERCENTAGE,
-                      perms: [Characteristic.Perms.READ]
+                      perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
                       });
         this.value = this.getDefaultValue();
     };
@@ -41,7 +41,7 @@ module.exports = function(homebridge) {
         Characteristic.call(this, 'Program command', 'E863F12C-079E-48FF-8F27-9C2605A29F52');
         this.setProps({
                       format: Characteristic.Formats.DATA,
-                      perms: [Characteristic.Perms.WRITE]
+                      perms: [Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
                       });
         this.value = this.getDefaultValue();
     };
@@ -51,7 +51,7 @@ module.exports = function(homebridge) {
         Characteristic.call(this, 'Program data', 'E863F12F-079E-48FF-8F27-9C2605A29F52');
         this.setProps({
                       format: Characteristic.Formats.DATA,
-                      perms: [Characteristic.Perms.READ]
+                      perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY]
                       });
         this.value = this.getDefaultValue();
     };
@@ -66,7 +66,7 @@ function EvohomePlatform(log, config){
     this.password = config['password'];
     this.temperatureUnit = config['temperatureUnit'];
     
-    this.cache_timeout = 30; // seconds
+    this.cache_timeout = 300; // seconds
     
     this.log = log;
     
