@@ -67,6 +67,7 @@ function EvohomePlatform(log, config){
     this.temperatureUnit = config['temperatureUnit'];
     
     this.cache_timeout = 300; // seconds
+    this.interval_setTemperature = 5; // seconds
 
     this.log = log;
     
@@ -113,7 +114,7 @@ EvohomePlatform.prototype = {
                                 var name = locations[0].devices[deviceId].name + " Thermostat";
                                 // create accessory (only if it is "HeatingZone")
                                 if (device.modelType = "HeatingZone") {
-                                    var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, thermostat, this.temperatureUnit, this.username, this.password);
+                                    var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, thermostat, this.temperatureUnit, this.username, this.password, this.interval_setTemperature);
                                     // store accessory in myAccessories
                                     this.myAccessories.push(accessory);
                                 }
@@ -211,7 +212,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
 }
 
 // give this function all the parameters needed
-function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, temperatureUnit, username, password) {
+function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, temperatureUnit, username, password, interval_setTemperature) {
     this.name = name;
 
     this.displayName = name; // fakegato
@@ -230,9 +231,79 @@ function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, tem
     this.log = log;
     
     this.loggingService = new FakeGatoHistoryService("thermo", this);
+
+    this.targetTemperateToSet = -1;
+
+    setInterval(this.periodicCheckSetTemperature.bind(this), interval_setTemperature * 1000);
 }
 
 EvohomeThermostatAccessory.prototype = {
+
+    periodicCheckSetTemperature: function() {
+        var that = this;
+        var value = that.targetTemperateToSet;
+
+        if(value != -1) {
+            evohome.login(that.username, that.password).then(function (session) {
+                session.getSchedule(that.device.zoneID).then(function (schedule) {
+                    
+                    var date = new Date();
+                    var weekdayNumber = date.getDay();
+                    var weekday = new Array(7);
+                    weekday[0]="Sunday";
+                    weekday[1]="Monday";
+                    weekday[2]="Tuesday";
+                    weekday[3]="Wednesday";
+                    weekday[4]="Thursday";
+                    weekday[5]="Friday";
+                    weekday[6]="Saturday";
+                    
+                    var currenttime = date.toLocaleTimeString();
+                    var proceed = true;
+                    var nextScheduleTime = "";
+                    
+                    for(var scheduleId in schedule) {
+                        if(schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
+                            var switchpoints = schedule[scheduleId].switchpoints;
+                            for(var switchpointId in switchpoints) {
+                                if(proceed == true) {
+                                    if(currenttime >= switchpoints[switchpointId].timeOfDay) {
+                                        proceed = true;
+                                    } else if (currenttime < switchpoints[switchpointId].timeOfDay) {
+                                        proceed = false;
+                                        nextScheduleTime = switchpoints[switchpointId].timeOfDay;
+                                    }
+                                }
+                            }
+                            if(proceed == true) {
+                                nextScheduleTime = "00:00:00";
+                            }
+                        }
+                    }
+                    
+                    that.log("Setting target temperature for", that.name, "to", value + "° until " + nextScheduleTime);
+
+                    session.setHeatSetpoint(that.device.zoneID, value, nextScheduleTime).then(function (taskId) {
+                        that.log("Successfully changed temperature!");
+                        that.log(taskId);
+                        // returns taskId if successful
+                        that.thermostat.setpointStatus.targetHeatTemperature = value;
+                        // set target temperature here also to prevent from setting temperature two times
+                        // nothing else here...
+                        //callback(null, Number(1));
+                    });
+                }).fail(function(err) {
+                    that.log('Evohome failed:', err);
+                    //callback(null, Number(0));
+                });
+            }).fail(function (err) {
+                that.log('Evohome Failed:', err);
+                //callback(null, Number(0));
+            });
+
+            that.targetTemperateToSet = -1;
+        }
+    },
     
     getCurrentTemperature: function(callback) {
         var that = this;
@@ -294,63 +365,8 @@ EvohomeThermostatAccessory.prototype = {
     setTargetTemperature: function(value, callback) {
         var that = this;
             
-        evohome.login(this.username, this.password).then(function (session) {
-            session.getSchedule(that.device.zoneID).then(function (schedule) {
-                
-                var date = new Date();
-                var weekdayNumber = date.getDay();
-                var weekday = new Array(7);
-                weekday[0]="Sunday";
-                weekday[1]="Monday";
-                weekday[2]="Tuesday";
-                weekday[3]="Wednesday";
-                weekday[4]="Thursday";
-                weekday[5]="Friday";
-                weekday[6]="Saturday";
-                
-                var currenttime = date.toLocaleTimeString();
-                var proceed = true;
-                var nextScheduleTime = "";
-                
-                for(var scheduleId in schedule) {
-                    if(schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
-                        var switchpoints = schedule[scheduleId].switchpoints;
-                        for(var switchpointId in switchpoints) {
-                            if(proceed == true) {
-                                if(currenttime >= switchpoints[switchpointId].timeOfDay) {
-                                    proceed = true;
-                                } else if (currenttime < switchpoints[switchpointId].timeOfDay) {
-                                    proceed = false;
-                                    nextScheduleTime = switchpoints[switchpointId].timeOfDay;
-                                }
-                            }
-                        }
-                        if(proceed == true) {
-                            nextScheduleTime = "00:00:00";
-                        }
-                    }
-                }
-                
-                that.log("Setting target temperature for", that.name, "to", value + "° until " + nextScheduleTime);
-
-                session.setHeatSetpoint(that.device.zoneID, value, nextScheduleTime).then(function (taskId) {
-                    that.log("Successfully changed temperature!");
-                    that.log(taskId);
-                    // returns taskId if successful
-                    that.thermostat.setpointStatus.targetHeatTemperature = value;
-                    // set target temperature here also to prevent from setting temperature two times
-                    // nothing else here...
-                    callback(null, Number(1));
-                });
-            }).fail(function(err) {
-                that.log('Evohome failed:', err);
-                callback(null, Number(0));
-            });
-        }).fail(function (err) {
-            that.log('Evohome Failed:', err);
-            callback(null, Number(0));
-        });
-        callback(null, Number(0));
+        that.targetTemperateToSet = value;
+        callback(null, Number(1));
     },
 
     getTargetTemperature: function(callback) {
