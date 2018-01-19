@@ -25,7 +25,7 @@ Configuration sample:
             "name" : "Evohome",
             "username" : "username/email",
             "password" : "password",
-            "appId" : "91db1612-73fd-4500-91b2-e63b069b185c"
+            "temperatureUnit" : "Celsius"
         }
     ]
 ```
@@ -34,7 +34,7 @@ Configuration sample:
 - name: can be anything you want
 - username: your Honeywell e-mail
 - password: your Honeywell password
-- appId: "91db1612-73fd-4500-91b2-e63b069b185c" (optional)
+- temperatureUnit: Celsius / Fahrenheit
 
 # Roadmap
 
@@ -42,7 +42,7 @@ Configuration sample:
 - ~~update temperature~~
 - ~~get device name~~
 - ~~set target temperature~~ (credits to zizzex)
-- change temperature until next scheduled event (now 10 minutes)
+- ~~change temperature until next scheduled event (now 10 minutes)~~
 - add "global device" to add Away/Energy saving etc.
 - add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (thanks to @sOckhamSter)
 
