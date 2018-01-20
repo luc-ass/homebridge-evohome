@@ -414,7 +414,23 @@ EvohomeThermostatAccessory.prototype = {
         callback();
     },
 
+    getValvePosition: function(callback) {
+        // not implemented
+        callback(null, 50);
+    },
    
+    setProgramCommand: function(value, callback) {
+        // not implemented
+        callback();
+    },
+    
+    getProgramData: function(callback) {
+        // not implemented
+        var data  = "12f1130014c717040af6010700fc140c170c11fa24366684ffffffff24366684ffffffff24366684ffffffff24366684ffffffff24366684ffffffff24366684ffffffff24366684fffffffff42422222af3381900001a24366684ffffffff";
+        var buffer = new Buffer(('' + data).replace(/[^0-9A-F]/ig, ''), 'hex').toString('base64');
+        callback(null, buffer);
+    },
+    
     getServices: function() {
         var that = this;
 
@@ -485,7 +501,19 @@ EvohomeThermostatAccessory.prototype = {
         this.thermostatService.addCharacteristic(CustomCharacteristic.ValvePosition);
         this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramCommand);
         this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramData);
+        
+        this.thermostatService
+        .getCharacteristic(CustomCharacteristic.ValvePosition)
+        .on('get', this.getValvePosition.bind(this));
 
+        this.thermostatService
+        .getCharacteristic(CustomCharacteristic.ProgramCommand)
+        .on('set', this.setProgramCommand.bind(this));
+        
+        this.thermostatService
+        .getCharacteristic(CustomCharacteristic.ProgramData)
+        .on('get', this.getProgramData.bind(this));
+        
         return [informationService, this.thermostatService, this.loggingService];
 
     }
