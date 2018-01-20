@@ -112,9 +112,11 @@ EvohomePlatform.prototype = {
                                 var thermostat = thermostats[thermoId];
                                 // store name of device
                                 var name = locations[0].devices[deviceId].name + " Thermostat";
+                                // timezone offset in minutes
+                                var offsetMinutes = locations[0].timeZone.offsetMinutes;
                                 // create accessory (only if it is "HeatingZone")
                                 if (device.modelType = "HeatingZone") {
-                                    var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, thermostat, this.temperatureUnit, this.username, this.password, this.interval_setTemperature);
+                                    var accessory = new EvohomeThermostatAccessory(that.log, name, device, deviceId, thermostat, this.temperatureUnit, this.username, this.password, this.interval_setTemperature, offsetMinutes);
                                     // store accessory in myAccessories
                                     this.myAccessories.push(accessory);
                                 }
@@ -212,7 +214,7 @@ EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
 }
 
 // give this function all the parameters needed
-function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, temperatureUnit, username, password, interval_setTemperature) {
+function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, temperatureUnit, username, password, interval_setTemperature, offsetMinutes) {
     this.name = name;
 
     this.displayName = name; // fakegato
@@ -234,6 +236,8 @@ function EvohomeThermostatAccessory(log, name, device, deviceId, thermostat, tem
 
     this.targetTemperateToSet = -1;
 
+    this.offsetMinutes = offsetMinutes;
+
     setInterval(this.periodicCheckSetTemperature.bind(this), interval_setTemperature * 1000);
 }
 
@@ -248,7 +252,9 @@ EvohomeThermostatAccessory.prototype = {
                 session.getSchedule(that.device.zoneID).then(function (schedule) {
                     
                     var date = new Date();
-                    var weekdayNumber = date.getDay();
+                    var utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+                    var correctDate = new Date(utc + (60000 * that.offsetMinutes));
+                    var weekdayNumber = correctDate.getDay();
                     var weekday = new Array(7);
                     weekday[0]="Sunday";
                     weekday[1]="Monday";
@@ -258,22 +264,26 @@ EvohomeThermostatAccessory.prototype = {
                     weekday[5]="Friday";
                     weekday[6]="Saturday";
                     
-                    var currenttime = date.toLocaleTimeString();
+                    var currenttime = correctDate.toLocaleTimeString();
                     var proceed = true;
                     var nextScheduleTime = "";
                     
                     for(var scheduleId in schedule) {
                         if(schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
+                            that.log("Schedule points for today (" + schedule[scheduleId].dayOfWeek + ")")
                             var switchpoints = schedule[scheduleId].switchpoints;
                             for(var switchpointId in switchpoints) {
+                                var logline = "- " + switchpoints[switchpointId].timeOfDay;
                                 if(proceed == true) {
                                     if(currenttime >= switchpoints[switchpointId].timeOfDay) {
                                         proceed = true;
                                     } else if (currenttime < switchpoints[switchpointId].timeOfDay) {
                                         proceed = false;
                                         nextScheduleTime = switchpoints[switchpointId].timeOfDay;
+                                        logline = logline + " -> next change";
                                     }
                                 }
+                                that.log(logline);
                             }
                             if(proceed == true) {
                                 nextScheduleTime = "00:00:00";
