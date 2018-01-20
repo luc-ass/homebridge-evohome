@@ -265,6 +265,7 @@ EvohomeThermostatAccessory.prototype = {
                     weekday[6]="Saturday";
                     
                     var currenttime = correctDate.toLocaleTimeString('nl-BE');
+                    that.log("The current time is", currenttime);
                     var proceed = true;
                     var nextScheduleTime = "";
                     
