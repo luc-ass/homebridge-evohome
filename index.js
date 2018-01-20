@@ -270,16 +270,20 @@ EvohomeThermostatAccessory.prototype = {
                     
                     for(var scheduleId in schedule) {
                         if(schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
+                            that.log("Schedule points for today (" + schedule[scheduleId].dayOfWeek + ")")
                             var switchpoints = schedule[scheduleId].switchpoints;
                             for(var switchpointId in switchpoints) {
+                                var logline = "- " + switchpoints[switchpointId].timeOfDay;
                                 if(proceed == true) {
                                     if(currenttime >= switchpoints[switchpointId].timeOfDay) {
                                         proceed = true;
                                     } else if (currenttime < switchpoints[switchpointId].timeOfDay) {
                                         proceed = false;
                                         nextScheduleTime = switchpoints[switchpointId].timeOfDay;
+                                        logline = logline + " -> next change";
                                     }
                                 }
+                                that.log(logline);
                             }
                             if(proceed == true) {
                                 nextScheduleTime = "00:00:00";
