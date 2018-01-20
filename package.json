@@ -1,6 +1,6 @@
 {
   "name": "homebridge-evohome",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Honeywell Evohome support for Homebridge: https://github.com/nfarina/homebridge",
   "license": "ISC",
   "keywords": [
