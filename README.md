@@ -41,10 +41,12 @@ Configuration sample:
 - ~~get temperature~~
 - ~~update temperature~~
 - ~~get device name~~
-- ~~set target temperature~~ (credits to zizzex)
-- ~~change temperature until next scheduled event (now 10 minutes)~~
+- ~~set target temperature~~ (credits to @zizzex)
+- ~~change temperature until next scheduled event~~ (credits to @fredericvl)
+- ~~make use of elgato eve graphs including automatic updating~~ (credits to @rooi)
 - add "global device" to add Away/Energy saving etc.
-- add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (thanks to @sOckhamSter)
+- add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
+- add support for multiple locations.
 
 # Notes
 
