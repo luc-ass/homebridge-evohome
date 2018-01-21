@@ -43,6 +43,7 @@ Configuration sample:
 - ~~get device name~~
 - ~~set target temperature~~ (credits to @zizzex)
 - ~~change temperature until next scheduled event~~ (credits to @fredericvl)
+ - This feature sets the temperature until the next scheduled event on the same day. If there is no event on the same day it will be scheduled until 00:00:00. As this is a new feature it contains advanced logging. Please post your log if you encounter any problems.
 - ~~make use of elgato eve graphs including automatic updating~~ (credits to @rooi)
 - add "global device" to add Away/Energy saving etc.
 - add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
