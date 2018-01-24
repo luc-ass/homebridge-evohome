@@ -4,14 +4,14 @@
 
 This ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!
 
-Up until now this plugin will only add your Thermostats to Homebridge. Other devices such as domestic hot water or the central unit itself with modes such as away or vacation will probably follow in the future once the basic problems are fixed.
+Up until now this plugin will only add your Thermostats and central functions (for example "ECO") to Homebridge. Other devices such as domestic hot water will probably follow in the future once we can wrap our heads arround it.
 
 # Installation
 
-This plugin is not yet on NPM. Insatllation only via GitHub at the moment...
+Insatllation via NPM:
 
-1. Install homebridge using: npm install -g homebridge <br>
-2. Install this plugin using npm install -g homebridge-evohome
+1. Install homebridge using: ´npm install -g homebridge´
+2. Install this plugin using ´npm install -g homebridge-evohome´
 3. Update your configuration file. See sample-config below for a sample.
 
 # Configuration
