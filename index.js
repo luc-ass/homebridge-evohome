@@ -175,7 +175,7 @@ EvohomePlatform.prototype = {
     }
 };
 
-EvohomePlatform.prototype.renewSession = function(session,myAccessories) {
+EvohomePlatform.prototype.renewSession = function() {
     var that = this;
     var session = this.sessionObject;
     session._renew().then(function(json) {
@@ -188,8 +188,8 @@ EvohomePlatform.prototype.renewSession = function(session,myAccessories) {
     });
 }
 
-EvohomePlatform.prototype.periodicUpdate = function(session,myAccessories) {
-
+EvohomePlatform.prototype.periodicUpdate = function() {
+    
     if(!this.updating && this.myAccessories){
         this.updating = true;
 
@@ -396,8 +396,6 @@ EvohomeThermostatAccessory.prototype = {
                     that.targetTemperateToSet = -1;
                     that.thermostat.setpointStatus.targetHeatTemperature = value;
                     // set target temperature here also to prevent from setting temperature two times
-                    // nothing else here...
-                    //callback(null, Number(1));
                 });
             }).fail(function(err) {
                 that.log('Evohome failed:', err);
@@ -419,15 +417,18 @@ EvohomeThermostatAccessory.prototype = {
     getCurrentHeatingCoolingState: function(callback) {
         var that = this;
 
-        that.log("getCurrentHeatingCooling");
-
-        // TODO:
-        // fixed until it can be requested from Evohome...
         // OFF  = 0
         // HEAT = 1
         // COOL = 2
         // AUTO = 3
-        callback(null, Number(1));
+        if (this.model == "HeatingZone"){
+            var targetTemp = this.thermostat.setpointStatus.targetHeatTemperature;
+            var state = (targetTemp == 5) ? 0 : 1;
+        } else {
+            var state = 1;
+            // domestic hot water not supported (set to heat by default)
+        }
+        callback(null, Number(state));
 
     },
 
@@ -443,24 +444,45 @@ EvohomeThermostatAccessory.prototype = {
 
     setTargetHeatingCooling: function(value, callback) {
         var that = this;
+        var session = that.platform.sessionObject;
 
-        // not implemented
+        if(value == 0) {
+            // set temperature to 5 degrees permanently when heating is "off"
+            session.setHeatSetpoint(that.device.zoneID, 5, null).then(function (taskId) {
+                that.log("Heating is set off for " + that.name + " (set to 5°)");
+                that.log(taskId);
+                // returns taskId if successful
+                that.thermostat.setpointStatus.targetHeatTemperature = 5;
+                // set target temperature here also to prevent from setting temperature two times
+            });
+        } else {
+            // set thermostat to follow the schedule by passing 0 to the method
+            session.setHeatSetpoint(that.device.zoneID, 0, null).then(function (taskId) {
+                that.log("Cancelled override for " + that.name + " (set to follow schedule)");
+                that.log(taskId);
+                // returns taskId if successful
+            });
+        }
 
-        that.log("attempted to change targetHeatingCooling: " + value +" - not yet implemented");
-        callback();
+        callback(null);
 
     },
 
     getTargetHeatingCooling: function(callback) {
         var that = this;
 
-        // TODO:
-        // fixed until it can be requested from Evohome...
         // OFF  = 0
         // HEAT = 1
         // COOL = 2
         // AUTO = 3
-        callback(null, Number(1));
+        if (this.model == "HeatingZone"){
+            var targetTemp = this.thermostat.setpointStatus.targetHeatTemperature;
+            var state = (targetTemp == 5) ? 0 : 1;
+        } else {
+            var state = 1;
+            // domestic hot water not supported (set to heat by default)
+        }
+        callback(null, Number(state));
 
     },
 
@@ -654,6 +676,11 @@ EvohomeSwitchAccessory.prototype = {
             if(taskId.id != null) {
                 that.log("System mode is set to: " + systemMode);
                 that.log(taskId);
+
+                // force update to get newest values from Honeywell with delay of 3 seconds (else it's too fast)
+                setTimeout(function() {
+                    that.platform.periodicUpdate();
+                }, 3 * 1000);
 
                 that.active = value;
                 callback(null, Number(1));
