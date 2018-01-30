@@ -49,7 +49,7 @@ Configuration sample:
 - ~~make use of elgato eve graphs including automatic updating~~ (credits to @rooi)
 - ~~add "global device" to add Away/Energy saving etc.~~ (credits to @fredericvl)
 - add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
-- add support for multiple locations. (in beta right now: see the multiple-locations branch)
+- ~~add support for multiple locations.~~
 
 # Notes
 
