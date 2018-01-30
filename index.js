@@ -94,7 +94,7 @@ EvohomePlatform.prototype = {
             this.sessionObject = session;
 
             session.getLocations().then(function(locations){
-                this.log('You have', locations.length, 'location(s). Only the first one will be used!');
+                this.log('You have', locations.length, 'location(s). This instance will be using Index No', that.locationIndex);
                 this.log('You have', locations[that.locationIndex].devices.length, 'device(s).')
 
                 session.getThermostats(locations[that.locationIndex].locationID).then(function(thermostats){
