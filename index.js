@@ -327,7 +327,9 @@ function EvohomeThermostatAccessory(platform, log, name, device, deviceId, therm
 
     this.log = log;
 
-    this.loggingService = new FakeGatoHistoryService("thermo", this);
+    this.loggingService = new FakeGatoHistoryService("thermo", this, {
+                                                     storage: 'fs'
+                                                     });
 
     this.targetTemperateToSet = -1;
 
