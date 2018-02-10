@@ -23,7 +23,7 @@
     "lodash": "~2.4.1",
     "q": "~1.0.1",
     "request": "~2.34.0",
-    "fakegato-history": "^0.3.4",
+    "fakegato-history": "^0.4.0",
     "moment": "^2.18.1"
   }
 }
