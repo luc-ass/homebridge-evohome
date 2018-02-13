@@ -596,9 +596,9 @@ EvohomeThermostatAccessory.prototype = {
         .getCharacteristic(Characteristic.CurrentTemperature)
         .on('get', this.getCurrentTemperature.bind(this))
         .setProps({
-                  minValue: 5,
-                  maxValue: 35,
-                  minStep: 0.5
+                    minValue: this.device.minHeatSetpoint,
+                    maxValue: this.device.maxHeatSetpoint,
+                    minStep: this.device.valueResolution
                   });
 
         // this.addCharacteristic(Characteristic.TargetTemperature); READ WRITE
@@ -607,9 +607,9 @@ EvohomeThermostatAccessory.prototype = {
         .on('get', this.getTargetTemperature.bind(this))
         .on('set', this.setTargetTemperature.bind(this))
         .setProps({
-                  minValue: 5,
-                  maxValue: 35,
-                  minStep: 0.5
+                    minValue: this.device.minHeatSetpoint,
+                    maxValue: this.device.maxHeatSetpoint,
+                    minStep: this.device.valueResolution
                   });
 
         // this.addCharacteristic(Characteristic.TemperatureDisplayUnits); READ WRITE
