@@ -221,22 +221,40 @@ EvohomePlatform.prototype.periodicUpdate = function() {
                                             // Check if temp has changed
                                             var oldCurrentTemp = this.myAccessories[i].thermostat.temperatureStatus.temperature;
                                             var newCurrentTemp = thermostat.temperatureStatus.temperature;
+                                            var oldTargetTemp = this.myAccessories[i].thermostat.setpointStatus.targetHeatTemperature;
+                                            var newTargetTemp = thermostat.setpointStatus.targetHeatTemperature;
 
+                                            // retrieve service, update stored device and thermostat    
                                             var service = this.myAccessories[i].thermostatService;
+                                            this.myAccessories[i].device = device;
+                                            this.myAccessories[i].thermostat = thermostat;
 
                                             if(oldCurrentTemp!=newCurrentTemp && service) {
                                                 this.log("Updating: " + device.name + " currentTempChange from: " + oldCurrentTemp + " to: " + newCurrentTemp);
                                             }
-
-                                            var oldTargetTemp = this.myAccessories[i].thermostat.setpointStatus.targetHeatTemperature;
-                                            var newTargetTemp = thermostat.setpointStatus.targetHeatTemperature;
-
+                                          
                                             if(oldTargetTemp!=newTargetTemp && service) {
                                                 this.log("Updating: " + device.name + " targetTempChange from: " + oldTargetTemp + " to: " + newTargetTemp);
                                             }
 
-                                            this.myAccessories[i].device = device;
-                                            this.myAccessories[i].thermostat = thermostat;
+                                            // notify homebridge of current temp and target because homekit's cached temperature might be wrong
+                                            if (service) {
+                                                // updateValue triggers a change event which notifies HomeKit
+                                                service.getCharacteristic(Characteristic.CurrentTemperature)
+                                                       .updateValue(Number(newCurrentTemp));
+
+                                                service.getCharacteristic(Characteristic.TargetTemperature)
+                                                        .updateValue(Number(newTargetTemp));     
+
+                                                // if temperature or setpoint changed then CurrentHeatingCoolingState and TargetHeatingCoolingState might have changed too
+                                                // getValue will update HomeKit if the value is different to homebridge's cached value
+                                                service.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
+                                                    .getValue();
+
+                                                service.getCharacteristic(Characteristic.TargetHeatingCoolingState)
+                                                    .getValue();
+                                            }
+
 
                                             var loggingService = this.myAccessories[i].loggingService;
 
@@ -425,7 +443,10 @@ EvohomeThermostatAccessory.prototype = {
         // AUTO = 3
         if (this.model == "HeatingZone"){
             var targetTemp = this.thermostat.setpointStatus.targetHeatTemperature;
-            var state = (targetTemp == 5) ? 0 : 1;
+            var currentTemp = this.thermostat.temperatureStatus.temperature;
+
+            // state is HEAT if there is current call for heat, or OFF
+            var state = (currentTemp < targetTemp) ? 1 : 0;
         } else {
             var state = 1;
             // domestic hot water not supported (set to heat by default)
@@ -448,7 +469,12 @@ EvohomeThermostatAccessory.prototype = {
         var that = this;
         var session = that.platform.sessionObject;
 
-        if(value == 0) {
+        // OFF  = 0
+        // HEAT = 1
+        // COOL = 2
+        // AUTO = 3
+
+        if(value == 0) { // OFF
             // set temperature to 5 degrees permanently when heating is "off"
             session.setHeatSetpoint(that.device.zoneID, 5, null).then(function (taskId) {
                 that.log("Heating is set off for " + that.name + " (set to 5°)");
@@ -504,11 +530,9 @@ EvohomeThermostatAccessory.prototype = {
         // is defined first
         if (this.model = "HeatingZone"){
             var targetTemperature = this.thermostat.setpointStatus.targetHeatTemperature;
-            that.log("Device type is: " + this.model + ". Target temperature should be there.");
             that.log("Target temperature for", this.name, "is", targetTemperature + "°");
         } else {
             var targetTemperature = 0;
-            that.log("Device type is: " + this.model + ". Target temperature is probably NOT there (this is normal).");
             that.log("Will set target temperature for", this.name, "to " + targetTemperature + "°");
         }
         callback(null, Number(targetTemperature));
