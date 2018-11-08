@@ -53,4 +53,5 @@ Configuration sample:
 
 # Notes
 
-It seems to be vitally important to set the right system time, especially on raspi!
+- It seems to be vitally important to set the right system time, especially on raspi!
+- Updating from < 0.5.1 to > 0.6.0 will actually create new devices and put them into the standard room of your home. They just need to be moved back to their rooms.
