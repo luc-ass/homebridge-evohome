@@ -64,6 +64,7 @@ module.exports = function(homebridge) {
 function EvohomePlatform(log, config){
 
     this.sessionObject = null;
+    this.name = config['name'];
     this.username = config['username'];
     this.password = config['password'];
     this.temperatureUnit = config['temperatureUnit'];
@@ -125,7 +126,7 @@ EvohomePlatform.prototype = {
                                         var offsetMinutes = locations[that.locationIndex].timeZone.offsetMinutes;
                                         // create accessory (only if it is "HeatingZone")
                                         if (device.modelType == "HeatingZone") {
-                                            var accessory = new EvohomeThermostatAccessory(that, that.log, name, device, deviceId, thermostat, this.temperatureUnit, this.username, this.password, this.interval_setTemperature, offsetMinutes);
+                                            var accessory = new EvohomeThermostatAccessory(that, that.log, name, device, locations[that.locationIndex].systemId, deviceId, thermostat, this.temperatureUnit, this.username, this.password, this.interval_setTemperature, offsetMinutes);
                                             // store accessory in myAccessories
                                             this.myAccessories.push(accessory);
                                         }
@@ -136,19 +137,19 @@ EvohomePlatform.prototype = {
 
                         this.systemMode = systemModeStatus.mode;
 
-                        var awayAccessory = new EvohomeSwitchAccessory(that, that.log, "Evohome Away Mode", locations[that.locationIndex].systemId, "Away", (systemModeStatus.mode == "Away" ? true : false), this.username, this.password);
+                        var awayAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Away Mode", locations[that.locationIndex].systemId, "Away", (systemModeStatus.mode == "Away" ? true : false), this.username, this.password);
                         this.myAccessories.push(awayAccessory);
 
-                        var dayOffAccessory = new EvohomeSwitchAccessory(that, that.log, "Evohome Day Off Mode", locations[that.locationIndex].systemId, "DayOff", (systemModeStatus.mode == "DayOff" ? true : false), this.username, this.password);
+                        var dayOffAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Day Off Mode", locations[that.locationIndex].systemId, "DayOff", (systemModeStatus.mode == "DayOff" ? true : false), this.username, this.password);
                         this.myAccessories.push(dayOffAccessory);
 
-                        var heatingOffAccessory = new EvohomeSwitchAccessory(that, that.log, "Evohome Heating Off Mode", locations[that.locationIndex].systemId, "HeatingOff", (systemModeStatus.mode == "HeatingOff" ? true : false), this.username, this.password);
+                        var heatingOffAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Heating Off Mode", locations[that.locationIndex].systemId, "HeatingOff", (systemModeStatus.mode == "HeatingOff" ? true : false), this.username, this.password);
                         this.myAccessories.push(heatingOffAccessory);
 
-                        var ecoAccessory = new EvohomeSwitchAccessory(that, that.log, "Evohome Eco Mode", locations[that.locationIndex].systemId, "AutoWithEco", (systemModeStatus.mode == "AutoWithEco" ? true : false), this.username, this.password);
+                        var ecoAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Eco Mode", locations[that.locationIndex].systemId, "AutoWithEco", (systemModeStatus.mode == "AutoWithEco" ? true : false), this.username, this.password);
                         this.myAccessories.push(ecoAccessory);
 
-                        var customAccessory = new EvohomeSwitchAccessory(that, that.log, "Evohome Custom Mode", locations[that.locationIndex].systemId, "Custom", (systemModeStatus.mode == "Custom" ? true : false), this.username, this.password);
+                        var customAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Custom Mode", locations[that.locationIndex].systemId, "Custom", (systemModeStatus.mode == "Custom" ? true : false), this.username, this.password);
                         this.myAccessories.push(customAccessory);
 
                         callback(this.myAccessories);
@@ -326,7 +327,8 @@ EvohomePlatform.prototype.periodicUpdate = function() {
 }
 
 // give this function all the parameters needed
-function EvohomeThermostatAccessory(platform, log, name, device, deviceId, thermostat, temperatureUnit, username, password, interval_setTemperature, offsetMinutes) {
+function EvohomeThermostatAccessory(platform, log, name, device, systemId, deviceId, thermostat, temperatureUnit, username, password, interval_setTemperature, offsetMinutes) {
+    this.uuid_base = systemId + ":" + deviceId;
     this.name = name;
 
     this.displayName = name; // fakegato
@@ -670,6 +672,7 @@ EvohomeThermostatAccessory.prototype = {
 }
 
 function EvohomeSwitchAccessory(platform, log, name, systemId, systemMode, active, username, password) {
+    this.uuid_base = systemId + ":" + systemMode;
     this.name = name;
     this.systemId = systemId;
     this.systemMode = systemMode;
