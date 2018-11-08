@@ -1,7 +1,5 @@
 # homebridge-evohome
 
-***!Attention: The old Version (<0.1.1) is no longer working due to a change in the API-URL. Please update.***
-
 This ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!
 
 Up until now this plugin will only add your Thermostats and central functions (for example "ECO") to Homebridge. Other devices such as domestic hot water will probably follow in the future once we can wrap our heads arround it.
@@ -54,4 +52,4 @@ Configuration sample:
 # Notes
 
 - It seems to be vitally important to set the right system time, especially on raspi!
-- Updating from < 0.5.1 to > 0.6.0 will actually create new devices and put them into the standard room of your home. They just need to be moved back to their rooms.
+- Updating from < 0.5.1 to > 0.6.0 will actually create new devices and put them into the standard room of your home. They just need to be moved back to their rooms. This is expected behaviour as the UUID has changed. Historic data will be retained.
