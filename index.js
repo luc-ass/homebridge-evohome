@@ -70,6 +70,12 @@ function EvohomePlatform(log, config){
     this.temperatureUnit = config['temperatureUnit'];
 
     this.locationIndex = config['locationIndex'] || 0;
+    
+    this.switchAway = config['switchAway']; //set to false to hide 
+    this.switchDayOff = config['switchDayOff'];
+    this.switchEco = config['switchEco'];
+    this.switchHeatingOff = config['switchHeatingOff'];
+    this.switchCustom = config['switchCustom'];
 
     this.cache_timeout = 300; // seconds
     this.interval_setTemperature = 5; // seconds
@@ -137,20 +143,30 @@ EvohomePlatform.prototype = {
 
                         this.systemMode = systemModeStatus.mode;
 
+                    if(this.switchAway != false){
                         var awayAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Away Mode", locations[that.locationIndex].systemId, "Away", (systemModeStatus.mode == "Away" ? true : false), this.username, this.password);
                         this.myAccessories.push(awayAccessory);
+					}
 
+					if(this.switchDayOff != false){
                         var dayOffAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Day Off Mode", locations[that.locationIndex].systemId, "DayOff", (systemModeStatus.mode == "DayOff" ? true : false), this.username, this.password);
                         this.myAccessories.push(dayOffAccessory);
-
+					}
+					
+					if(this.switchHeatingOff != false){
                         var heatingOffAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Heating Off Mode", locations[that.locationIndex].systemId, "HeatingOff", (systemModeStatus.mode == "HeatingOff" ? true : false), this.username, this.password);
                         this.myAccessories.push(heatingOffAccessory);
-
+					}
+					
+					if(this.switchEco != false){
                         var ecoAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Eco Mode", locations[that.locationIndex].systemId, "AutoWithEco", (systemModeStatus.mode == "AutoWithEco" ? true : false), this.username, this.password);
                         this.myAccessories.push(ecoAccessory);
+					}
 
+					if(this.switchCustom != false){
                         var customAccessory = new EvohomeSwitchAccessory(that, that.log, that.name + " Custom Mode", locations[that.locationIndex].systemId, "Custom", (systemModeStatus.mode == "Custom" ? true : false), this.username, this.password);
                         this.myAccessories.push(customAccessory);
+					}
 
                         callback(this.myAccessories);
 
