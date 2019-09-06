@@ -36,6 +36,13 @@ Configuration sample:
 - temperatureUnit: Celsius / Fahrenheit
 - locationIndex : 0, 1, 2, etc. (optional, needed for multiple locations)
 
+You can also add the following parameters to hide global switches: (thank you @sverspecht)
+- "switchAway": false,
+- "switchDayOff": false,
+- "switchEco": false,
+- "switchHeatingOff": false,
+- "switchCustom": false
+
 # Roadmap
 
 - ~~get temperature~~
