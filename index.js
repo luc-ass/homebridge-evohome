@@ -638,8 +638,8 @@ EvohomeThermostatAccessory.prototype = {
         .getCharacteristic(Characteristic.CurrentTemperature)
         .on('get', this.getCurrentTemperature.bind(this))
         .setProps({
-                    minValue: this.device.minHeatSetpoint,
-                    maxValue: this.device.maxHeatSetpoint,
+                    minValue: 1,
+                    maxValue: 50,
                     minStep: this.device.valueResolution
                   });
 
