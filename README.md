@@ -1,6 +1,10 @@
+<span align="center">
+
+# Honeywell Evohome support for Homebridge
 ![npm](https://img.shields.io/npm/dt/homebridge-evohome)
 ![npm](https://img.shields.io/npm/v/homebridge-evohome)
-# homebridge-evohome
+
+</span>
 
 This ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!
 
@@ -47,16 +51,15 @@ You can also add the following parameters to hide global switches: (thank you @s
 
 # Roadmap
 
-- ~~get temperature~~
-- ~~update temperature~~
-- ~~get device name~~
-- ~~set target temperature~~ (credits to @zizzex)
-- ~~change temperature until next scheduled event~~ (credits to @fredericvl)
-   - This feature sets the temperature until the next scheduled event on the same day. If there is no event on the same day it will be scheduled until 00:00:00. As this is a new feature it contains advanced logging. Please post your log if you encounter any problems.
-- ~~make use of elgato eve graphs including automatic updating~~ (credits to @rooi)
-- ~~add "global device" to add Away/Energy saving etc.~~ (credits to @fredericvl)
-- add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
-- ~~add support for multiple locations.~~ (credits to @ebarnard)
+- [x] Read temperature
+- [x] Update temperature
+- [x] Get device names
+- [x] Set target temperature (credits to @zizzex)
+- [x] Change temperature until next scheduled event (credits to @fredericvl). This feature sets the temperature until the next scheduled event on the same day. If there is no event on the same day it will be scheduled until 00:00:00. As this is a new feature it contains advanced logging. Please post your log if you encounter any problems.
+- [x] Make use of Elgato Eve graphs (using fakegato-history) including automatic updating (credits to @rooi)
+- [x] Add "global device" to add Away/Energy saving etc. (credits to @fredericvl)
+- [x] add support for multiple locations. (credits to @ebarnard)
+- [ ] add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
 
 # Notes
 
