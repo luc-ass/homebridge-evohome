@@ -12,7 +12,8 @@
 				"type": "string",
 				"default": "Evohome",
 				"minLength": 1,
-				"required": true
+				"required": true,
+				"description": "Plugin name as displayed in the Homebridge log"
 			},
 			"username": {
 				"title": "Username/Email adress",
@@ -39,8 +40,9 @@
 				"title": "Location Index",
 				"type": "integer",
 				"minimum": 0,
+				"default": 0,
 				"required": false,
-				"description": "This should only be changed if you have more than one location. The index starts with \"0\" and counts up from there"
+				"description": "This should only be changed if you have more than one location. The index starts with \"0\" and counts up for each added home."
 			},
 			"switchAway": {
 				"title": "Display \"Away Switch\"",
@@ -73,5 +75,19 @@
 				"required": false
 			}
 		}
-	}
+	},
+	"layout": [
+		"name",
+		{
+			"type": "flex",
+			"flex-flow": "row wrap",
+			"items": [
+				"username",
+				{
+					"key": "password",
+					"type": "password"
+				}
+			]
+		}
+	]
 }
