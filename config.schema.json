@@ -2,8 +2,8 @@
 	"pluginAlias": "Evhohome",
 	"pluginType": "platform",
 	"singular": true,
-	"headerDisplay": "Header display configuration",
-	"footerDisplay": "Footer display configuration",
+	"headerDisplay": "Please configure your Evohome platform",
+	"footerDisplay": "",
 	"schema": {
 		"type": "object",
 		"properties": {
@@ -35,8 +35,6 @@
 				"type": "integer",
 				"required": false
 			}
-		},
-		"form": null,
-		"display": null
+		}
 	}
 }
