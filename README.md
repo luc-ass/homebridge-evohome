@@ -11,7 +11,7 @@ This ia a plugin for Honeywell evohome. It is a partially-working implementation
 
 Up until now this plugin will only add your Thermostats and central functions (for example "ECO") to Homebridge. Other devices such as domestic hot water will probably follow in the future once we can wrap our heads arround it.
 
-# Installation
+## Installation
 
 **Installation via homebridge-config-ui-x:**
 1. Install homebridge and homebridge-config-ui-x.
@@ -23,7 +23,7 @@ Up until now this plugin will only add your Thermostats and central functions (f
 2. Install this plugin using `npm install -g homebridge-evohome@latest`
 3. Update your configuration file. See sample-config below for a sample.
 
-# Configuration
+## Configuration
 
 Configuration sample:
 
@@ -56,7 +56,7 @@ You can also add the following parameters to hide global switches: (thank you @s
 - "switchHeatingOff": false,
 - "switchCustom": false
 
-# Roadmap
+## Roadmap
 
 - [x] Read temperature
 - [x] Update temperature
@@ -68,7 +68,7 @@ You can also add the following parameters to hide global switches: (thank you @s
 - [x] add support for multiple locations. (credits to @ebarnard)
 - [ ] add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
 
-# Notes
+## Notes
 
 - It seems to be vitally important to set the right system time, especially on the Raspberry Pi.
 - Updating from < 0.5.1 to > 0.6.0 will actually create new devices and put them into the standard room of your home. They just need to be moved back to their rooms. This is expected behaviour as the UUID has changed. Historic data will be retained.
