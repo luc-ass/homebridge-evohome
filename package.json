@@ -1,4 +1,5 @@
 {
+  "displayName": "Homebridge Evohome",
   "name": "homebridge-evohome",
   "version": "0.7.0",
   "description": "Honeywell Evohome support for Homebridge: https://github.com/nfarina/homebridge",
