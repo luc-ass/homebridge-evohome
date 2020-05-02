@@ -67,7 +67,7 @@ function EvohomePlatform(log, config){
     this.name = config['name'];
     this.username = config['username'];
     this.password = config['password'];
-    this.temperatureUnit = config['temperatureUnit'];
+    this.temperatureUnit = config['temperatureUnit'] || "Celsius";
 
     this.locationIndex = config['locationIndex'] || 0;
     
