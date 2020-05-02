@@ -491,12 +491,25 @@ EvohomeThermostatAccessory.prototype = {
         var that = this;
         var session = that.platform.sessionObject;
 
-        // OFF  = 0
-        // HEAT = 1
-        // COOL = 2
-        // AUTO = 3
+        // OFF  = 0 (Turn heating off, duh)
+        // HEAT = 1 (User intention - Operate normally - change nothing)
+        // COOL = 2 (User intention - Operate normally - change nothing)
+        // AUTO = 3 (Revert to timer/cancel override)
+
+        // HEAT and COOL could be interpreted as "lock the temperature" but
+        // expected evohome behaviour for this, based on the main panel, 
+        // would be to continue the set temperature until the next timer
+        // event. If no new temp is selected this just means do nothing.
+        //
+        // If a new temp is selected then setTargetTemperature gets called
+        // instead of setTargetHeatingCooling, which is correct.
+        //
+        // If temp is previously OFF then the override should be cancelled.
+
 
         if(value == 0) { // OFF
+            that.log("OFF selected, turning heating off");
+
             // set temperature to 5 degrees permanently when heating is "off"
             session.setHeatSetpoint(that.device.zoneID, 5, null).then(function (taskId) {
                 that.log("Heating is set off for " + that.name + " (set to 5°)");
@@ -505,7 +518,24 @@ EvohomeThermostatAccessory.prototype = {
                 that.thermostat.setpointStatus.targetHeatTemperature = 5;
                 // set target temperature here also to prevent from setting temperature two times
             });
-        } else {
+        } else if(value == 1 || value == 2) { // HEAT or COOL
+            that.getTargetHeatingCooling(function (dummy, currentState) {
+                if(currentState == 0) {
+                    that.log("HEAT or COOL selected, previous state OFF, cancelling override");
+
+                    // set thermostat to follow the schedule by passing 0 to the method
+                    session.setHeatSetpoint(that.device.zoneID, 0, null).then(function (taskId) {
+                        that.log("Cancelled override for " + that.name + " (set to follow schedule)");
+                        that.log(taskId);
+                        // returns taskId if successful
+                    });
+                } else {
+                    that.log("HEAT or COOL selected, previous state AUTO, HEAT or COOL. Doing nothing.");
+                }
+            });
+        } else { // AUTO
+            that.log("AUTO selected, cancelling overrides");
+
             // set thermostat to follow the schedule by passing 0 to the method
             session.setHeatSetpoint(that.device.zoneID, 0, null).then(function (taskId) {
                 that.log("Cancelled override for " + that.name + " (set to follow schedule)");
@@ -538,6 +568,8 @@ EvohomeThermostatAccessory.prototype = {
 
     setTargetTemperature: function(value, callback) {
         var that = this;
+
+        that.log("Request to set target temperature to " + value);
 
         that.targetTemperateToSet = value;
         callback(null, Number(1));
