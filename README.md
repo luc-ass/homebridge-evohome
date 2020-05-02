@@ -4,6 +4,7 @@
 ![npm](https://img.shields.io/npm/dt/homebridge-evohome)
 ![npm](https://img.shields.io/npm/v/homebridge-evohome)
 
+
 </span>
 
 This ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!
@@ -12,10 +13,14 @@ Up until now this plugin will only add your Thermostats and central functions (f
 
 # Installation
 
-Insatllation via NPM:
+**Installation via homebridge-config-ui-x:**
+1. Install homebridge and homebridge-config-ui-x.
+2. Go to the "Plugins" tab and search for `homebridge-evohome`
+3. Install the plugin and fill out the setup form
 
+**Insatllation via NPM:**
 1. Install homebridge using: `npm install -g homebridge`
-2. Install this plugin using `npm install -g homebridge-evohome`
+2. Install this plugin using `npm install -g homebridge-evohome@latest`
 3. Update your configuration file. See sample-config below for a sample.
 
 # Configuration
@@ -39,7 +44,9 @@ Configuration sample:
 - name: can be anything you want
 - username: your Honeywell e-mail
 - password: your Honeywell password
-- temperatureUnit: Celsius / Fahrenheit
+
+Optional parameters:
+- temperatureUnit: Celsius / Fahrenheit (optional, defaults to Celsius)
 - locationIndex : 0, 1, 2, etc. (optional, needed for multiple locations)
 
 You can also add the following parameters to hide global switches: (thank you @sverspecht)
@@ -63,5 +70,5 @@ You can also add the following parameters to hide global switches: (thank you @s
 
 # Notes
 
-- It seems to be vitally important to set the right system time, especially on raspi!
+- It seems to be vitally important to set the right system time, especially on the Raspberry Pi.
 - Updating from < 0.5.1 to > 0.6.0 will actually create new devices and put them into the standard room of your home. They just need to be moved back to their rooms. This is expected behaviour as the UUID has changed. Historic data will be retained.
