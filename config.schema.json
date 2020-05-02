@@ -1,5 +1,5 @@
 {
-	"pluginAlias": "Evhohome",
+	"pluginAlias": "Evohome",
 	"pluginType": "platform",
 	"singular": false,
 	"headerDisplay": "This Plugin integrates your Honeywell Evohome into Homebridge. Please use your credentials from https://getconnected.honeywellhome.com",
