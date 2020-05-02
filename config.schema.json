@@ -3,7 +3,7 @@
 	"pluginType": "platform",
 	"singular": false,
 	"headerDisplay": "This Plugin integrates your Honeywell Evohome into Homebridge. Please use your credentials from https://getconnected.honeywellhome.com",
-	"footerDisplay": "If you encounter any problems don't hesitate to have a look at https://github.com/luc-ass/homebridge-evohome",
+	"footerDisplay": "It is important, that your Homebridge time zone is set correct. Please double check this! If you encounter any problems don't hesitate to have a look at https://github.com/luc-ass/homebridge-evohome.",
 	"schema": {
 		"type": "object",
 		"properties": {
