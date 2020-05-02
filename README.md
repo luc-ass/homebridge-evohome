@@ -1,3 +1,5 @@
+![npm](https://img.shields.io/npm/dt/homebridge-evohome)
+![npm](https://img.shields.io/npm/v/homebridge-evohome)
 # homebridge-evohome
 
 This ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!
