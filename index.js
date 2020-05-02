@@ -175,19 +175,23 @@ EvohomePlatform.prototype = {
 
                     }.bind(this)).fail(function(err){
                         that.log('Evohome failed:', err);
+                        callback([]);
                     });
 
                 }.bind(this)).fail(function(err){
                     that.log('Evohome failed:', err);
+                    callback([]);
                 });
 
             }.bind(this)).fail(function(err){
                 that.log('Evohome Failed:', err);
+                callback([]);
             });
 
         }.bind(this)).fail(function(err) {
             // tell me if login did not work!
             that.log("Error during Login:", err);
+            callback([]);
         });
     }
 };
