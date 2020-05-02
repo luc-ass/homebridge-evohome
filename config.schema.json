@@ -28,11 +28,27 @@
 				"title": "Temperature Unit",
 				"type": "string",
 				"default": "Celsius",
+				"oneOf": [
+          { "title": "Celsius", "enum": ["Celsius"] },
+          { "title": "Fahrenheit", "enum": ["Fahrenheit"] }
+        ],
 				"required": false
 			},
 			"locationIndex": {
 				"title": "Location Index",
 				"type": "integer",
+				"required": false
+			},
+			"switchAway": {
+				"title": "Display \"Away Switch\"",
+				"type": "boolean",
+				"default": true,
+				"required": false
+			},
+			"switchDayOff": {
+				"title": "Display \"Day Off Switch\"",
+				"type": "boolean",
+				"default": false,
 				"required": false
 			}
 		}
