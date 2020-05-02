@@ -30,15 +30,17 @@
 				"type": "string",
 				"default": "Celsius",
 				"oneOf": [
-          { "title": "Celsius", "enum": ["Celsius"] },
-          { "title": "Fahrenheit", "enum": ["Fahrenheit"] }
-        ],
+					{ "title": "Celsius", "enum": ["Celsius"] },
+					{ "title": "Fahrenheit", "enum": ["Fahrenheit"] }
+				],
 				"required": true
 			},
 			"locationIndex": {
 				"title": "Location Index",
 				"type": "integer",
-				"required": false
+				"minimum": 0,
+				"required": false,
+				"description": "This should only be changed if you have more than one location. The index starts with \"0\" and counts up from there"
 			},
 			"switchAway": {
 				"title": "Display \"Away Switch\"",
