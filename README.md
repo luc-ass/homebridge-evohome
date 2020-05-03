@@ -69,7 +69,8 @@ Configuration sample:
 - [x] add support for multiple locations. (credits to @ebarnard)
 - [ ] add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
 
-## Notes
+## Known Issues & Notes
 
-- It seems to be vitally important to set the right system time, especially on the Raspberry Pi.
-- Updating from < 0.5.1 to > 0.6.0 will actually create new devices and put them into the standard room of your home. They just need to be moved back to their rooms. This is expected behaviour as the UUID has changed. Historic data will be retained.
+- System time/time zone must be the same as the time on your evohome controller or else schedules will work in unexpected ways.
+- Your password may not contain `&` or else the login will fail.
+- Updating from `<0.5.1` to `>0.6.0` will create new devices and put them into the standard room of your home. They just need to be moved back to their rooms. This is expected behaviour as the UUID has changed. Historic data will be retained.
