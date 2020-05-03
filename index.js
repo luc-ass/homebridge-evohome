@@ -390,7 +390,8 @@ EvohomeThermostatAccessory.prototype = {
 
                 var date = new Date();
                 var utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-                var correctDate = new Date(utc + (60000 * that.offsetMinutes));
+                //var correctDate = new Date(utc + (60000 * that.offsetMinutes));
+		var correctDate = new Date();
                 var weekdayNumber = correctDate.getDay();
                 var weekday = new Array(7);
                 weekday[0]="Sunday";
