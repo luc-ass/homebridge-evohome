@@ -390,7 +390,11 @@ EvohomeThermostatAccessory.prototype = {
 
                 var date = new Date();
                 var utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-                //var correctDate = new Date(utc + (60000 * that.offsetMinutes));
+                // this was previously used to be independent from system time
+		// but caused problems with daylight saving time so went back
+		// to system time. Keeping this here to revert if needed
+		// -- 2020-05-03
+		//var correctDate = new Date(utc + (60000 * that.offsetMinutes));
 		var correctDate = new Date();
                 var weekdayNumber = correctDate.getDay();
                 var weekday = new Array(7);
