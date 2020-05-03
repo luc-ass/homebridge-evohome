@@ -14,12 +14,12 @@ Up until now this plugin will only add your Thermostats and central functions (f
 
 ## Installation
 
-**Installation via homebridge-config-ui-x:**
+**via homebridge-config-ui-x:**
 1. Install homebridge and homebridge-config-ui-x.
 2. Go to the "Plugins" tab and search for `homebridge-evohome`
 3. Install the plugin and fill out the setup form
 
-**Insatllation via NPM:**
+**via NPM:**
 1. Install homebridge using: `npm install -g homebridge`
 2. Install this plugin using `npm install -g homebridge-evohome@latest`
 3. Update your configuration file. See sample-config below for a sample.
@@ -41,21 +41,20 @@ Configuration sample:
     ]
 ```
 
-- platform: Evohome
-- name: can be anything you want
-- username: your Honeywell e-mail
-- password: your Honeywell password
+| Parameter          | optional | accepted values               | info |
+| :--                | :--      | :--                           | :-- |
+| `platform`         | no       | Evohome                       | |
+| `name`             | no       | *any Name you want*           | |
+| `username`         | no       | *your Honeywell email adress* | |
+| `password`         | no       | *your Honeywell password*     | |
+| `temperatureUnit`  | yes      | Celsius, Fahrenheit           | defaults to Celsius |
+| `locationIndex`    | yes      | 0, 1, 2, etc.                 | only needed if you have multiple locations |
+| `switchAway`       | yes      | true, false                   | creates a switch for away mode |
+| `switchDayOff`     | yes      | true, false                   | creates a switch for day off mode |
+| `switchEco`        | yes      | true, false                   | creates a switch for eco settings |
+| `switchHeatingOff` | yes      | true, false                   | creates a switch to tur off the heating |
+| `switchCustom`     | yes      | true, false                   | creates a switch four cour custom mode |
 
-Optional parameters:
-- temperatureUnit: Celsius / Fahrenheit (optional, defaults to Celsius)
-- locationIndex : 0, 1, 2, etc. (optional, needed for multiple locations)
-
-You can also add the following parameters to hide global switches: (thank you @sverspecht)
-- "switchAway": false,
-- "switchDayOff": false,
-- "switchEco": false,
-- "switchHeatingOff": false,
-- "switchCustom": false
 
 ## Roadmap
 
