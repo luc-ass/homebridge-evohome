@@ -24,7 +24,7 @@
     "lodash": ">=4.17.13",
     "q": "~1.0.1",
     "request": ">=2.68.0",
-    "fakegato-history": "^0.4.0",
+    "fakegato-history": ">=0.4.0",
     "moment": "^2.18.1"
   }
 }
