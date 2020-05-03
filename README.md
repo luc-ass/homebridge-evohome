@@ -3,6 +3,7 @@
 # Honeywell Evohome support for Homebridge
 ![npm](https://img.shields.io/npm/dt/homebridge-evohome)
 ![npm](https://img.shields.io/npm/v/homebridge-evohome)
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 
 </span>
