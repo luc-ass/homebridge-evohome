@@ -9,6 +9,8 @@
 
 </span>
 
+:warning: **Developers:** I am in the middle of refactoring the code! This might take some time. It will probably be part of the next release. Please let me know if you plan to contribute?  
+
 This ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!
 
 Up until now this plugin will only add your Thermostats and central functions (for example "ECO") to Homebridge. Other devices such as domestic hot water will probably follow in the future once we can wrap our heads arround it.
