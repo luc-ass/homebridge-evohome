@@ -131,7 +131,7 @@ EvohomePlatform.prototype = {
                                         // timezone offset in minutes
                                         var offsetMinutes = locations[that.locationIndex].timeZone.offsetMinutes;
                                         // create accessory (only if it is "HeatingZone")
-                                        if (device.modelType == "HeatingZone") {
+                                        if (device.modelType == "HeatingZone" || device.modelType == "RoundWireless" || device.modelType == "RoundModulation") {
                                             var accessory = new EvohomeThermostatAccessory(that, that.log, name, device, locations[that.locationIndex].systemId, deviceId, thermostat, this.temperatureUnit, this.username, this.password, this.interval_setTemperature, offsetMinutes);
                                             // store accessory in myAccessories
                                             this.myAccessories.push(accessory);
