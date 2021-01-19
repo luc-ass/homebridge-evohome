@@ -68,11 +68,12 @@ Configuration sample:
 - [x] Change temperature until next scheduled event (credits to @fredericvl). This feature sets the temperature until the next scheduled event on the same day. If there is no event on the same day it will be scheduled until 00:00:00. As this is a new feature it contains advanced logging. Please post your log if you encounter any problems.
 - [x] Make use of Elgato Eve graphs (using fakegato-history) including automatic updating (credits to @rooi)
 - [x] Add "global device" to add Away/Energy saving etc. (credits to @fredericvl)
-- [x] add support for multiple locations. (credits to @ebarnard)
-- [ ] add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
+- [x] Add support for multiple locations. (credits to @ebarnard)
+- [ ] Add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
+- [ ] Add support for Honeywell Round Connected.
 
 ## Known Issues & Notes
 
 - System time/time zone must be the same as the time on your evohome controller or else schedules will work in unexpected ways.
 - Your password may not contain `&` or else the login will fail.
-- Updating from `<0.5.1` to `>0.6.0` will create new devices and put them into the standard room of your home. They just need to be moved back to their rooms. This is expected behaviour as the UUID has changed. Historic data will be retained.
+- Updating from `<0.5.1` to `>0.6.0` will create new devices and put them into the standard room of your home. They just need to be moved back to their rooms. This is expected behaviour as the UUID has changed. Historic data will be retained. This can also happen without a clear cause. It is under investigation here: [#61](../../issues/61).
