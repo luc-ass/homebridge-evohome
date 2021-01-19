@@ -130,7 +130,7 @@ EvohomePlatform.prototype = {
                                         var name = locations[that.locationIndex].devices[deviceId].name + " Thermostat";
                                         // timezone offset in minutes
                                         var offsetMinutes = locations[that.locationIndex].timeZone.offsetMinutes;
-                                        // create accessory (only if it is "HeatingZone")
+                                        // create accessory (only if it is "HeatingZone", "RoundWireless" or "RoundModulation")
                                         if (device.modelType == "HeatingZone" || 
                                             device.modelType == "RoundWireless" || 
                                             device.modelType == "RoundModulation") {
