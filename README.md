@@ -1,6 +1,7 @@
 <span align="center">
 
 ![Honeywell Evohome Controller](assets/TCC_EMEA.png)
+![Honeywell Evohome Controller](assets/evohome-controller.jpg)
 # Honeywell Evohome support for Homebridge 
 ![npm](https://img.shields.io/npm/dt/homebridge-evohome)
 ![npm](https://img.shields.io/npm/v/homebridge-evohome)
