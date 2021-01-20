@@ -411,7 +411,7 @@ EvohomeThermostatAccessory.prototype = {
                 var currenttime = correctDate.toLocaleTimeString('de-DE', { timeZone: "Europe/Berlin", hour12: false});
                 that.log("The current time is", currenttime);
                 var proceed = true;
-                var nextScheduleTime = "";
+                var nextScheduleTime = null;
 
                 for(var scheduleId in schedule) {
                     if(schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
