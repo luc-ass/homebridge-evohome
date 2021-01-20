@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Evohome",
   "name": "homebridge-evohome",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Honeywell Evohome support for Homebridge: https://github.com/nfarina/homebridge",
   "license": "ISC",
   "keywords": [
@@ -24,7 +24,7 @@
     "lodash": ">=4.17.13",
     "q": "~1.5.1",
     "request": ">=2.68.0",
-    "fakegato-history": ">=0.4.0",
+    "fakegato-history": ">=0.6.1",
     "moment": "^2.18.1"
   },
   "devDependencies": {
