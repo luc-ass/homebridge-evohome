@@ -69,8 +69,8 @@ Configuration sample:
 - [x] Make use of Elgato Eve graphs (using fakegato-history) including automatic updating (credits to @rooi)
 - [x] Add "global device" to add Away/Energy saving etc. (credits to @fredericvl)
 - [x] Add support for multiple locations. (credits to @ebarnard)
+- [x] Add support for Honeywell Round Connected.
 - [ ] Add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
-- [ ] Add support for Honeywell Round Connected.
 
 ## Known Issues & Notes
 
