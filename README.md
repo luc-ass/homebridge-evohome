@@ -6,17 +6,16 @@
 
 # Honeywell Evohome support for Homebridge 
 ![npm](https://img.shields.io/npm/dt/homebridge-evohome)
+![npm](https://img.shields.io/npm/dw/homebridge-evohome)
 ![npm](https://img.shields.io/npm/v/homebridge-evohome)
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 
 </span>
 
-:warning: **Developers:** I am in the middle of refactoring the code! This might take some time. It will probably be part of the next release. Please let me know if you plan to contribute?  
+This ia a plugin to integrate [Honeywell Evohome](https://getconnected.honeywellhome.com/de/thermostate/evohome) into Apple HomeKit. It is work in progress. Help is greatly appreciated!
 
-This ia a plugin for Honeywell evohome. It is a partially-working implementation into HomeKit. This plugin is work in progress. Help is appreciated!
-
-Up until now this plugin will only add your Thermostats and central functions (for example "ECO") to Homebridge. Other devices such as domestic hot water will probably follow in the future once we can wrap our heads arround it.
+Up until now this plugin will only add your Thermostats and central functions (for example "ECO") to Homebridge. Other devices such as domestic hot water will probably follow in the future once we can wrap our heads arround it (and have someone to test it out).
 
 ## Installation
 
@@ -64,16 +63,16 @@ Configuration sample:
 
 ## Roadmap
 
+- [x] Get device names
 - [x] Read temperature
 - [x] Update temperature
-- [x] Get device names
 - [x] Set target temperature (credits to @zizzex)
 - [x] Change temperature until next scheduled event (credits to @fredericvl). This feature sets the temperature until the next scheduled event on the same day. If there is no event on the same day it will be scheduled until 00:00:00. As this is a new feature it contains advanced logging. Please post your log if you encounter any problems.
 - [x] Make use of Elgato Eve graphs (using fakegato-history) including automatic updating (credits to @rooi)
 - [x] Add "global device" to add Away/Energy saving etc. (credits to @fredericvl)
 - [x] Add support for multiple locations. (credits to @ebarnard)
-- [x] Add support for Honeywell Round Connected.
-- [ ] Add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter)
+- [x] Add support for Honeywell Round Connected
+- [ ] Add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter).
 
 ## Known Issues & Notes
 
