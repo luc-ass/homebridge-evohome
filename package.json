@@ -1,8 +1,8 @@
 {
-  "name": "homebridge-dynamic-platform-example",
+  "name": "homebridge-evohome",
   "version": "1.0.0",
-  "description": "An example dynamic platform plugin for homebridge written in Typescript",
-  "main": "dist/dynamic-platform.js",
+  "description": "A plugin integrating Honeywell Evohome into Homebridge and Homekit",
+  "main": "dist/index.js",
   "scripts": {
     "clean": "rimraf ./dist",
     "build": "rimraf ./dist && tsc",
@@ -10,7 +10,7 @@
     "postpublish": "npm run clean",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Andreas Bauer <mail@anderl-bauer.de>",
+  "author": "Lucas Gasenzer <lucasgasenzer@mac.com>",
   "engines": {
     "homebridge": ">=1.0.0"
   },
@@ -21,10 +21,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/homebridge/homebridge-examples.git"
+    "url": "git://github.com/luc-ass/homebridge-evohome.git"
   },
   "bugs": {
-    "url": "http://github.com/homebridge/homebridge-examples/issues"
+    "url": "http://github.com/luc-ass/homebridge-evohome/issues"
+  },
+  "dependencies": {
+    "axios": "^0.21.1"
   },
   "devDependencies": {
     "@types/node": "10.17.19",
