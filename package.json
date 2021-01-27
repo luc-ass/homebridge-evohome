@@ -26,6 +26,13 @@
   "bugs": {
     "url": "http://github.com/luc-ass/homebridge-evohome/issues"
   },
+  "keywords": [
+    "homebridge-plugin",
+    "honeywell",
+    "honeywell-evohome",
+    "thermostat",
+    "tccna"
+  ],
   "dependencies": {
     "axios": "^0.21.1"
   },
