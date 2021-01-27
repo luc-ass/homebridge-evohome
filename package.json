@@ -1,33 +1,35 @@
 {
-  "displayName": "Homebridge Evohome",
-  "name": "homebridge-evohome",
-  "version": "0.8.2",
-  "description": "Honeywell Evohome support for Homebridge: https://github.com/nfarina/homebridge",
+  "name": "homebridge-dynamic-platform-example",
+  "version": "1.0.0",
+  "description": "An example dynamic platform plugin for homebridge written in Typescript",
+  "main": "dist/dynamic-platform.js",
+  "scripts": {
+    "clean": "rimraf ./dist",
+    "build": "rimraf ./dist && tsc",
+    "prepublishOnly": "npm run build",
+    "postpublish": "npm run clean",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Andreas Bauer <mail@anderl-bauer.de>",
+  "engines": {
+    "homebridge": ">=1.0.0"
+  },
   "license": "ISC",
-  "keywords": [
-    "homebridge-plugin",
-    "evohome",
-    "honeywell"
+  "files": [
+    "LICENSE",
+    "dist"
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/luc-ass/homebridge-evohome.git"
+    "url": "git://github.com/homebridge/homebridge-examples.git"
   },
   "bugs": {
-    "url": "http://github.com/luc-ass/homebridge-evohome/issues"
-  },
-  "engines": {
-    "node": ">=0.12.0",
-    "homebridge": ">=0.3.1"
-  },
-  "dependencies": {
-    "lodash": ">=4.17.13",
-    "moment": "^2.18.1",
-    "q": "~1.5.1",
-    "request": ">=2.68.0",
-    "fakegato-history": ">=0.6.1"
+    "url": "http://github.com/homebridge/homebridge-examples/issues"
   },
   "devDependencies": {
-    "prettier": "2.2.1"
+    "@types/node": "10.17.19",
+    "typescript": "^3.8.3",
+    "rimraf": "^3.0.2",
+    "homebridge": "^1.0.4"
   }
 }
