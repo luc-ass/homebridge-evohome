@@ -1,7 +1,6 @@
 # homebridge-evohome
 
-This is the refactoring-branch of homebridge-evohome. It will be used to
-rewrite the plugin using typescript and the `dynamic-platform-example``
+This is the refactoring-branch of homebridge-evohome. It will be used to rewrite the plugin using typescript and the `dynamic-platform-example`. The rewrite of this plugin will hopefully prevent thermostats from disappearing when Honeywell servers are not reachable.
 
 ## Resources:
 - https://github.com/homebridge/homebridge-examples/tree/master/dynamic-platform-example-typescript
