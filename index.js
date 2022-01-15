@@ -784,6 +784,7 @@ EvohomeThermostatAccessory.prototype = {
 
       // state is HEAT if there is current call for heat, or OFF
       var state = currentTemp < targetTemp ? 1 : 0;
+      that.log("Current state is: " + state);
     } else {
       var state = 1;
       // domestic hot water not supported (set to heat by default)
