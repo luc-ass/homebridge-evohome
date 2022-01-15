@@ -697,8 +697,8 @@ EvohomeThermostatAccessory.prototype = {
           weekday[5] = "Friday";
           weekday[6] = "Saturday";
 
-          var currenttime = correctDate.toLocaleTimeString("de-DE", {
-            timeZone: "Europe/Berlin",
+          var currenttime = correctDate.toLocaleTimeString("en-GB", {
+            timeZone: "Europe/Dublin",
             hour12: false,
           });
           that.log("The current time is", currenttime);
@@ -886,7 +886,16 @@ EvohomeThermostatAccessory.prototype = {
     // AUTO = 3
     if (this.model == "HeatingZone") {
       var targetTemp = this.thermostat.setpointStatus.targetHeatTemperature;
-      var state = targetTemp == 5 ? 0 : 1;
+      var currentTemp = this.thermostat.temperatureStatus.temperature;
+      var state = null;
+
+      if (targetTemp == 5 || targetTemp <= currentTemp) {
+        state = 0;
+      }
+      else {
+        state = 1;
+      }
+
     } else {
       var state = 1;
       // domestic hot water not supported (set to heat by default)
