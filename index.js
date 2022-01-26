@@ -347,7 +347,7 @@ EvohomePlatform.prototype.renewSession = function () {
       that.log("Renewed Honeywell API authentication token!");
     })
     .fail(function (err) {
-      this.log("Renewing Honeywell API authentication token failed:", err);
+      that.log("Renewing Honeywell API authentication token failed:", err);
     });
 };
 
@@ -615,7 +615,7 @@ EvohomePlatform.prototype.periodicUpdate = function () {
       )
       .fail(function (err) {
         this.log("Evohome Failed:", err);
-      });
+      }.bind(this));
 
     this.updating = false;
   }
