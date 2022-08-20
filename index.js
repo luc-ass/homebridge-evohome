@@ -887,14 +887,10 @@ EvohomeThermostatAccessory.prototype = {
     if (this.model == "HeatingZone") {
       var targetTemp = this.thermostat.setpointStatus.targetHeatTemperature;
       var currentTemp = this.thermostat.temperatureStatus.temperature;
-      var state = null;
 
-      if (targetTemp == 5 || targetTemp <= currentTemp) {
-        state = 0;
-      }
-      else {
-        state = 1;
-      }
+      // Sets the heating state of the thermostat to either OFF or HEAT
+      // based on the user's desired temperature
+      var state = (targetTemp <= 5 || targetTemp <= currentTemp) ? 0 : 1;
 
     } else {
       var state = 1;
