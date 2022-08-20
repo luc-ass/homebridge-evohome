@@ -634,7 +634,8 @@ function EvohomeThermostatAccessory(
   username,
   password,
   interval_setTemperature,
-  offsetMinutes
+  offsetMinutes,
+  alertSettings
 ) {
   this.uuid_base = systemId + ":" + deviceID;
   this.name = name;
@@ -642,7 +643,7 @@ function EvohomeThermostatAccessory(
   this.displayName = name; // fakegato
   this.device = device;
   this.model = device.modelType;
-  this.serial = deviceID;
+  this.serial = alertSettings.deviceID;
   this.systemId = systemId;
 
   this.deviceID = deviceID;
