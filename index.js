@@ -642,7 +642,7 @@ function EvohomeThermostatAccessory(
   this.displayName = name; // fakegato
   this.device = device;
   this.model = device.modelType;
-  this.serial = device.deviceID;
+  this.serial = deviceID;
 
   this.deviceID = deviceID;
 
