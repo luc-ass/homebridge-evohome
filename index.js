@@ -642,7 +642,7 @@ function EvohomeThermostatAccessory(
   this.displayName = name; // fakegato
   this.device = device;
   this.model = device.modelType;
-  this.serial = deviceID;
+  this.serial = device.deviceID;
 
   this.deviceID = deviceID;
 
@@ -984,7 +984,7 @@ EvohomeThermostatAccessory.prototype = {
     var informationService = new Service.AccessoryInformation();
 
     //var serial = 123456 + this.deviceID;
-    var strSerial = this.deviceID.toString();
+    var strSerial = this.serial.toString();
     this.log("Serial: " + strSerial)
 
     informationService
