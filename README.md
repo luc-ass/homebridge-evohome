@@ -17,7 +17,7 @@ This ia a plugin to integrate [Honeywell Evohome](https://getconnected.honeywell
 
 Up until now this plugin will only add your Thermostats and central functions (for example "ECO") to Homebridge. Other devices such as domestic hot water will probably follow in the future once we can wrap our heads arround it (and have someone to test it out).
 
-## Installation
+## ⚙️ Installation
 
 **via homebridge-config-ui-x:**
 1. Install homebridge and homebridge-config-ui-x.
@@ -29,7 +29,7 @@ Up until now this plugin will only add your Thermostats and central functions (f
 2. Install this plugin using `npm install -g homebridge-evohome@latest`
 3. Update your configuration file. See sample-config below for a sample.
 
-## Configuration
+## ⚙️ Configuration
 
 Configuration sample:
 
@@ -61,7 +61,7 @@ Configuration sample:
 | `switchCustom`     | yes      | true, false                   | creates a switch four cour custom mode |
 
 
-## Roadmap
+## 📝 Roadmap
 
 - [x] Get device names
 - [x] Read temperature
@@ -74,7 +74,7 @@ Configuration sample:
 - [x] Add support for Honeywell Round Connected
 - [ ] Add "DOMESTIC_HOT_WATER" with matching characteristics. This device will now be ignored to prevent errors (credits to @sOckhamSter).
 
-## Known Issues & Notes
+## ⚠️ Known Issues & Notes
 
 - System time/time zone must be the same as the time on your evohome controller or else schedules will work in unexpected ways.
 - Your password may not contain `&` or else the login will fail.
