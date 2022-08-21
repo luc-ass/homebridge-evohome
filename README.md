@@ -1,6 +1,6 @@
 <span align="center">
 
-![Honeywell Evohome Controller](assets/honeywell_round.jpeg)&nbsp;&nbsp;
+![Honeywell Evohome Controller](assets/honeywell_round.png)&nbsp;&nbsp;
 ![Honeywell Evohome Controller](assets/TCC_EMEA.png)&nbsp;&nbsp;
 ![Honeywell Evohome Controller](assets/honeywell_evohome.jpg)
 
