@@ -140,20 +140,20 @@ EvohomePlatform.prototype = {
                         .then(
                           function (systemModeStatus) {
                             // iterate through the devices
-                            for (var deviceId in locations[that.locationIndex]
+                            for (var deviceID in locations[that.locationIndex]
                               .devices) {
                               for (var thermoId in thermostats) {
                                 if (
                                   locations[that.locationIndex].devices[
-                                    deviceId
+                                    deviceID
                                   ].zoneID == thermostats[thermoId].zoneId
                                 ) {
                                   // print name of the device
                                   this.log(
-                                    deviceId +
+                                    deviceID +
                                       ": " +
                                       locations[that.locationIndex].devices[
-                                        deviceId
+                                        deviceID
                                       ].name +
                                       " (" +
                                       thermostats[thermoId].temperatureStatus
@@ -163,7 +163,7 @@ EvohomePlatform.prototype = {
 
                                   if (
                                     locations[that.locationIndex].devices[
-                                      deviceId
+                                      deviceID
                                     ].name == ""
                                   ) {
                                     // Device name is empty
@@ -176,14 +176,14 @@ EvohomePlatform.prototype = {
                                     // store device in var
                                     var device =
                                       locations[that.locationIndex].devices[
-                                        deviceId
+                                        deviceID
                                       ];
                                     // store thermostat in var
                                     var thermostat = thermostats[thermoId];
                                     // store name of device
                                     var name =
                                       locations[that.locationIndex].devices[
-                                        deviceId
+                                        deviceID
                                       ].name + " Thermostat";
                                     // timezone offset in minutes
                                     var offsetMinutes =
@@ -201,7 +201,7 @@ EvohomePlatform.prototype = {
                                         name,
                                         device,
                                         locations[that.locationIndex].systemId,
-                                        deviceId,
+                                        deviceID,
                                         thermostat,
                                         this.temperatureUnit,
                                         this.username,
@@ -347,7 +347,7 @@ EvohomePlatform.prototype.renewSession = function () {
       that.log("Renewed Honeywell API authentication token!");
     })
     .fail(function (err) {
-      this.log("Renewing Honeywell API authentication token failed:", err);
+      that.log("Renewing Honeywell API authentication token failed:", err);
     });
 };
 
@@ -377,11 +377,11 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                       var updatedEcoActive = false;
                       var updatedCustomActive = false;
 
-                      for (var deviceId in locations[this.locationIndex]
+                      for (var deviceID in locations[this.locationIndex]
                         .devices) {
                         for (var thermoId in thermostats) {
                           if (
-                            locations[this.locationIndex].devices[deviceId]
+                            locations[this.locationIndex].devices[deviceID]
                               .zoneID == thermostats[thermoId].zoneId
                           ) {
                             for (
@@ -393,12 +393,12 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                 this.myAccessories[i].device != null &&
                                 this.myAccessories[i].device.zoneID ==
                                   locations[this.locationIndex].devices[
-                                    deviceId
+                                    deviceID
                                   ].zoneID
                               ) {
                                 var device =
                                   locations[this.locationIndex].devices[
-                                    deviceId
+                                    deviceID
                                   ];
                                 var thermostat = thermostats[thermoId];
 
@@ -615,7 +615,7 @@ EvohomePlatform.prototype.periodicUpdate = function () {
       )
       .fail(function (err) {
         this.log("Evohome Failed:", err);
-      });
+      }.bind(this));
 
     this.updating = false;
   }
@@ -628,7 +628,7 @@ function EvohomeThermostatAccessory(
   name,
   device,
   systemId,
-  deviceId,
+  deviceID,
   thermostat,
   temperatureUnit,
   username,
@@ -636,15 +636,16 @@ function EvohomeThermostatAccessory(
   interval_setTemperature,
   offsetMinutes
 ) {
-  this.uuid_base = systemId + ":" + deviceId;
+  this.uuid_base = systemId + ":" + deviceID;
   this.name = name;
 
   this.displayName = name; // fakegato
   this.device = device;
   this.model = device.modelType;
-  this.serial = deviceId;
+  this.serial = deviceID;
+  this.systemId = systemId;
 
-  this.deviceId = deviceId;
+  this.deviceID = deviceID;
 
   this.thermostat = thermostat;
   this.temperatureUnit = temperatureUnit;
@@ -697,8 +698,7 @@ EvohomeThermostatAccessory.prototype = {
           weekday[5] = "Friday";
           weekday[6] = "Saturday";
 
-          var currenttime = correctDate.toLocaleTimeString("en-GB", {
-            timeZone: "Europe/Dublin",
+          var currenttime = correctDate.toLocaleTimeString([], {
             hour12: false,
           });
           that.log("The current time is", currenttime);
@@ -938,9 +938,10 @@ EvohomeThermostatAccessory.prototype = {
 
   getTemperatureDisplayUnits: function (callback) {
     var that = this;
-    var temperatureUnits = 0;
+    var temperatureUnits = this.temperatureUnit = "Fahrenheit" ? 1 : 0;
 
-    switch (this.temperatureUnit) {
+    /* switch (this.temperatureUnit) {
+      
       case "Fahrenheit":
         temperatureUnits = 1;
         break;
@@ -949,7 +950,7 @@ EvohomeThermostatAccessory.prototype = {
         break;
       default:
         temperatureUnits = 0;
-    }
+    } */
 
     callback(null, Number(temperatureUnits));
   },
@@ -988,8 +989,9 @@ EvohomeThermostatAccessory.prototype = {
     // Information Service
     var informationService = new Service.AccessoryInformation();
 
-    //var serial = 123456 + this.deviceId;
-    var strSerial = this.serial.toString();
+    //var serial = 123456 + this.deviceID;
+    var strSerial = this.systemId + "-" + this.serial;
+    this.log("Serial: " + strSerial)
 
     informationService
       .setCharacteristic(Characteristic.Identify, this.name)
