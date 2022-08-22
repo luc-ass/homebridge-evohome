@@ -25,7 +25,7 @@ Up until now this plugin will only add your Thermostats and central functions (f
 
 **Terminal / NPM:**
 1. Install this plugin using `npm install -g homebridge-evohome@latest`
-2. Update your configuration file ([sample-config below](#⚙️-configuration))
+2. Update your configuration file ([sample-config below](https://github.com/luc-ass/homebridge-evohome#%EF%B8%8F-configuration))
 
 ## ⚙️ Configuration
 
