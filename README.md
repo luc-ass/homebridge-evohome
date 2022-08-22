@@ -17,7 +17,11 @@ This ia a plugin to integrate [Honeywell Evohome](https://getconnected.honeywell
 
 Up until now this plugin will only add your Thermostats and central functions (for example "ECO") to Homebridge. Other devices such as domestic hot water will probably follow in the future once we can wrap our heads arround it (and have someone to test it out).
 
+<<<<<<< HEAD
 ## 🚀 Getting Started
+=======
+## 🚀 Installation
+>>>>>>> a1c140dd7a2758ea6196e239521d36c3eb71a9f1
 
 **Homebridge with [Config UI X](https://github.com/oznu/homebridge-config-ui-x):**
 1. Go to the "Plugins" tab and search for `homebridge-evohome`
