@@ -698,8 +698,7 @@ EvohomeThermostatAccessory.prototype = {
           weekday[5] = "Friday";
           weekday[6] = "Saturday";
 
-          var currenttime = correctDate.toLocaleTimeString("de-DE", {
-            timeZone: "Europe/Berlin",
+          var currenttime = correctDate.toLocaleTimeString([], {
             hour12: false,
           });
           that.log("The current time is", currenttime);
