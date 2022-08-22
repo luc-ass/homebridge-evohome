@@ -78,7 +78,7 @@ Configuration sample:
 - Your password may not contain `&` or else the login will fail.
 - Updating from `<0.5.1` to `>0.6.0` will create new devices and put them into the standard room of your home. They just need to be moved back to their rooms. This is expected behaviour as the UUID has changed. Historic data will be retained. This can also happen without a clear cause. It is under investigation here: [#61](../../issues/61).
 
-## 💥 Beta Testing
+## 🧪 Beta Testing
 
 This part talks about testing pre-release version of the plugin. I strongly recommend, that you don't do this in your production environment. It will frequently reset accessories and break automations. If you still want to or have been asked to, this is my preferred way of installing from github:
 
