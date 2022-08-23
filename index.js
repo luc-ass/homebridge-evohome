@@ -784,6 +784,7 @@ EvohomeThermostatAccessory.prototype = {
 
       // state is HEAT if there is current call for heat, or OFF
       var state = currentTemp < targetTemp ? 1 : 0;
+      that.log("Current state of: " + this.name + " is: " + state);
     } else {
       var state = 1;
       // domestic hot water not supported (set to heat by default)
@@ -886,7 +887,12 @@ EvohomeThermostatAccessory.prototype = {
     // AUTO = 3
     if (this.model == "HeatingZone") {
       var targetTemp = this.thermostat.setpointStatus.targetHeatTemperature;
-      var state = targetTemp == 5 ? 0 : 1;
+      var currentTemp = this.thermostat.temperatureStatus.temperature;
+
+      // Sets the heating state of the thermostat to either OFF or HEAT
+      // based on the user's desired temperature
+      var state = (targetTemp <= 5 || targetTemp <= currentTemp) ? 0 : 1;
+
     } else {
       var state = 1;
       // domestic hot water not supported (set to heat by default)
