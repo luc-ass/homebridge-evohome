@@ -1093,7 +1093,7 @@ function EvohomeSwitchAccessory(
 EvohomeSwitchAccessory.prototype = {
   getActive: function (callback) {
     var that = this;
-    that.log("System mode " + that.systemMode + " is " + that.active);
+    that.log.debug("System mode " + that.systemMode + " is " + that.active);
     callback(null, that.active);
   },
 
