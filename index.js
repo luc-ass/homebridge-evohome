@@ -7,7 +7,7 @@
 //     "name" : "Evohome",
 //     "username" : "username/email",
 //     "password" : "password",
-//     "lcoationIndex" : "locationIndex"
+//     "locationIndex" : "locationIndex"
 // }
 //
 
