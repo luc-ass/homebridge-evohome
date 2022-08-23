@@ -310,26 +310,26 @@ EvohomePlatform.prototype = {
                           }.bind(this)
                         )
                         .fail(function (err) {
-                          that.log("Evohome failed:", err);
+                          that.log.error("Evohome failed:", err);
                           callback([]);
                         });
                     }.bind(this)
                   )
                   .fail(function (err) {
-                    that.log("Evohome failed:", err);
+                    that.log.error("Evohome failed:", err);
                     callback([]);
                   });
               }.bind(this)
             )
             .fail(function (err) {
-              that.log("Evohome Failed:", err);
+              that.log.error("Evohome Failed:", err);
               callback([]);
             });
         }.bind(this)
       )
       .fail(function (err) {
         // tell me if login did not work!
-        that.log("Error during Login:", err);
+        that.log.error("Error during Login:", err);
         callback([]);
       });
   },
@@ -344,10 +344,10 @@ EvohomePlatform.prototype.renewSession = function () {
       // renew session token
       session.sessionId = "bearer " + json.access_token;
       session.refreshToken = json.refresh_token;
-      that.log("Renewed Honeywell API authentication token!");
+      that.log.debug("Renewed Honeywell API authentication token!");
     })
     .fail(function (err) {
-      that.log("Renewing Honeywell API authentication token failed:", err);
+      that.log.error("Renewing Honeywell API authentication token failed:", err);
     });
 };
 
@@ -425,7 +425,7 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                     oldCurrentTemp != newCurrentTemp &&
                                     service
                                   ) {
-                                    this.log(
+                                    this.log.debug(
                                       "Updating: " +
                                         device.name +
                                         " currentTempChange from: " +
@@ -604,17 +604,17 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                     }.bind(this)
                   )
                   .fail(function (err) {
-                    this.log("Evohome Failed:", err);
+                    this.log.error("Evohome Failed:", err);
                   });
               }.bind(this)
             )
             .fail(function (err) {
-              this.log("Evohome Failed:", err);
+              this.log.error("Evohome Failed:", err);
             });
         }.bind(this)
       )
       .fail(function (err) {
-        this.log("Evohome Failed:", err);
+        this.log.error("Evohome Failed:", err);
       }.bind(this));
 
     this.updating = false;
@@ -701,13 +701,13 @@ EvohomeThermostatAccessory.prototype = {
           var currenttime = correctDate.toLocaleTimeString([], {
             hour12: false,
           });
-          that.log("The current time is", currenttime);
+          that.log.debug("The current time is", currenttime);
           var proceed = true;
           var nextScheduleTime = null;
 
           for (var scheduleId in schedule) {
             if (schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
-              that.log(
+              that.log.debug(
                 "Schedule points for today (" +
                   schedule[scheduleId].dayOfWeek +
                   ")"
@@ -726,7 +726,7 @@ EvohomeThermostatAccessory.prototype = {
                     logline = logline + " -> next change";
                   }
                 }
-                that.log(logline);
+                that.log.debug(logline);
               }
               if (proceed == true) {
                 nextScheduleTime = "00:00:00";
@@ -744,8 +744,8 @@ EvohomeThermostatAccessory.prototype = {
           session
             .setHeatSetpoint(that.device.zoneID, value, nextScheduleTime)
             .then(function (taskId) {
-              that.log("Successfully changed temperature!");
-              that.log(taskId);
+              that.log.debug("Successfully changed temperature!");
+              that.log.debug(taskId);
               // returns taskId if successful
               that.targetTemperateToSet = -1;
               that.thermostat.setpointStatus.targetHeatTemperature = value;
@@ -753,7 +753,7 @@ EvohomeThermostatAccessory.prototype = {
             });
         })
         .fail(function (err) {
-          that.log("Evohome failed:", err);
+          that.log.error("Evohome failed:", err);
           that.targetTemperateToSet = -1;
           //callback(null, Number(0));
         });
@@ -766,7 +766,7 @@ EvohomeThermostatAccessory.prototype = {
     // need to refresh data if outdated!!
     var currentTemperature = this.thermostat.temperatureStatus.temperature;
     callback(null, Number(currentTemperature));
-    that.log(
+    that.log.debug(
       "Current temperature of " + this.name + " is " + currentTemperature + "°"
     );
   },
@@ -795,7 +795,7 @@ EvohomeThermostatAccessory.prototype = {
   getName: function (callback) {
     var that = this;
 
-    that.log("requesting name of", this.name);
+    that.log.debug("requesting name of", this.name);
 
     callback(this.name);
   },
@@ -821,14 +821,14 @@ EvohomeThermostatAccessory.prototype = {
 
     if (value == 0) {
       // OFF
-      that.log("OFF selected, turning heating off");
+      that.log.debug("OFF selected, turning heating off");
 
       // set temperature to 5 degrees permanently when heating is "off"
       session
         .setHeatSetpoint(that.device.zoneID, 5, null)
         .then(function (taskId) {
           that.log("Heating is set off for " + that.name + " (set to 5°)");
-          that.log(taskId);
+          that.log.debug(taskId);
           // returns taskId if successful
           that.thermostat.setpointStatus.targetHeatTemperature = 5;
           // set target temperature here also to prevent from setting temperature two times
@@ -837,7 +837,7 @@ EvohomeThermostatAccessory.prototype = {
       // HEAT or COOL
       that.getTargetHeatingCooling(function (dummy, currentState) {
         if (currentState == 0) {
-          that.log(
+          that.log.debug(
             "HEAT or COOL selected, previous state OFF, cancelling override"
           );
 
@@ -850,7 +850,7 @@ EvohomeThermostatAccessory.prototype = {
                   that.name +
                   " (set to follow schedule)"
               );
-              that.log(taskId);
+              that.log.debug(taskId);
               // returns taskId if successful
             });
         } else {
@@ -861,7 +861,7 @@ EvohomeThermostatAccessory.prototype = {
       });
     } else {
       // AUTO
-      that.log("AUTO selected, cancelling overrides");
+      that.log.debug("AUTO selected, cancelling overrides");
 
       // set thermostat to follow the schedule by passing 0 to the method
       session
@@ -870,7 +870,7 @@ EvohomeThermostatAccessory.prototype = {
           that.log(
             "Cancelled override for " + that.name + " (set to follow schedule)"
           );
-          that.log(taskId);
+          that.log.debug(taskId);
           // returns taskId if successful
         });
     }
@@ -919,7 +919,7 @@ EvohomeThermostatAccessory.prototype = {
     if ((this.model = "HeatingZone")) {
       var targetTemperature = this.thermostat.setpointStatus
         .targetHeatTemperature;
-      that.log(
+      that.log.debug(
         "Target temperature for",
         this.name,
         "is",
@@ -927,7 +927,7 @@ EvohomeThermostatAccessory.prototype = {
       );
     } else {
       var targetTemperature = 0;
-      that.log(
+      that.log.debug(
         "Will set target temperature for",
         this.name,
         "to " + targetTemperature + "°"
@@ -991,7 +991,7 @@ EvohomeThermostatAccessory.prototype = {
 
     //var serial = 123456 + this.deviceID;
     var strSerial = this.systemId + "-" + this.serial;
-    this.log("Serial: " + strSerial)
+    this.log.debug("Serial: " + strSerial)
 
     informationService
       .setCharacteristic(Characteristic.Identify, this.name)
@@ -1099,7 +1099,7 @@ function EvohomeSwitchAccessory(
 EvohomeSwitchAccessory.prototype = {
   getActive: function (callback) {
     var that = this;
-    that.log("System mode " + that.systemMode + " is " + that.active);
+    that.log.debug("System mode " + that.systemMode + " is " + that.active);
     callback(null, that.active);
   },
 
@@ -1133,7 +1133,7 @@ EvohomeSwitchAccessory.prototype = {
         }
       })
       .fail(function (err) {
-        that.log("Evohome failed:", err);
+        that.log.error("Evohome failed:", err);
         callback(err);
       });
   },
