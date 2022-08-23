@@ -985,7 +985,7 @@ EvohomeThermostatAccessory.prototype = {
 
     //var serial = 123456 + this.deviceID;
     var strSerial = this.systemId + "-" + this.serial;
-    this.debug("Serial: " + strSerial)
+    this.log.debug("Serial: " + strSerial)
 
     informationService
       .setCharacteristic(Characteristic.Identify, this.name)
