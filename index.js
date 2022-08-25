@@ -310,26 +310,26 @@ EvohomePlatform.prototype = {
                           }.bind(this)
                         )
                         .fail(function (err) {
-                          that.log.error("Error getting system mode status:", err);
+                          that.log.error("Error getting system mode status:\n", err);
                           callback([]);
                         });
                     }.bind(this)
                   )
                   .fail(function (err) {
-                    that.log.error("Error getting thermostats:", err);
+                    that.log.error("Error getting thermostats:\n", err);
                     callback([]);
                   });
               }.bind(this)
             )
             .fail(function (err) {
-              that.log.error("Error getting locations:", err);
+              that.log.error("Error getting locations:\n", err);
               callback([]);
             });
         }.bind(this)
       )
       .fail(function (err) {
         // tell me if login did not work!
-        that.log.error("Error during login:", err);
+        that.log.error("Error during login:\n", err);
         callback([]);
       });
   },
@@ -347,7 +347,7 @@ EvohomePlatform.prototype.renewSession = function () {
       that.log.debug("Renewed Honeywell API authentication token!");
     })
     .fail(function (err) {
-      that.log.error("Renewing Honeywell API authentication token failed:", err);
+      that.log.error("Renewing Honeywell API authentication token failed:\n", err);
     });
 };
 
@@ -753,7 +753,7 @@ EvohomeThermostatAccessory.prototype = {
             });
         })
         .fail(function (err) {
-          that.log.error("Evohome failed:", err);
+          that.log.error("Error getting schedule:\n", err);
           that.targetTemperateToSet = -1;
           //callback(null, Number(0));
         });
@@ -1133,7 +1133,7 @@ EvohomeSwitchAccessory.prototype = {
         }
       })
       .fail(function (err) {
-        that.log.error("Evohome failed:", err);
+        that.log.error("Error setting system mode:\n", err);
         callback(err);
       });
   },
