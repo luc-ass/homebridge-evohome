@@ -604,17 +604,17 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                     }.bind(this)
                   )
                   .fail(function (err) {
-                    this.log.error("Evohome Failed:", err);
+                    this.log.error("Error getting system modes:\n", err);
                   });
               }.bind(this)
             )
             .fail(function (err) {
-              this.log.error("Evohome Failed:", err);
+              this.log.error("Error getting thermostats:\n", err);
             });
         }.bind(this)
       )
       .fail(function (err) {
-        this.log.error("Evohome Failed:", err);
+        this.log.error("Error getting locations:\n", err);
       }.bind(this));
 
     this.updating = false;
