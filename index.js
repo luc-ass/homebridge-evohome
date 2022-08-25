@@ -310,26 +310,26 @@ EvohomePlatform.prototype = {
                           }.bind(this)
                         )
                         .fail(function (err) {
-                          that.log.error("Evohome failed:", err);
+                          that.log.error("Error getting system mode status:", err);
                           callback([]);
                         });
                     }.bind(this)
                   )
                   .fail(function (err) {
-                    that.log.error("Evohome failed:", err);
+                    that.log.error("Error getting thermostats:", err);
                     callback([]);
                   });
               }.bind(this)
             )
             .fail(function (err) {
-              that.log.error("Evohome Failed:", err);
+              that.log.error("Error getting locations:", err);
               callback([]);
             });
         }.bind(this)
       )
       .fail(function (err) {
         // tell me if login did not work!
-        that.log.error("Error during Login:", err);
+        that.log.error("Error during login:", err);
         callback([]);
       });
   },
@@ -604,7 +604,7 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                     }.bind(this)
                   )
                   .fail(function (err) {
-                    this.log.error("Error getting system modes:\n", err);
+                    this.log.error("Error getting system mode status:\n", err);
                   });
               }.bind(this)
             )
