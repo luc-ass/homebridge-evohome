@@ -5,9 +5,9 @@
 ![Honeywell Evohome Controller](assets/honeywell_evohome.png)
 
 # Honeywell Evohome support for Homebridge
-![npm](https://img.shields.io/npm/dt/homebridge-evohome)
-![npm](https://img.shields.io/npm/dw/homebridge-evohome)
-![npm](https://img.shields.io/npm/v/homebridge-evohome)
+![npm](https://img.shields.io/npm/dt/homebridge-evohome?logo=npm)
+![npm](https://img.shields.io/npm/dw/homebridge-evohome?logo=npm)
+![npm](https://img.shields.io/npm/v/homebridge-evohome?logo=npm)
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 
