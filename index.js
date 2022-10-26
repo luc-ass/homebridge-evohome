@@ -311,26 +311,22 @@ EvohomePlatform.prototype = {
                         )
                         .fail(function (err) {
                           that.log.error("Error getting system mode status:\n", err);
-                          callback([]);
                         });
                     }.bind(this)
                   )
                   .fail(function (err) {
                     that.log.error("Error getting thermostats:\n", err);
-                    callback([]);
                   });
               }.bind(this)
             )
             .fail(function (err) {
               that.log.error("Error getting locations:\n", err);
-              callback([]);
             });
         }.bind(this)
       )
       .fail(function (err) {
         // tell me if login did not work!
         that.log.error("Error during login:\n", err);
-        callback([]);
       });
   },
 };
