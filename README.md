@@ -92,7 +92,7 @@ rm -r homebridge-evohome
 # recreate the folder
 mkdir homebridge-evohome
 # clone repo to folder
-git clone --branch main https://github.com/luc-ass/homebridge-evohome.git ./homebridge-evohome
+git clone --single-branch --branch main https://github.com/luc-ass/homebridge-evohome.git ./homebridge-evohome
 # cd into folder
 cd homebridge-evohome
 # install plugin
