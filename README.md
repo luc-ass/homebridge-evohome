@@ -58,6 +58,7 @@ Configuration sample:
 | `switchHeatingOff` | yes      | `true`,  `false`                   | creates a switch to tur off the heating |
 | `switchCustom`     | yes      | `true`,  `false`                   | creates a switch for your custom mode |
 | `childBridge`     | yes      | `true`,  `false`                   | allows you to have persistent accessories, if plugin is run inside a child bridge |
+| `temperatureAboveAsOff`     | yes      | `true`,  `false`                   | allows you to displays thermostats as off, if room temperature is above target temperature |
 
 
 ## 📝 Roadmap
