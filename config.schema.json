@@ -73,6 +73,12 @@
 				"type": "boolean",
 				"default": true,
 				"required": false
+			},
+			"temperatureAboveAsOff": {
+				"title": "Represent room temperature above set temperature as off",
+				"type": "boolean",
+				"default": false,
+				"required": true
 			}
 		}
 	},
@@ -101,7 +107,8 @@
 				"switchDayOff",
 				"switchEco",
 				"switchHeatingOff",
-				"switchCustom"
+				"switchCustom",
+				"temperatureAboveAsOff"
 			]
 		}
 	]
