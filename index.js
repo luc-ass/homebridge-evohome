@@ -87,6 +87,7 @@ function EvohomePlatform(log, config) {
   this.switchEco = config["switchEco"];
   this.switchHeatingOff = config["switchHeatingOff"];
   this.switchCustom = config["switchCustom"];
+  this.temperatureAboveAsOff = config["temperatureAboveAsOff"];
 
   this.cache_timeout = 300; // seconds
   this.interval_setTemperature = 5; // seconds
@@ -890,8 +891,12 @@ EvohomeThermostatAccessory.prototype = {
       var currentTemp = this.thermostat.temperatureStatus.temperature;
 
       // Sets the heating state of the thermostat to either OFF or HEAT
-      // based on the user's desired temperature
-      var state = (targetTemp <= 5 || targetTemp <= currentTemp) ? 0 : 1;
+      var state = (
+        // OFF if targetTemp <= 5 °C
+        targetTemp <= 5 || 
+        // OFF if targetTemp below currentTemp AND 'temperatureAboveAsOff' set to true
+        (targetTemp <= currentTemp && temperatureAboveAsOff )
+        ) ? 0 : 1;
 
     } else {
       var state = 1;
