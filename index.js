@@ -905,7 +905,7 @@ EvohomeThermostatAccessory.prototype = {
         // OFF if targetTemp <= 5 °C
         targetTemp <= 5 || 
         // OFF if targetTemp below currentTemp AND 'temperatureAboveAsOff' set to true
-        (targetTemp <= currentTemp && temperatureAboveAsOff )
+        (targetTemp <= currentTemp && that.temperatureAboveAsOff )
         ) ? 0 : 1;
 
     } else {
