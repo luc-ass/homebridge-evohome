@@ -73,6 +73,13 @@
 				"type": "boolean",
 				"default": true,
 				"required": false
+			},
+			"childBridge": {
+				"title": "This accessory runs in a child bridge (recommended)",
+				"description": "This switch should be turned on if the platform is run as a child bridge. This ensures, that accessories are not lost on error.",
+				"type": "boolean",
+				"default": false,
+				"required": false
 			}
 		}
 	},
@@ -101,7 +108,8 @@
 				"switchDayOff",
 				"switchEco",
 				"switchHeatingOff",
-				"switchCustom"
+				"switchCustom",
+				"childBridge"
 			]
 		}
 	]
