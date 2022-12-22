@@ -57,6 +57,7 @@ Configuration sample:
 | `switchEco`        | yes      | `true`,  `false`                   | creates a switch for eco settings |
 | `switchHeatingOff` | yes      | `true`,  `false`                   | creates a switch to tur off the heating |
 | `switchCustom`     | yes      | `true`,  `false`                   | creates a switch for your custom mode |
+| `temperatureAboveAsOff`     | yes      | `true`,  `false`                   | allows you to displays thermostats as off, if room temperature is above target temperature |
 
 
 ## 📝 Roadmap
