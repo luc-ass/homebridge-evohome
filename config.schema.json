@@ -2,7 +2,7 @@
 	"pluginAlias": "Evohome",
 	"pluginType": "platform",
 	"singular": false,
-	"headerDisplay": "This Plugin integrates your Honeywell Evohome into Homebridge. Please use your credentials from https://getconnected.honeywellhome.com",
+	"headerDisplay": "This Plugin integrates your Honeywell Evohome into Homebridge. Please use your credentials from https://getconnected.honeywellhome.com. You should consider running this plugin as a child bridge, as it allows for persistent accessories, thus prevent breaking your automations!",
 	"footerDisplay": "It is important, that your Homebridge time zone is set correct. Please double check this! If you encounter any problems don't hesitate to have a look at https://github.com/luc-ass/homebridge-evohome.",
 	"schema": {
 		"type": "object",
@@ -74,6 +74,13 @@
 				"default": true,
 				"required": false
 			},
+			"childBridge": {
+				"title": "This accessory runs in a child bridge (recommended)",
+				"description": "This switch should be turned on, if the platform is run as a child bridge. This ensures, that accessories are not lost on error.",
+				"type": "boolean",
+				"default": false,
+				"required": false
+      },
 			"temperatureAboveAsOff": {
 				"title": "Represent room temperature above set temperature as off",
 				"type": "boolean",
@@ -108,6 +115,7 @@
 				"switchEco",
 				"switchHeatingOff",
 				"switchCustom",
+				"childBridge",
 				"temperatureAboveAsOff"
 			]
 		}

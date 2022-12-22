@@ -57,6 +57,7 @@ Configuration sample:
 | `switchEco`        | yes      | `true`,  `false`                   | creates a switch for eco settings |
 | `switchHeatingOff` | yes      | `true`,  `false`                   | creates a switch to tur off the heating |
 | `switchCustom`     | yes      | `true`,  `false`                   | creates a switch for your custom mode |
+| `childBridge`     | yes      | `true`,  `false`                   | allows you to have persistent accessories, if plugin is run inside a child bridge |
 | `temperatureAboveAsOff`     | yes      | `true`,  `false`                   | allows you to displays thermostats as off, if room temperature is above target temperature |
 
 
@@ -93,7 +94,7 @@ rm -r homebridge-evohome
 # recreate the folder
 mkdir homebridge-evohome
 # clone repo to folder
-git clone --branch main https://github.com/luc-ass/homebridge-evohome.git ./homebridge-evohome
+git clone --single-branch --branch main https://github.com/luc-ass/homebridge-evohome.git ./homebridge-evohome
 # cd into folder
 cd homebridge-evohome
 # install plugin

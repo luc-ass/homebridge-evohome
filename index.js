@@ -89,6 +89,8 @@ function EvohomePlatform(log, config) {
   this.switchCustom = config["switchCustom"];
   this.temperatureAboveAsOff = config["temperatureAboveAsOff"];
 
+  this.childBridge = config["childBridge"] || false;
+
   this.cache_timeout = 300; // seconds
   this.interval_setTemperature = 5; // seconds
 
@@ -312,26 +314,34 @@ EvohomePlatform.prototype = {
                         )
                         .fail(function (err) {
                           that.log.error("Error getting system mode status:\n", err);
-                          callback([]);
+                          if (!childBridge){
+                            callback([]);
+                          }
                         });
                     }.bind(this)
                   )
                   .fail(function (err) {
                     that.log.error("Error getting thermostats:\n", err);
-                    callback([]);
+                    if (!childBridge){
+                      callback([]);
+                    }
                   });
               }.bind(this)
             )
             .fail(function (err) {
               that.log.error("Error getting locations:\n", err);
-              callback([]);
+              if (!childBridge){
+                callback([]);
+              }
             });
         }.bind(this)
       )
       .fail(function (err) {
         // tell me if login did not work!
         that.log.error("Error during login:\n", err);
-        callback([]);
+        if (!childBridge){
+          callback([]);
+        }
       });
   },
 };
