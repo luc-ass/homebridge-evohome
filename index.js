@@ -314,7 +314,7 @@ EvohomePlatform.prototype = {
                         )
                         .fail(function (err) {
                           that.log.error("Error getting system mode status:\n", err);
-                          if (!childBridge){
+                          if (!this.childBridge){
                             callback([]);
                           }
                         });
@@ -322,7 +322,7 @@ EvohomePlatform.prototype = {
                   )
                   .fail(function (err) {
                     that.log.error("Error getting thermostats:\n", err);
-                    if (!childBridge){
+                    if (!this.childBridge){
                       callback([]);
                     }
                   });
@@ -330,7 +330,7 @@ EvohomePlatform.prototype = {
             )
             .fail(function (err) {
               that.log.error("Error getting locations:\n", err);
-              if (!childBridge){
+              if (!this.childBridge){
                 callback([]);
               }
             });
@@ -339,7 +339,7 @@ EvohomePlatform.prototype = {
       .fail(function (err) {
         // tell me if login did not work!
         that.log.error("Error during login:\n", err);
-        if (!childBridge){
+        if (!this.childBridge){
           callback([]);
         }
       });
