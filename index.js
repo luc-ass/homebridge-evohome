@@ -20,6 +20,7 @@ var FakeGatoHistoryService;
 var inherits = require("util").inherits;
 const moment = require("moment");
 var CustomCharacteristic = {};
+var uuid = require("hap-nodejs").uuid;
 
 module.exports = function (homebridge) {
   FakeGatoHistoryService = require("fakegato-history")(homebridge);
