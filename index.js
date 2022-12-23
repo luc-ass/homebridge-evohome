@@ -1017,7 +1017,8 @@ EvohomeThermostatAccessory.prototype = {
 
     // Thermostat Service
     // generate UUID
-    let thermostatUUID = uuid.generate("EvohomeThermostat:"+this.uuid_base)
+    let thermostatUUID = uuid.generate("EvohomeThermostat:"+this.uuid_base);
+    this.log(thermostatUUID);
     // This creates each thermostat as its own room name, as pulled from Evohome
     this.thermostatService = new Service.Thermostat(this.name, thermostatUUID);
 
