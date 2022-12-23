@@ -14,19 +14,19 @@
 "use strict";
 
 var evohome = require("./lib/evohome.js");
-var Service, Characteristic;
+var Service, Characteristic, UUIDGen;
 var config;
 var FakeGatoHistoryService;
 var inherits = require("util").inherits;
 const moment = require("moment");
 var CustomCharacteristic = {};
-var uuid = require("hap-nodejs").uuid;
 
 module.exports = function (homebridge) {
   FakeGatoHistoryService = require("fakegato-history")(homebridge);
 
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
+  UUIDGen = homebridge.hap.uuid;
 
   CustomCharacteristic.ValvePosition = function () {
     Characteristic.call(
@@ -1018,7 +1018,7 @@ EvohomeThermostatAccessory.prototype = {
 
     // Thermostat Service
     // generate UUID
-    let thermostatUUID = uuid.generate("EvohomeThermostat:"+this.uuid_base);
+    let thermostatUUID = UUIDGen.generate("EvohomeThermostat:"+this.uuid_base);
     this.log(thermostatUUID);
     // This creates each thermostat as its own room name, as pulled from Evohome
     this.thermostatService = new Service.Thermostat(this.name, thermostatUUID);
