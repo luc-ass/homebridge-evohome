@@ -1016,10 +1016,10 @@ EvohomeThermostatAccessory.prototype = {
       .setCharacteristic(Characteristic.SerialNumber, strSerial); // need to stringify the this.serial
 
     // Thermostat Service
-    //this.thermostatService = new Service.Thermostat("Honeywell Thermostat");
-    // Remove the old way above because it creates all devices as "Honeywell Thermostat" so I have no idea which thermostat it is.
-    // This new way creates each thermostat as its own room name, as pulled from Evohome
-    this.thermostatService = new Service.Thermostat(this.name);
+    // generate UUID
+    let thermostatUUID = uuid.generate("EvohomeThermostat:"+this.uuid_base)
+    // This creates each thermostat as its own room name, as pulled from Evohome
+    this.thermostatService = new Service.Thermostat(this.name, thermostatUUID);
 
     // Required Characteristics /////////////////////////////////////////////////////////////
     // this.addCharacteristic(Characteristic.CurrentHeatingCoolingState); READ
