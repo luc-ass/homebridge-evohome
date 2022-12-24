@@ -346,7 +346,7 @@ EvohomePlatform.prototype = {
         // retry login after 5 minutes
         setInterval(
           // how to call the login?
-          this.accessories(),
+          that.accessories.bind(this),
           //that.periodicUpdate.bind(this),
           60000 // one minute for testing
         );
