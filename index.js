@@ -343,6 +343,13 @@ EvohomePlatform.prototype = {
         if (!this.childBridge){
           callback([]);
         }
+        // retry login after 5 minutes
+        setInterval(
+          // how to call the login?
+          this.accessories(),
+          //that.periodicUpdate.bind(this),
+          60000 // one minute for testing
+        );
       });
   },
 };
