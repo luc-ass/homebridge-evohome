@@ -102,8 +102,7 @@ function EvohomePlatform(log, config) {
   this.updating = false;
 }
 
-EvohomePlatform.prototype = {
-  accessories: function (callback) {
+EvohomePlatform.prototype.accessories = function (callback) {
     this.log("Logging into Evohome...");
 
     var that = this;
@@ -346,12 +345,11 @@ EvohomePlatform.prototype = {
         // retry login after 5 minutes
         setInterval(
           // how to call the login?
-          that.accessories.bind(this),
+          that.accessories,
           //that.periodicUpdate.bind(this),
           60000 // one minute for testing
         );
       });
-  },
 };
 
 EvohomePlatform.prototype.renewSession = function () {
