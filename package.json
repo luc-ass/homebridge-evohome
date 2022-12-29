@@ -14,7 +14,7 @@
     "url": "git://github.com/luc-ass/homebridge-evohome.git"
   },
   "bugs": {
-    "url": "http://github.com/luc-ass/homebridge-evohome/issues"
+    "url": "https://github.com/luc-ass/homebridge-evohome/issues"
   },
   "engines": {
     "node": ">=0.12.0",
