@@ -347,7 +347,7 @@ EvohomePlatform.prototype.accessories = function (callback) {
           // how to call the login?
           that.accessories.bind(this),
           //that.periodicUpdate.bind(this),
-          60000 // one minute for testing
+          6000 // one minute for testing
         );
       });
 };
