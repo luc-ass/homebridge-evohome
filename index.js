@@ -721,7 +721,7 @@ function getNextScheduledTime(log, schedule) {
 
   for (var scheduleId in schedule) {
     if (schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
-      that.log.debug(
+      log.debug(
         "Schedule points for today (" +
         schedule[scheduleId].dayOfWeek +
         ")"
@@ -1184,42 +1184,70 @@ EvohomeDhwAccessory.prototype = {
     var that = this;
     var session = that.platform.sessionObject;
 
-    //GEORGES
-    //session.getSchedule(that.device.zoneID, false)
+    session
+      .getSchedule(that.dhwId, true)
+      .then(function (schedule) {
+        var nextScheduleTime = getNextScheduledTime(that.log, schedule);
+        var mode = "PermanentOverride";
+        var now = new Date();
+        var untilTime = null;
 
-    var data = {};
-    if (value == 0) { // AUTO
-      data = {
-        "Mode": "FollowSchedule",
-        "State": "",
-        "UntilTime": null
-      };
-    } else if (value == 1) { // HEAT
-      data = {
-        "Mode": "PermanentOverride",  //TODO: this should be until next schedule
-        "State": "On",
-        "UntilTime": null
-      };
-    } else { // COOL
-      data = {
-        "Mode": "PermanentOverride",  //TODO: this should be until next schedule
-        "State": "Off",
-        "UntilTime": null
-      };
-    }
+        if (nextScheduleTime) {
+          if (nextScheduleTime == "00:00:00") {
+            now.setDate(now.getDate() + 1);
+          }
+          var endDateString = now.toDateString() + " " + nextScheduleTime;
+          untilTime = new Date(Date.parse(endDateString));
+          mode = "TemporaryOverride";
 
-    session.setSystemMode(this.dhwId, data, true)
-      .then(function (taskId) {
-        if (taskId.id) {
-          that.log("Hot Water is set to: " + value);
-          that.log.debug(taskId);
-        } else {
-          throw taskId;
+          that.log.debug(
+            "Setting Hot Water to",
+            value + " until " + nextScheduleTime
+          );
         }
+
+        var data = {};
+        if (value == 0) { // AUTO
+          data = {
+            "Mode": "FollowSchedule",
+            "State": "",
+            "UntilTime": null
+          };
+        } else if (value == 1) { // HEAT
+          data = {
+            "Mode": mode,
+            "State": "On",
+            "UntilTime": untilTime
+          };
+        } else { // COOL
+          data = {
+            "Mode": mode,
+            "State": "Off",
+            "UntilTime": untilTime
+          };
+        }
+
+        session.setSystemMode(that.dhwId, data, true)
+          .then(function (taskId) {
+            if (taskId.id) {
+              var msg = "Hot Water is set to: " + value;
+              if (untilTime && value != 0) {
+                msg += " until " + untilTime;
+              }
+              that.log(msg);
+              that.log.debug(taskId);
+            } else {
+              throw taskId;
+            }
+          })
+          .fail(function (err) {
+            that.log.error("Error setting system mode:\n", err);
+            callback(err);
+          });
       })
       .fail(function (err) {
-        that.log.error("Error setting system mode:\n", err);
-        callback(err);
+        that.log.error("Error getting schedule for Hot Water:\n", err);
+        that.targetTemperateToSet = -1;
       });
   },
 
