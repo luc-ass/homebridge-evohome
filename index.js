@@ -132,17 +132,15 @@ EvohomePlatform.prototype = {
                   "device(s)."
                 );
 
-                that.log("Getting DHW: ", locations[that.locationIndex].dhw);
+                var dhwStatus;
                 if (locations[that.locationIndex].dhw) {
+                  that.log("Getting DHW: ", locations[that.locationIndex].dhw);
                   session.getHotWater(locations[that.locationIndex].dhw['dhwId']).then(
                     function (dhw) {
-                      that.log("Found hot water: " + dhw);
+                      dhwStatus = dhw.dhwStatus.status;
                     }
                   ).fail(function (err) {
                     that.log.error("Failed to load Hot Water:\n", err);
-                    if (!this.childBridge) {
-                      callback([]);
-                    }
                   });
                 }
 
@@ -312,6 +310,21 @@ EvohomePlatform.prototype = {
                                 this.password
                               );
                               this.myAccessories.push(customAccessory);
+                            }
+
+                            if (locations[that.locationIndex].dhw) {
+
+                              var dhwSwitchAccessory = new EvohomeSwitchAccessory(
+                                that,
+                                that.log,
+                                that.name + " Hot Water",
+                                locations[that.locationIndex].systemId,
+                                "Hot Water",
+                                dhwStatus,
+                                that.username,
+                                that.password
+                              );
+                              this.myAccessories.push(dhwSwitchAccessory);
                             }
 
                             callback(this.myAccessories);
