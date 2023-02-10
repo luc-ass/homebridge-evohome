@@ -132,6 +132,18 @@ EvohomePlatform.prototype = {
                   "device(s)."
                 );
 
+                that.log("Getting DHW: ", locations[that.locationIndex].dhw);
+                session.getHotWater(locations[that.locationIndex].dhw['dhwId']).then(
+                  function (dhw){
+                    that.log("Found hot water: " + dhw);
+                  }
+                ).fail(function (err) {
+                  that.log.error("Failed to load Hot Water:\n", err);
+                  if (!this.childBridge){
+                    callback([]);
+                  }
+                });
+
                 session
                   .getThermostats(locations[that.locationIndex].locationID)
                   .then(
