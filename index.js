@@ -132,17 +132,6 @@ EvohomePlatform.prototype = {
                   "device(s)."
                 );
 
-                var dhwStatus;
-                if (locations[that.locationIndex].dhw) {
-                  session.getHotWater(locations[that.locationIndex].dhw['dhwId']).then(
-                    function (dhw) {
-                      dhwStatus = dhw.dhwStatus.status;
-                    }
-                  ).fail(function (err) {
-                    that.log.error("Failed to load Hot Water:\n", err);
-                  });
-                }
-
                 session
                   .getThermostats(locations[that.locationIndex].locationID)
                   .then(
@@ -312,14 +301,11 @@ EvohomePlatform.prototype = {
                             }
 
                             if (locations[that.locationIndex].dhw) {
-
-                              var dhwSwitchAccessory = new EvohomeSwitchAccessory(
+                              var dhwSwitchAccessory = new EvohomeDhwAccessory(
                                 that,
                                 that.log,
-                                that.name + " Hot Water",
+                                locations[that.locationIndex].systemId,
                                 locations[that.locationIndex].dhw['dhwId'],
-                                "Hot Water",
-                                dhwStatus,
                                 that.username,
                                 that.password
                               );
@@ -707,6 +693,64 @@ function EvohomeThermostatAccessory(
   );
 }
 
+function getNextScheduledTime(log, schedule) {
+  var date = new Date();
+  var utc = date.getTime() + date.getTimezoneOffset() * 60000;
+  // this was previously used to be independent from system time
+  // but caused problems with daylight saving time so went back
+  // to system time. Keeping this here to revert if needed
+  // -- 2020-05-03
+  //var correctDate = new Date(utc + (60000 * that.offsetMinutes));
+  var correctDate = new Date();
+  var weekdayNumber = correctDate.getDay();
+  var weekday = new Array(7);
+  weekday[0] = "Sunday";
+  weekday[1] = "Monday";
+  weekday[2] = "Tuesday";
+  weekday[3] = "Wednesday";
+  weekday[4] = "Thursday";
+  weekday[5] = "Friday";
+  weekday[6] = "Saturday";
+
+  var currenttime = correctDate.toLocaleTimeString([], {
+    hour12: false,
+  });
+  log.debug("The current time is", currenttime);
+  var proceed = true;
+  var nextScheduleTime = null;
+
+  for (var scheduleId in schedule) {
+    if (schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
+      that.log.debug(
+        "Schedule points for today (" +
+        schedule[scheduleId].dayOfWeek +
+        ")"
+      );
+      var switchpoints = schedule[scheduleId].switchpoints;
+      for (var switchpointId in switchpoints) {
+        var logline = "- " + switchpoints[switchpointId].timeOfDay;
+        if (proceed == true) {
+          if (currenttime >= switchpoints[switchpointId].timeOfDay) {
+            proceed = true;
+          } else if (
+            currenttime < switchpoints[switchpointId].timeOfDay
+          ) {
+            proceed = false;
+            nextScheduleTime = switchpoints[switchpointId].timeOfDay;
+            logline = logline + " -> next change";
+          }
+        }
+        log.debug(logline);
+      }
+      if (proceed == true) {
+        nextScheduleTime = "00:00:00";
+      }
+    }
+  }
+
+  return nextScheduleTime;
+}
+
 EvohomeThermostatAccessory.prototype = {
   periodicCheckSetTemperature: function () {
     var that = this;
@@ -715,61 +759,9 @@ EvohomeThermostatAccessory.prototype = {
 
     if (value != -1) {
       session
-        .getSchedule(that.device.zoneID)
+        .getSchedule(that.device.zoneID, false)
         .then(function (schedule) {
-          var date = new Date();
-          var utc = date.getTime() + date.getTimezoneOffset() * 60000;
-          // this was previously used to be independent from system time
-          // but caused problems with daylight saving time so went back
-          // to system time. Keeping this here to revert if needed
-          // -- 2020-05-03
-          //var correctDate = new Date(utc + (60000 * that.offsetMinutes));
-          var correctDate = new Date();
-          var weekdayNumber = correctDate.getDay();
-          var weekday = new Array(7);
-          weekday[0] = "Sunday";
-          weekday[1] = "Monday";
-          weekday[2] = "Tuesday";
-          weekday[3] = "Wednesday";
-          weekday[4] = "Thursday";
-          weekday[5] = "Friday";
-          weekday[6] = "Saturday";
-
-          var currenttime = correctDate.toLocaleTimeString([], {
-            hour12: false,
-          });
-          that.log.debug("The current time is", currenttime);
-          var proceed = true;
-          var nextScheduleTime = null;
-
-          for (var scheduleId in schedule) {
-            if (schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
-              that.log.debug(
-                "Schedule points for today (" +
-                schedule[scheduleId].dayOfWeek +
-                ")"
-              );
-              var switchpoints = schedule[scheduleId].switchpoints;
-              for (var switchpointId in switchpoints) {
-                var logline = "- " + switchpoints[switchpointId].timeOfDay;
-                if (proceed == true) {
-                  if (currenttime >= switchpoints[switchpointId].timeOfDay) {
-                    proceed = true;
-                  } else if (
-                    currenttime < switchpoints[switchpointId].timeOfDay
-                  ) {
-                    proceed = false;
-                    nextScheduleTime = switchpoints[switchpointId].timeOfDay;
-                    logline = logline + " -> next change";
-                  }
-                }
-                that.log.debug(logline);
-              }
-              if (proceed == true) {
-                nextScheduleTime = "00:00:00";
-              }
-            }
-          }
+          var nextScheduleTime = getNextScheduledTime(that.log, schedule);
 
           that.log(
             "Setting target temperature for",
@@ -1120,6 +1112,197 @@ EvohomeThermostatAccessory.prototype = {
   },
 };
 
+function EvohomeDhwAccessory(
+  platform,
+  log,
+  systemId,
+  dhwId,
+  username,
+  password
+) {
+  this.uuid_base = systemId + ":" + dhwId;
+  this.name = platform.name + " Hot Water";
+  this.systemId = systemId;
+  this.platform = platform;
+  this.dhwId = dhwId;
+  this.log = log;
+  this.model = "domesticHotWater";
+  this.username = username;
+  this.password = password;
+}
+
+EvohomeDhwAccessory.prototype = {
+  getHotWaterTemperature: function (callback) {
+    var that = this;
+    var session = that.platform.sessionObject;
+
+    session.getHotWater(this.dhwId).then(
+      function (dhw) {
+        var temp = dhw.temperatureStatus.temperature;
+        that.log.debug("Hot Water Temperature " + temp);
+        callback(null, temp);
+      }
+    ).fail(function (err) {
+      that.log.error("Failed to load Hot Water:\n", err);
+      callback(err);
+    });
+  },
+
+  getHotWaterStatus: function (callback) {
+    var that = this;
+    var session = that.platform.sessionObject;
+
+    session.getHotWater(this.dhwId).then(
+      function (dhw) {
+        var state = dhw.dhwStatus.state == "On" ? 1 : 0;
+        that.log.debug("Hot Water Status " + state);
+        callback(null, state);
+      }
+    ).fail(function (err) {
+      that.log.error("Failed to load Hot Water:\n", err);
+      callback(err);
+    });
+  },
+
+  getCurrentHeaterCoolerState: function (callback) {
+    var that = this;
+    var session = that.platform.sessionObject;
+
+    session.getHotWater(this.dhwId).then(
+      function (dhw) {
+        var state = dhw.dhwStatus.state == "On" ? 2 : 3;
+        that.log.debug("Hot Water Heater Cooler Status " + state);
+        callback(null, state);
+      }
+    ).fail(function (err) {
+      that.log.error("Failed to load Hot Water:\n", err);
+      callback(err);
+    });
+  },
+
+  setTargetHeaterCoolerState: function (value, callback) {
+    var that = this;
+    var session = that.platform.sessionObject;
+
+    //GEORGES
+    //session.getSchedule(that.device.zoneID, false)
+
+    var data = {};
+    if (value == 0) { // AUTO
+      data = {
+        "Mode": "FollowSchedule",
+        "State": "",
+        "UntilTime": null
+      };
+    } else if (value == 1) { // HEAT
+      data = {
+        "Mode": "PermanentOverride",  //TODO: this should be until next schedule
+        "State": "On",
+        "UntilTime": null
+      };
+    } else { // COOL
+      data = {
+        "Mode": "PermanentOverride",  //TODO: this should be until next schedule
+        "State": "Off",
+        "UntilTime": null
+      };
+    }
+
+    session.setSystemMode(this.dhwId, data, true)
+      .then(function (taskId) {
+        if (taskId.id) {
+          that.log("Hot Water is set to: " + value);
+          that.log.debug(taskId);
+        } else {
+          throw taskId;
+        }
+      })
+      .fail(function (err) {
+        that.log.error("Error setting system mode:\n", err);
+        callback(err);
+      });
+  },
+
+  getTargetHeaterCoolerState: function (callback) {
+    var that = this;
+    var session = that.platform.sessionObject;
+
+    session.getHotWater(this.dhwId).then(
+      function (dhw) {
+        // AUTO = 0
+        // HEAT = 1
+        // COOL = 2
+        var state = 2; // Overriden and is off so COOL
+        if (dhw.dhwStatus.mode == "FollowSchedule") { // Not overriden so AUTO
+          state = 0;
+        } else if (dhw.dhwStatus.state == "On") { // Overriden and On so HEAT
+          state = 1;
+        }
+
+        that.log.debug("Hot Water Target Status " + state);
+        callback(null, Number(state));
+      }
+    ).fail(function (err) {
+      that.log.error("Failed to load Hot Water:\n", err);
+      callback(err);
+    });
+  },
+
+  getCoolingThresholdTemperature: function (callback) {
+    callback(null, 25); // TODO
+  },
+
+  getHeatingThresholdTemperature: function (callback) {
+    callback(null, 25); // TODO
+  },
+
+  getServices: function () {
+    var that = this;
+
+    // Information Service
+    var informationService = new Service.AccessoryInformation();
+
+    informationService
+      .setCharacteristic(Characteristic.Identify, this.name)
+      .setCharacteristic(Characteristic.Manufacturer, "Honeywell")
+      .setCharacteristic(Characteristic.Model, this.model)
+      .setCharacteristic(Characteristic.Name, this.name)
+      .setCharacteristic(Characteristic.SerialNumber, this.dhwId);
+
+    // Represent the Domestic Hot Water as a HeaterCooler, because it
+    // allows you display the current temperature in a read mode,
+    // and allows you to set the status to on or off.
+    this.heaterCooler = new Service.HeaterCooler();
+
+    // Read Only
+    this.heaterCooler
+      .getCharacteristic(Characteristic.Active)
+      .on("get", this.getHotWaterStatus.bind(this));
+    this.heaterCooler
+      .getCharacteristic(Characteristic.CurrentHeaterCoolerState)
+      .on("get", this.getCurrentHeaterCoolerState.bind(this));
+    this.heaterCooler
+      .getCharacteristic(Characteristic.CurrentTemperature)
+      .on("get", this.getHotWaterTemperature.bind(this));
+
+    this.heaterCooler
+      .getCharacteristic(Characteristic.CoolingThresholdTemperature)
+      .on('get', this.getCoolingThresholdTemperature.bind(this));
+    this.heaterCooler
+      .getCharacteristic(Characteristic.HeatingThresholdTemperature)
+      .on('get', this.getHeatingThresholdTemperature.bind(this));
+
+    // Read Write
+    this.heaterCooler
+      .getCharacteristic(Characteristic.TargetHeaterCoolerState)
+      .on("get", this.getTargetHeaterCoolerState.bind(this))
+      .on("set", this.setTargetHeaterCoolerState.bind(this));
+
+    return [informationService, this.heaterCooler];
+  },
+}
+
+
 function EvohomeSwitchAccessory(
   platform,
   log,
@@ -1136,6 +1319,7 @@ function EvohomeSwitchAccessory(
   this.systemMode = systemMode;
   this.active = active;
   this.platform = platform;
+  this.model = "Switch";
   this.username = username;
   this.password = password;
   this.log = log;
@@ -1153,24 +1337,10 @@ EvohomeSwitchAccessory.prototype = {
     var session = that.platform.sessionObject;
     var systemMode;
 
-    var isHotWater = this.name.endsWith("Hot Water");
-
-    if (value) {
-      if (isHotWater) {
-        systemMode = "On"
-      } else {
-        systemMode = that.systemMode;
-      }
-    } else {
-      if (isHotWater) {
-        systemMode = "Off";
-      } else {
-        systemMode = "Auto";
-      }
-    }
+    var systemMode = value ? that.systemMode : "Auto";
 
     session
-      .setSystemMode(that.systemId, systemMode, isHotWater)
+      .setSystemMode(that.systemId, systemMode, false)
       .then(function (taskId) {
         if (taskId.id != null) {
           that.log("System mode is set to: " + systemMode);
