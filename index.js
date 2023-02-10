@@ -134,7 +134,6 @@ EvohomePlatform.prototype = {
 
                 var dhwStatus;
                 if (locations[that.locationIndex].dhw) {
-                  that.log("Getting DHW: ", locations[that.locationIndex].dhw);
                   session.getHotWater(locations[that.locationIndex].dhw['dhwId']).then(
                     function (dhw) {
                       dhwStatus = dhw.dhwStatus.status;
@@ -318,7 +317,7 @@ EvohomePlatform.prototype = {
                                 that,
                                 that.log,
                                 that.name + " Hot Water",
-                                locations[that.locationIndex].systemId,
+                                locations[that.locationIndex].dhw['dhwId'],
                                 "Hot Water",
                                 dhwStatus,
                                 that.username,
@@ -1154,14 +1153,24 @@ EvohomeSwitchAccessory.prototype = {
     var session = that.platform.sessionObject;
     var systemMode;
 
+    var isHotWater = this.name.endsWith("Hot Water");
+
     if (value) {
-      systemMode = that.systemMode;
+      if (isHotWater) {
+        systemMode = "On"
+      } else {
+        systemMode = that.systemMode;
+      }
     } else {
-      systemMode = "Auto";
+      if (isHotWater) {
+        systemMode = "Off";
+      } else {
+        systemMode = "Auto";
+      }
     }
 
     session
-      .setSystemMode(that.systemId, systemMode)
+      .setSystemMode(that.systemId, systemMode, isHotWater)
       .then(function (taskId) {
         if (taskId.id != null) {
           that.log("System mode is set to: " + systemMode);
