@@ -154,14 +154,14 @@ EvohomePlatform.prototype = {
                                   // print name of the device
                                   this.log(
                                     deviceID +
-                                    ": " +
-                                    locations[that.locationIndex].devices[
-                                      deviceID
-                                    ].name +
-                                    " (" +
-                                    thermostats[thermoId].temperatureStatus
-                                      .temperature +
-                                    "°)"
+                                      ": " +
+                                      locations[that.locationIndex].devices[
+                                        deviceID
+                                      ].name +
+                                      " (" +
+                                      thermostats[thermoId].temperatureStatus
+                                        .temperature +
+                                      "°)"
                                   );
 
                                   if (
@@ -179,7 +179,7 @@ EvohomePlatform.prototype = {
                                     // store device in var
                                     var device =
                                       locations[that.locationIndex].devices[
-                                      deviceID
+                                        deviceID
                                       ];
                                     // store thermostat in var
                                     var thermostat = thermostats[thermoId];
@@ -198,20 +198,23 @@ EvohomePlatform.prototype = {
                                       device.modelType == "RoundWireless" ||
                                       device.modelType == "RoundModulation"
                                     ) {
-                                      var accessory = new EvohomeThermostatAccessory(
-                                        that,
-                                        that.log,
-                                        name,
-                                        device,
-                                        locations[that.locationIndex].systemId,
-                                        deviceID,
-                                        thermostat,
-                                        this.temperatureUnit,
-                                        this.username,
-                                        this.password,
-                                        this.interval_setTemperature,
-                                        offsetMinutes
-                                      );
+                                      var accessory =
+                                        new EvohomeThermostatAccessory(
+                                          that,
+                                          that.log,
+                                          name,
+                                          device,
+                                          locations[
+                                            that.locationIndex
+                                          ].systemId,
+                                          deviceID,
+                                          thermostat,
+                                          this.temperatureUnit,
+                                          this.username,
+                                          this.password,
+                                          this.interval_setTemperature,
+                                          offsetMinutes
+                                        );
                                       // store accessory in myAccessories
                                       this.myAccessories.push(accessory);
                                     }
@@ -253,18 +256,19 @@ EvohomePlatform.prototype = {
                             }
 
                             if (this.switchHeatingOff != false) {
-                              var heatingOffAccessory = new EvohomeSwitchAccessory(
-                                that,
-                                that.log,
-                                that.name + " Heating Off Mode",
-                                locations[that.locationIndex].systemId,
-                                "HeatingOff",
-                                systemModeStatus.mode == "HeatingOff"
-                                  ? true
-                                  : false,
-                                this.username,
-                                this.password
-                              );
+                              var heatingOffAccessory =
+                                new EvohomeSwitchAccessory(
+                                  that,
+                                  that.log,
+                                  that.name + " Heating Off Mode",
+                                  locations[that.locationIndex].systemId,
+                                  "HeatingOff",
+                                  systemModeStatus.mode == "HeatingOff"
+                                    ? true
+                                    : false,
+                                  this.username,
+                                  this.password
+                                );
                               this.myAccessories.push(heatingOffAccessory);
                             }
 
@@ -304,8 +308,7 @@ EvohomePlatform.prototype = {
                               var dhwSwitchAccessory = new EvohomeDhwAccessory(
                                 that,
                                 that.log,
-                                locations[that.locationIndex].systemId,
-                                locations[that.locationIndex].dhw['dhwId'],
+                                locations[that.locationIndex].dhw["dhwId"],
                                 that.username,
                                 that.password
                               );
@@ -325,7 +328,10 @@ EvohomePlatform.prototype = {
                           }.bind(this)
                         )
                         .fail(function (err) {
-                          that.log.error("Error getting system mode status:\n", err);
+                          that.log.error(
+                            "Error getting system mode status:\n",
+                            err
+                          );
                           if (!this.childBridge) {
                             callback([]);
                           }
@@ -370,7 +376,10 @@ EvohomePlatform.prototype.renewSession = function () {
       that.log.debug("Renewed Honeywell API authentication token!");
     })
     .fail(function (err) {
-      that.log.error("Renewing Honeywell API authentication token failed:\n", err);
+      that.log.error(
+        "Renewing Honeywell API authentication token failed:\n",
+        err
+      );
     });
 };
 
@@ -415,32 +424,33 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                               if (
                                 this.myAccessories[i].device != null &&
                                 this.myAccessories[i].device.zoneID ==
-                                locations[this.locationIndex].devices[
-                                  deviceID
-                                ].zoneID
+                                  locations[this.locationIndex].devices[
+                                    deviceID
+                                  ].zoneID
                               ) {
                                 var device =
                                   locations[this.locationIndex].devices[
-                                  deviceID
+                                    deviceID
                                   ];
                                 var thermostat = thermostats[thermoId];
 
                                 if (device) {
                                   // Check if temp has changed
-                                  var oldCurrentTemp = this.myAccessories[i]
-                                    .thermostat.temperatureStatus.temperature;
+                                  var oldCurrentTemp =
+                                    this.myAccessories[i].thermostat
+                                      .temperatureStatus.temperature;
                                   var newCurrentTemp =
                                     thermostat.temperatureStatus.temperature;
-                                  var oldTargetTemp = this.myAccessories[i]
-                                    .thermostat.setpointStatus
-                                    .targetHeatTemperature;
+                                  var oldTargetTemp =
+                                    this.myAccessories[i].thermostat
+                                      .setpointStatus.targetHeatTemperature;
                                   var newTargetTemp =
                                     thermostat.setpointStatus
                                       .targetHeatTemperature;
 
                                   // retrieve service, update stored device and thermostat
-                                  var service = this.myAccessories[i]
-                                    .thermostatService;
+                                  var service =
+                                    this.myAccessories[i].thermostatService;
                                   this.myAccessories[i].device = device;
                                   this.myAccessories[i].thermostat = thermostat;
 
@@ -450,11 +460,11 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                   ) {
                                     this.log.debug(
                                       "Updating: " +
-                                      device.name +
-                                      " currentTempChange from: " +
-                                      oldCurrentTemp +
-                                      " to: " +
-                                      newCurrentTemp
+                                        device.name +
+                                        " currentTempChange from: " +
+                                        oldCurrentTemp +
+                                        " to: " +
+                                        newCurrentTemp
                                     );
                                   }
 
@@ -464,11 +474,11 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                   ) {
                                     this.log(
                                       "Updating: " +
-                                      device.name +
-                                      " targetTempChange from: " +
-                                      oldTargetTemp +
-                                      " to: " +
-                                      newTargetTemp
+                                        device.name +
+                                        " targetTempChange from: " +
+                                        oldTargetTemp +
+                                        " to: " +
+                                        newTargetTemp
                                     );
                                   }
 
@@ -502,8 +512,8 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                       .getValue();
                                   }
 
-                                  var loggingService = this.myAccessories[i]
-                                    .loggingService;
+                                  var loggingService =
+                                    this.myAccessories[i].loggingService;
 
                                   //this.log("populating loggingService: " + loggingService);
                                   //this.log(moment().unix() + " " + newCurrentTemp + " " + newTargetTemp);
@@ -529,7 +539,7 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                 ) {
                                   this.log(
                                     "Updating system mode Away to " +
-                                    newAwayActive
+                                      newAwayActive
                                   );
                                   this.myAccessories[i].active = newAwayActive;
                                 }
@@ -549,11 +559,10 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                 ) {
                                   this.log(
                                     "Updating system mode DayOff to " +
-                                    newDayOffActive
+                                      newDayOffActive
                                   );
-                                  this.myAccessories[
-                                    i
-                                  ].active = newDayOffActive;
+                                  this.myAccessories[i].active =
+                                    newDayOffActive;
                                 }
                               } else if (
                                 !updatedHeatingOffActive &&
@@ -571,16 +580,15 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                 ) {
                                   this.log(
                                     "Updating system mode HeatingOff to " +
-                                    newHeatingOffActive
+                                      newHeatingOffActive
                                   );
-                                  this.myAccessories[
-                                    i
-                                  ].active = newHeatingOffActive;
+                                  this.myAccessories[i].active =
+                                    newHeatingOffActive;
                                 }
                               } else if (
                                 !updatedEcoActive &&
                                 this.myAccessories[i].systemMode ==
-                                "AutoWithEco"
+                                  "AutoWithEco"
                               ) {
                                 updatedEcoActive = true;
 
@@ -593,7 +601,7 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                 ) {
                                   this.log(
                                     "Updating system mode Eco to " +
-                                    newEcoActive
+                                      newEcoActive
                                   );
                                   this.myAccessories[i].active = newEcoActive;
                                 }
@@ -613,11 +621,10 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                 ) {
                                   this.log(
                                     "Updating system mode Custom to " +
-                                    newCustomActive
+                                      newCustomActive
                                   );
-                                  this.myAccessories[
-                                    i
-                                  ].active = newCustomActive;
+                                  this.myAccessories[i].active =
+                                    newCustomActive;
                                 }
                               }
                             }
@@ -636,9 +643,11 @@ EvohomePlatform.prototype.periodicUpdate = function () {
             });
         }.bind(this)
       )
-      .fail(function (err) {
-        this.log.error("Error getting locations:\n", err);
-      }.bind(this));
+      .fail(
+        function (err) {
+          this.log.error("Error getting locations:\n", err);
+        }.bind(this)
+      );
 
     this.updating = false;
   }
@@ -722,9 +731,7 @@ function getNextScheduledTime(log, schedule) {
   for (var scheduleId in schedule) {
     if (schedule[scheduleId].dayOfWeek == weekday[weekdayNumber]) {
       log.debug(
-        "Schedule points for today (" +
-        schedule[scheduleId].dayOfWeek +
-        ")"
+        "Schedule points for today (" + schedule[scheduleId].dayOfWeek + ")"
       );
       var switchpoints = schedule[scheduleId].switchpoints;
       for (var switchpointId in switchpoints) {
@@ -732,9 +739,7 @@ function getNextScheduledTime(log, schedule) {
         if (proceed == true) {
           if (currenttime >= switchpoints[switchpointId].timeOfDay) {
             proceed = true;
-          } else if (
-            currenttime < switchpoints[switchpointId].timeOfDay
-          ) {
+          } else if (currenttime < switchpoints[switchpointId].timeOfDay) {
             proceed = false;
             nextScheduleTime = switchpoints[switchpointId].timeOfDay;
             logline = logline + " -> next change";
@@ -876,8 +881,8 @@ EvohomeThermostatAccessory.prototype = {
             .then(function (taskId) {
               that.log(
                 "Cancelled override for " +
-                that.name +
-                " (set to follow schedule)"
+                  that.name +
+                  " (set to follow schedule)"
               );
               that.log.debug(taskId);
               // returns taskId if successful
@@ -919,13 +924,13 @@ EvohomeThermostatAccessory.prototype = {
       var currentTemp = this.thermostat.temperatureStatus.temperature;
 
       // Sets the heating state of the thermostat to either OFF or HEAT
-      var state = (
+      var state =
         // OFF if targetTemp <= 5 °C
         targetTemp <= 5 ||
         // OFF if targetTemp below currentTemp AND 'temperatureAboveAsOff' set to true
         (targetTemp <= currentTemp && that.temperatureAboveAsOff)
-      ) ? 0 : 1;
-
+          ? 0
+          : 1;
     } else {
       var state = 1;
       // domestic hot water not supported (set to heat by default)
@@ -950,8 +955,8 @@ EvohomeThermostatAccessory.prototype = {
     // with DOMESTIC_HOT_WATER) so we need to chek if it
     // is defined first
     if ((this.model = "HeatingZone")) {
-      var targetTemperature = this.thermostat.setpointStatus
-        .targetHeatTemperature;
+      var targetTemperature =
+        this.thermostat.setpointStatus.targetHeatTemperature;
       that.log.debug(
         "Target temperature for",
         this.name,
@@ -1027,7 +1032,7 @@ EvohomeThermostatAccessory.prototype = {
 
     //var serial = 123456 + this.deviceID;
     var strSerial = this.systemId + "-" + this.serial;
-    this.log.debug("Serial: " + strSerial)
+    this.log.debug("Serial: " + strSerial);
 
     informationService
       .setCharacteristic(Characteristic.Identify, this.name)
@@ -1112,17 +1117,10 @@ EvohomeThermostatAccessory.prototype = {
   },
 };
 
-function EvohomeDhwAccessory(
-  platform,
-  log,
-  systemId,
-  dhwId,
-  username,
-  password
-) {
-  this.uuid_base = systemId + ":" + dhwId;
+// This will be a Temperature sensor with a switch inside it.
+function EvohomeDhwAccessory(platform, log, dhwId, username, password) {
+  this.uuid_base = dhwId;
   this.name = platform.name + " Hot Water";
-  this.systemId = systemId;
   this.platform = platform;
   this.dhwId = dhwId;
   this.log = log;
@@ -1136,51 +1134,54 @@ EvohomeDhwAccessory.prototype = {
     var that = this;
     var session = that.platform.sessionObject;
 
-    session.getHotWater(this.dhwId).then(
-      function (dhw) {
+    session
+      .getHotWater(this.dhwId)
+      .then(function (dhw) {
         var temp = dhw.temperatureStatus.temperature;
         that.log.debug("Hot Water Temperature " + temp);
         callback(null, temp);
-      }
-    ).fail(function (err) {
-      that.log.error("Failed to load Hot Water:\n", err);
-      callback(err);
-    });
+      })
+      .fail(function (err) {
+        that.log.error("Failed to load Hot Water:\n", err);
+        callback(err);
+      });
   },
 
   getHotWaterStatus: function (callback) {
     var that = this;
     var session = that.platform.sessionObject;
 
-    session.getHotWater(this.dhwId).then(
-      function (dhw) {
-        var state = dhw.dhwStatus.state == "On" ? 1 : 0;
+    session
+      .getHotWater(this.dhwId)
+      .then(function (dhw) {
+        var state = dhw.dhwStatus.state == "On" ? true : false;
         that.log.debug("Hot Water Status " + state);
         callback(null, state);
-      }
-    ).fail(function (err) {
-      that.log.error("Failed to load Hot Water:\n", err);
-      callback(err);
-    });
+      })
+      .fail(function (err) {
+        that.log.error("Failed to load Hot Water:\n", err);
+        callback(err);
+      });
   },
 
   getCurrentHeaterCoolerState: function (callback) {
     var that = this;
     var session = that.platform.sessionObject;
 
-    session.getHotWater(this.dhwId).then(
-      function (dhw) {
+    session
+      .getHotWater(this.dhwId)
+      .then(function (dhw) {
         var state = dhw.dhwStatus.state == "On" ? 2 : 3;
         that.log.debug("Hot Water Heater Cooler Status " + state);
         callback(null, state);
-      }
-    ).fail(function (err) {
-      that.log.error("Failed to load Hot Water:\n", err);
-      callback(err);
-    });
+      })
+      .fail(function (err) {
+        that.log.error("Failed to load Hot Water:\n", err);
+        callback(err);
+      });
   },
 
-  setTargetHeaterCoolerState: function (value, callback) {
+  setHotWaterStatus: function (value, callback) {
     var that = this;
     var session = that.platform.sessionObject;
 
@@ -1206,32 +1207,18 @@ EvohomeDhwAccessory.prototype = {
           );
         }
 
-        var data = {};
-        if (value == 0) { // AUTO
-          data = {
-            "Mode": "FollowSchedule",
-            "State": "",
-            "UntilTime": null
-          };
-        } else if (value == 1) { // HEAT
-          data = {
-            "Mode": mode,
-            "State": "On",
-            "UntilTime": untilTime
-          };
-        } else { // COOL
-          data = {
-            "Mode": mode,
-            "State": "Off",
-            "UntilTime": untilTime
-          };
-        }
+        var data = {
+          Mode: mode,
+          State: value ? "On" : "Off",
+          UntilTime: untilTime,
+        };
 
-        session.setSystemMode(that.dhwId, data, true)
+        session
+          .setSystemMode(that.dhwId, data, true)
           .then(function (taskId) {
             if (taskId.id) {
               var msg = "Hot Water is set to: " + value;
-              if (untilTime && value != 0) {
+              if (untilTime) {
                 msg += " until " + untilTime;
               }
               that.log(msg);
@@ -1241,47 +1228,13 @@ EvohomeDhwAccessory.prototype = {
             }
           })
           .fail(function (err) {
-            that.log.error("Error setting system mode:\n", err);
+            that.log.error("Error setting Hot Water mode:\n", err);
             callback(err);
           });
       })
       .fail(function (err) {
         that.log.error("Error getting schedule for Hot Water:\n", err);
-        that.targetTemperateToSet = -1;
       });
-  },
-
-  getTargetHeaterCoolerState: function (callback) {
-    var that = this;
-    var session = that.platform.sessionObject;
-
-    session.getHotWater(this.dhwId).then(
-      function (dhw) {
-        // AUTO = 0
-        // HEAT = 1
-        // COOL = 2
-        var state = 2; // Overriden and is off so COOL
-        if (dhw.dhwStatus.mode == "FollowSchedule") { // Not overriden so AUTO
-          state = 0;
-        } else if (dhw.dhwStatus.state == "On") { // Overriden and On so HEAT
-          state = 1;
-        }
-
-        that.log.debug("Hot Water Target Status " + state);
-        callback(null, Number(state));
-      }
-    ).fail(function (err) {
-      that.log.error("Failed to load Hot Water:\n", err);
-      callback(err);
-    });
-  },
-
-  getCoolingThresholdTemperature: function (callback) {
-    callback(null, 25); // TODO
-  },
-
-  getHeatingThresholdTemperature: function (callback) {
-    callback(null, 25); // TODO
   },
 
   getServices: function () {
@@ -1297,39 +1250,29 @@ EvohomeDhwAccessory.prototype = {
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.SerialNumber, this.dhwId);
 
-    // Represent the Domestic Hot Water as a HeaterCooler, because it
-    // allows you display the current temperature in a read mode,
-    // and allows you to set the status to on or off.
-    this.heaterCooler = new Service.HeaterCooler();
+    // The Domestic Hot Water will be a Temperature Sensor, and within it
+    // a switch to control on and off until next schedule.
+    this.tempSensor = new Service.TemperatureSensor();
 
     // Read Only
-    this.heaterCooler
-      .getCharacteristic(Characteristic.Active)
-      .on("get", this.getHotWaterStatus.bind(this));
-    this.heaterCooler
-      .getCharacteristic(Characteristic.CurrentHeaterCoolerState)
-      .on("get", this.getCurrentHeaterCoolerState.bind(this));
-    this.heaterCooler
+    this.tempSensor
       .getCharacteristic(Characteristic.CurrentTemperature)
       .on("get", this.getHotWaterTemperature.bind(this));
 
-    this.heaterCooler
-      .getCharacteristic(Characteristic.CoolingThresholdTemperature)
-      .on('get', this.getCoolingThresholdTemperature.bind(this));
-    this.heaterCooler
-      .getCharacteristic(Characteristic.HeatingThresholdTemperature)
-      .on('get', this.getHeatingThresholdTemperature.bind(this));
+    this.tempSensor.setPrimaryService(true);
+
+    // Switch within the sensor to control it on and off.
+    this.active = new Service.Switch();
 
     // Read Write
-    this.heaterCooler
-      .getCharacteristic(Characteristic.TargetHeaterCoolerState)
-      .on("get", this.getTargetHeaterCoolerState.bind(this))
-      .on("set", this.setTargetHeaterCoolerState.bind(this));
+    this.active
+      .getCharacteristic(Characteristic.On)
+      .on("get", this.getHotWaterStatus.bind(this))
+      .on("set", this.setHotWaterStatus.bind(this));
 
-    return [informationService, this.heaterCooler];
+    return [informationService, this.tempSensor, this.active];
   },
-}
-
+};
 
 function EvohomeSwitchAccessory(
   platform,
