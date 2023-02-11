@@ -408,6 +408,7 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                       var updatedHeatingOffActive = false;
                       var updatedEcoActive = false;
                       var updatedCustomActive = false;
+                      var updatedHotWaterActive = false;
 
                       for (var deviceID in locations[this.locationIndex]
                         .devices) {
@@ -626,6 +627,26 @@ EvohomePlatform.prototype.periodicUpdate = function () {
                                   this.myAccessories[i].active =
                                     newCustomActive;
                                 }
+                              } else if (
+                                !updatedHotWaterActive &&
+                                this.myAccessories[i].model ==
+                                  "domesticHotWater"
+                              ) {
+                                updatedHotWaterActive = true;
+
+                                var loggingService =
+                                  this.myAccessories[i].loggingService;
+
+                                loggingService.addEntry({
+                                  time: moment().unix(),
+                                  currentTemp:
+                                    this.myAccessories[i].currentTemperature,
+                                  setTemp: 60, // TODO, random value
+                                  valvePosition: this.myAccessories[i]
+                                    .currentState
+                                    ? 100
+                                    : 0,
+                                });
                               }
                             }
                           }
@@ -1121,30 +1142,25 @@ EvohomeThermostatAccessory.prototype = {
 function EvohomeDhwAccessory(platform, log, dhwId, username, password) {
   this.uuid_base = dhwId;
   this.name = platform.name + " Hot Water";
+  this.displayName = this.name;
   this.platform = platform;
   this.dhwId = dhwId;
   this.log = log;
   this.model = "domesticHotWater";
   this.username = username;
   this.password = password;
+  this.currentTemperature = -99;
+  this.currentState = null;
+
+  // Enable logging of temperature
+  this.loggingService = new FakeGatoHistoryService("thermo", this, {
+    storage: "fs",
+  });
 }
 
 EvohomeDhwAccessory.prototype = {
   getHotWaterTemperature: function (callback) {
-    var that = this;
-    var session = that.platform.sessionObject;
-
-    session
-      .getHotWater(this.dhwId)
-      .then(function (dhw) {
-        var temp = dhw.temperatureStatus.temperature;
-        that.log.debug("Hot Water Temperature " + temp);
-        callback(null, temp);
-      })
-      .fail(function (err) {
-        that.log.error("Failed to load Hot Water:\n", err);
-        callback(err);
-      });
+    callback(null, this.currentTemperature);
   },
 
   getHotWaterStatus: function (callback) {
@@ -1155,6 +1171,8 @@ EvohomeDhwAccessory.prototype = {
       .getHotWater(this.dhwId)
       .then(function (dhw) {
         var state = dhw.dhwStatus.state == "On" ? true : false;
+        that.currentTemperature = dhw.temperatureStatus.temperature;
+        that.currentState = state;
         that.log.debug("Hot Water Status " + state);
         callback(null, state);
       })
@@ -1270,7 +1288,12 @@ EvohomeDhwAccessory.prototype = {
       .on("get", this.getHotWaterStatus.bind(this))
       .on("set", this.setHotWaterStatus.bind(this));
 
-    return [informationService, this.tempSensor, this.active];
+    return [
+      informationService,
+      this.tempSensor,
+      this.active,
+      this.loggingService,
+    ];
   },
 };
 
