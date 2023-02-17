@@ -93,6 +93,7 @@ function EvohomePlatform(log, config) {
 
   this.cache_timeout = 300; // seconds
   this.interval_setTemperature = 5; // seconds
+  this.interval_getStatus = 60; // seconds
 
   this.systemMode = "";
 
@@ -310,7 +311,8 @@ EvohomePlatform.prototype = {
                                 that.log,
                                 locations[that.locationIndex].dhw["dhwId"],
                                 that.username,
-                                that.password
+                                that.password,
+                                that.interval_getStatus
                               );
                               this.myAccessories.push(dhwSwitchAccessory);
                             }
@@ -975,7 +977,7 @@ EvohomeThermostatAccessory.prototype = {
 
     // gives back the target temperature of thermostat
     // crashes the plugin IF there is no value defined (like
-    // with DOMESTIC_HOT_WATER) so we need to chek if it
+    // with DOMESTIC_HOT_WATER) so we need to check if it
     // is defined first
     if ((this.model = "HeatingZone")) {
       var targetTemperature =
@@ -998,37 +1000,30 @@ EvohomeThermostatAccessory.prototype = {
   },
 
   getTemperatureDisplayUnits: function (callback) {
-    var that = this;
     var temperatureUnits = this.temperatureUnit == "Fahrenheit" ? 1 : 0;
-
-    /* switch (this.temperatureUnit) {
-      
-      case "Fahrenheit":
-        temperatureUnits = 1;
-        break;
-      case "Celsius":
-        temperatureUnits = 0;
-        break;
-      default:
-        temperatureUnits = 0;
-    } */
-
     callback(null, Number(temperatureUnits));
   },
 
   setTemperatureDisplayUnits: function (value, callback) {
-    var that = this;
-
     var stringValue = value == 1 ? "Fahrenheit" : "Celsius";
 
-    that.log.debug("set temperature units to", stringValue);
-    that.temperatureUnit = stringValue;
+    this.log.debug("set temperature units to", stringValue);
+    this.temperatureUnit = stringValue;
     callback();
   },
 
   getValvePosition: function (callback) {
-    // not implemented
-    callback(null, 50);
+    if (this.model == "HeatingZone") {
+      var targetTemp = this.thermostat.setpointStatus.targetHeatTemperature;
+      var currentTemp = this.thermostat.temperatureStatus.temperature;
+
+      // state is HEAT if there is current call for heat, or OFF
+      var state = currentTemp < targetTemp ? 100 : 0;
+    } else {
+      var state = 100;
+      // domestic hot water not supported (set to heat by default)
+    }
+    callback(null, Number(state));
   },
 
   setProgramCommand: function (value, callback) {
@@ -1141,7 +1136,14 @@ EvohomeThermostatAccessory.prototype = {
 };
 
 // This will be a Temperature sensor with a switch inside it.
-function EvohomeDhwAccessory(platform, log, dhwId, username, password) {
+function EvohomeDhwAccessory(
+  platform,
+  log,
+  dhwId,
+  username,
+  password,
+  interval_getStatus
+) {
   this.uuid_base = dhwId;
   this.name = platform.name + " Hot Water";
   this.displayName = this.name;
@@ -1158,47 +1160,39 @@ function EvohomeDhwAccessory(platform, log, dhwId, username, password) {
   this.loggingService = new FakeGatoHistoryService("thermo", this, {
     storage: "fs",
   });
+
+  setInterval(this.periodicCheckStatus.bind(this), interval_getStatus * 1000);
 }
 
 EvohomeDhwAccessory.prototype = {
+  periodicCheckStatus: function (callback) {
+    var that = this;
+    var session = that.platform.sessionObject;
+
+    session
+      .getHotWater(this.dhwId)
+      .then(function (dhw) {
+        that.currentTemperature = dhw.temperatureStatus.temperature;
+        that.currentState = dhw.dhwStatus.state == "On" ? true : false;
+        that.log.debug(
+          "Hot Water Temperature " +
+            that.currentTemperature +
+            " and Status " +
+            that.currentState
+        );
+      })
+      .fail(function (err) {
+        that.log.error("Failed to load Hot Water:\n", err);
+        callback(err);
+      });
+  },
+
   getHotWaterTemperature: function (callback) {
     callback(null, this.currentTemperature);
   },
 
   getHotWaterStatus: function (callback) {
-    var that = this;
-    var session = that.platform.sessionObject;
-
-    session
-      .getHotWater(this.dhwId)
-      .then(function (dhw) {
-        var state = dhw.dhwStatus.state == "On" ? true : false;
-        that.currentTemperature = dhw.temperatureStatus.temperature;
-        that.currentState = state;
-        that.log.debug("Hot Water Status " + state);
-        callback(null, state);
-      })
-      .fail(function (err) {
-        that.log.error("Failed to load Hot Water:\n", err);
-        callback(err);
-      });
-  },
-
-  getCurrentHeaterCoolerState: function (callback) {
-    var that = this;
-    var session = that.platform.sessionObject;
-
-    session
-      .getHotWater(this.dhwId)
-      .then(function (dhw) {
-        var state = dhw.dhwStatus.state == "On" ? 2 : 3;
-        that.log.debug("Hot Water Heater Cooler Status " + state);
-        callback(null, state);
-      })
-      .fail(function (err) {
-        that.log.error("Failed to load Hot Water:\n", err);
-        callback(err);
-      });
+    callback(null, that.currentState);
   },
 
   setHotWaterStatus: function (value, callback) {
