@@ -1192,7 +1192,7 @@ EvohomeDhwAccessory.prototype = {
   },
 
   getHotWaterStatus: function (callback) {
-    callback(null, that.currentState);
+    callback(null, this.currentState);
   },
 
   setHotWaterStatus: function (value, callback) {
