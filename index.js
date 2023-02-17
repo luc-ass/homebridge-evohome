@@ -1154,7 +1154,7 @@ function EvohomeDhwAccessory(
   this.username = username;
   this.password = password;
   this.currentTemperature = -99;
-  this.currentState = null;
+  this.currentState = true;
 
   // Enable logging of temperature
   this.loggingService = new FakeGatoHistoryService("thermo", this, {
