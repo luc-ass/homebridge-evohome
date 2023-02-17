@@ -518,12 +518,14 @@ EvohomePlatform.prototype.periodicUpdate = function () {
 
                                   //this.log("populating loggingService: " + loggingService);
                                   //this.log(moment().unix() + " " + newCurrentTemp + " " + newTargetTemp);
+                                  var valvePosition =
+                                    newCurrentTemp >= newTargetTemp ? 0 : 100;
                                   loggingService.addEntry({
                                     time: moment().unix(),
                                     currentTemp: newCurrentTemp,
                                     setTemp: newTargetTemp,
-                                    valvePosition: 50,
-                                  }); // valve pos 50%???
+                                    valvePosition: valvePosition,
+                                  });
                                 }
                               } else if (
                                 !updatedAwayActive &&
