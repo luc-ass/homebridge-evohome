@@ -1237,6 +1237,7 @@ EvohomeDhwAccessory.prototype = {
               }
               that.log(msg);
               that.log.debug(taskId);
+              that.currentState = value;
             } else {
               throw taskId;
             }
