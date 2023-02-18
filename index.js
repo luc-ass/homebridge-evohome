@@ -953,7 +953,7 @@ EvohomeThermostatAccessory.prototype = {
 
   getTemperatureDisplayUnits: function (callback) {
     var that = this;
-    var temperatureUnits = this.temperatureUnit = "Fahrenheit" ? 1 : 0;
+    var temperatureUnits = this.temperatureUnit == "Fahrenheit" ? 1 : 0;
 
     /* switch (this.temperatureUnit) {
       
@@ -973,7 +973,10 @@ EvohomeThermostatAccessory.prototype = {
   setTemperatureDisplayUnits: function (value, callback) {
     var that = this;
 
-    that.log("set temperature units to", value);
+    var stringValue = value == 1 ? "Fahrenheit" : "Celsius";
+
+    that.log.debug("set temperature units to", stringValue);
+    that.temperatureUnit = stringValue;
     callback();
   },
 
@@ -1057,7 +1060,8 @@ EvohomeThermostatAccessory.prototype = {
     // this.addCharacteristic(Characteristic.TemperatureDisplayUnits); READ WRITE
     this.thermostatService
       .getCharacteristic(Characteristic.TemperatureDisplayUnits)
-      .on("get", this.getTemperatureDisplayUnits.bind(this));
+      .on("get", this.getTemperatureDisplayUnits.bind(this))
+      .on("set", this.setTemperatureDisplayUnits.bind(this));
 
     // Optional Characteristics /////////////////////////////////////////////////////////////
     // this.addOptionalCharacteristic(Characteristic.CurrentRelativeHumidity);
