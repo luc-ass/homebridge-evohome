@@ -1069,18 +1069,18 @@ EvohomeThermostatAccessory.prototype = {
     // this.addCharacteristic(Characteristic.CurrentHeatingCoolingState); READ
     this.thermostatService
       .getCharacteristic(Characteristic.CurrentHeatingCoolingState)
-      .on("get", this.getCurrentHeatingCoolingState.bind(this));
+      .onget(this.getCurrentHeatingCoolingState.bind(this));
 
     // this.addCharacteristic(Characteristic.TargetHeatingCoolingState); READ WRITE
     this.thermostatService
       .getCharacteristic(Characteristic.TargetHeatingCoolingState)
-      .on("get", this.getTargetHeatingCooling.bind(this))
-      .on("set", this.setTargetHeatingCooling.bind(this));
+      .onget(this.getTargetHeatingCooling.bind(this))
+      .onset(this.setTargetHeatingCooling.bind(this));
 
     // this.addCharacteristic(Characteristic.CurrentTemperature); READ
     this.thermostatService
       .getCharacteristic(Characteristic.CurrentTemperature)
-      .on("get", this.getCurrentTemperature.bind(this))
+      .onget(this.getCurrentTemperature.bind(this))
       .setProps({
         minValue: 1,
         maxValue: 50,
@@ -1090,8 +1090,8 @@ EvohomeThermostatAccessory.prototype = {
     // this.addCharacteristic(Characteristic.TargetTemperature); READ WRITE
     this.thermostatService
       .getCharacteristic(Characteristic.TargetTemperature)
-      .on("get", this.getTargetTemperature.bind(this))
-      .on("set", this.setTargetTemperature.bind(this))
+      .onget(this.getTargetTemperature.bind(this))
+      .onset(this.setTargetTemperature.bind(this))
       .setProps({
         minValue: this.device.minHeatSetpoint,
         maxValue: this.device.maxHeatSetpoint,
@@ -1101,8 +1101,8 @@ EvohomeThermostatAccessory.prototype = {
     // this.addCharacteristic(Characteristic.TemperatureDisplayUnits); READ WRITE
     this.thermostatService
       .getCharacteristic(Characteristic.TemperatureDisplayUnits)
-      .on("get", this.getTemperatureDisplayUnits.bind(this))
-      .on("set", this.setTemperatureDisplayUnits.bind(this));
+      .onget(this.getTemperatureDisplayUnits.bind(this))
+      .onset(this.setTemperatureDisplayUnits.bind(this));
 
     // Optional Characteristics /////////////////////////////////////////////////////////////
     // this.addOptionalCharacteristic(Characteristic.CurrentRelativeHumidity);
@@ -1121,15 +1121,15 @@ EvohomeThermostatAccessory.prototype = {
 
     this.thermostatService
       .getCharacteristic(CustomCharacteristic.ValvePosition)
-      .on("get", this.getValvePosition.bind(this));
+      .onget(this.getValvePosition.bind(this));
 
     this.thermostatService
       .getCharacteristic(CustomCharacteristic.ProgramCommand)
-      .on("set", this.setProgramCommand.bind(this));
+      .onset(this.setProgramCommand.bind(this));
 
     this.thermostatService
       .getCharacteristic(CustomCharacteristic.ProgramData)
-      .on("get", this.getProgramData.bind(this));
+      .onget(this.getProgramData.bind(this));
 
     return [informationService, this.thermostatService, this.loggingService];
   },
@@ -1272,7 +1272,7 @@ EvohomeDhwAccessory.prototype = {
     // Read Only
     this.tempSensor
       .getCharacteristic(Characteristic.CurrentTemperature)
-      .on("get", this.getHotWaterTemperature.bind(this));
+      .onget(this.getHotWaterTemperature.bind(this));
 
     this.tempSensor.setPrimaryService(true);
 
@@ -1282,8 +1282,8 @@ EvohomeDhwAccessory.prototype = {
     // Read Write
     this.active
       .getCharacteristic(Characteristic.On)
-      .on("get", this.getHotWaterStatus.bind(this))
-      .on("set", this.setHotWaterStatus.bind(this));
+      .onget(this.getHotWaterStatus.bind(this))
+      .onset(this.setHotWaterStatus.bind(this));
 
     return [
       informationService,
@@ -1374,8 +1374,8 @@ EvohomeSwitchAccessory.prototype = {
     // this.addCharacteristic(Characteristic.On); READ WRITE
     this.switchService
       .getCharacteristic(Characteristic.On)
-      .on("get", this.getActive.bind(this))
-      .on("set", this.setActive.bind(this));
+      .onget(this.getActive.bind(this))
+      .onset(this.setActive.bind(this));
 
     return [informationService, this.switchService];
   },
