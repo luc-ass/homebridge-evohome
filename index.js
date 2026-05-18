@@ -21,7 +21,7 @@ var inherits = require("util").inherits;
 const moment = require("moment");
 var CustomCharacteristic = {};
 
-module.exports = function (homebridge) {
+module.exports = (homebridge) => {
   FakeGatoHistoryService = require("fakegato-history")(homebridge);
 
   Service = homebridge.hap.Service;
@@ -70,7 +70,7 @@ module.exports = function (homebridge) {
   };
   inherits(CustomCharacteristic.ProgramData, Characteristic);
 
-  homebridge.registerPlatform("homebridge-evohome", "Evohome", EvohomePlatform);
+homebridge.registerPlatform("homebridge-evohome", "Evohome", EvohomePlatform, true); // true = dynamic platform (recommended)
 };
 
 function EvohomePlatform(log, config) {
@@ -98,7 +98,8 @@ function EvohomePlatform(log, config) {
   this.systemMode = "";
 
   this.log = log;
-
+  this.api = homebridge; // if you want to use newer API features later
+  
   this.updating = false;
 }
 
