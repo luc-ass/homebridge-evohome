@@ -98,7 +98,7 @@ function EvohomePlatform(log, config) {
   this.systemMode = "";
 
   this.log = log;
-  this.api = homebridge; // if you want to use newer API features later
+ // this.api = homebridge; // if you want to use newer API features later
   
   this.updating = false;
 }
