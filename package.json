@@ -1,6 +1,6 @@
 {
   "displayName": "Homebridge Evohome",
-  "name": "homebridge-evohome",
+  "name": "@jdegouw/homebridge-evohome",
   "version": "0.12.0",
   "description": "Honeywell Evohome support for Homebridge",
   "license": "ISC",
