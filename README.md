@@ -82,22 +82,25 @@ Configuration sample:
 
 ## 🧪 Beta Testing
 
-This part talks about testing pre-release version of the plugin. I strongly recommend, that you don't do this in your production environment. It will frequently reset accessories and break automations. If you still want to or have been asked to, this is my preferred way of installing from github:
+This part talks about testing a pre-release version of the plugin. I strongly recommend that you don't do this in your production environment, as it will frequently reset accessories and break automations.
 
-In Homebridge Config UI X Terminal:
+If you still want to test the latest version from GitHub, use the following steps in the Homebridge Config UI X Terminal:
 
 ```sh
-# go to node module directory
+# Go to the node_modules directory
 cd node_modules
-# remove homebridge-evohome and contents
+
+# Remove the old plugin folder
 rm -r homebridge-evohome
-# recreate the folder
+
+# Recreate the folder
 mkdir homebridge-evohome
-# clone repo to folder
-git clone --single-branch --branch main https://github.com/luc-ass/homebridge-evohome.git ./homebridge-evohome
-# cd into folder
+
+# Clone this fork
+git clone --single-branch --branch main https://github.com/jdegouw/homebridge-evohome.git ./homebridge-evohome
+
+# Go into the folder and install
 cd homebridge-evohome
-# install plugin
 npm install
 ```
 Now restart Homebridge
