@@ -832,7 +832,14 @@ EvohomeThermostatAccessory.prototype = {
 
     // need to refresh data if outdated!!
     var currentTemperature = this.thermostat.temperatureStatus.temperature;
-    callback(null, Number(currentTemperature));
+    // Some zones (e.g. floor-sensor-only rooms) can report undefined.
+    // HAP v2 strictly validates values; an undefined/NaN here would be
+    // rejected. Fall back to the characteristic's minValue (1) instead.
+    var numericTemperature = Number(currentTemperature);
+    if (!Number.isFinite(numericTemperature)) {
+      numericTemperature = 1;
+    }
+    callback(null, numericTemperature);
     that.log.debug(
       "Current temperature of " + this.name + " is " + currentTemperature + "°"
     );
@@ -1043,7 +1050,7 @@ EvohomeThermostatAccessory.prototype = {
     // not implemented
     var data =
       "12f1130014c717040af6010700fc140c170c11fa24366684ffffffff24366684ffffffff24366684ffffffff24366684ffffffff24366684ffffffff24366684ffffffff24366684fffffffff42422222af3381900001a24366684ffffffff";
-    var buffer = new Buffer(
+    var buffer = Buffer.from(
       ("" + data).replace(/[^0-9A-F]/gi, ""),
       "hex"
     ).toString("base64");
