@@ -33,21 +33,21 @@ export default tseslint.config(
       "max-depth": ["error", 3],
       "max-nested-callbacks": ["error", 3],
 
-      // B3: Characteristic.getValue() existiert in HAP 2.x nicht mehr.
-      // updateValue() ist der Ersatz.
       "no-restricted-syntax": [
         "error",
         {
+          // B3: Characteristic.getValue() existiert in HAP 2.x nicht mehr.
           selector: "MemberExpression[property.name='getValue']",
           message:
             "Characteristic.getValue() wurde in HAP 2.x entfernt (Befund B3). updateValue() verwenden.",
         },
-      ],
-
-      // B7: new Buffer(...) ist seit Node 6 deprecated.
-      "no-restricted-globals": [
-        "error",
-        { name: "Buffer", message: "Buffer.from() / Buffer.alloc() verwenden." },
+        {
+          // B7: new Buffer(...) ist seit Node 6 deprecated. Die Regel trifft
+          // gezielt den Konstruktoraufruf — Buffer.from()/alloc() bleiben erlaubt.
+          selector: "NewExpression[callee.name='Buffer']",
+          message:
+            "new Buffer(...) ist deprecated (Befund B7). Buffer.from() oder Buffer.alloc() verwenden.",
+        },
       ],
 
       // S5/S12: verschluckte Fehler und vergessene awaits waren die Ursache
@@ -65,6 +65,14 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      // API-Antworten werden als Record<string, unknown> gelesen. Der
+      // Klammerzugriff macht sichtbar, dass das Feld aus ungeprüftem JSON
+      // stammt und nicht aus einem bekannten Typ.
+      "@typescript-eslint/dot-notation": [
+        "error",
+        { allowIndexSignaturePropertyAccess: true },
+      ],
+
       eqeqeq: ["error", "always"],
       curly: ["error", "all"],
       "no-var": "error",

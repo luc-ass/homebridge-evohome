@@ -1,0 +1,75 @@
+{
+  "locationId": "9876543",
+  "gateways": [
+    {
+      "gatewayId": "555001",
+      "temperatureControlSystems": [
+        {
+          "systemId": "444001",
+          "systemModeStatus": {
+            "mode": "AutoWithEco",
+            "isPermanent": true
+          },
+          "zones": [
+            {
+              "zoneId": "3001",
+              "name": "Wohnzimmer",
+              "temperatureStatus": { "temperature": 21.5, "isAvailable": true },
+              "setpointStatus": {
+                "targetHeatTemperature": 20,
+                "setpointMode": "FollowSchedule"
+              },
+              "activeFaults": []
+            },
+            {
+              "zoneId": "3002",
+              "name": "Bad",
+              "temperatureStatus": { "temperature": 19, "isAvailable": true },
+              "setpointStatus": {
+                "targetHeatTemperature": 22,
+                "setpointMode": "TemporaryOverride",
+                "until": "2026-09-03T18:30:00Z"
+              },
+              "activeFaults": []
+            },
+            {
+              "zoneId": "3003",
+              "name": "Flur",
+              "temperatureStatus": { "isAvailable": false },
+              "setpointStatus": {
+                "targetHeatTemperature": 5,
+                "setpointMode": "PermanentOverride"
+              },
+              "activeFaults": [
+                {
+                  "faultType": "TempZoneActuatorLowBattery",
+                  "since": "2026-09-01T07:12:00Z"
+                }
+              ]
+            },
+            {
+              "zoneId": "3004",
+              "name": "Wintergarten",
+              "temperatureStatus": { "temperature": 16, "isAvailable": true },
+              "setpointStatus": {
+                "targetHeatTemperature": 15,
+                "setpointMode": "FollowSchedule"
+              },
+              "activeFaults": []
+            }
+          ],
+          "dhw": {
+            "dhwId": "2001",
+            "temperatureStatus": { "temperature": 54.5, "isAvailable": true },
+            "stateStatus": {
+              "state": "On",
+              "mode": "TemporaryOverride",
+              "until": "2026-09-03T20:00:00Z"
+            },
+            "activeFaults": []
+          }
+        }
+      ]
+    }
+  ]
+}

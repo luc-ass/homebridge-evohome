@@ -1,0 +1,25 @@
+{
+  "dailySchedules": [
+    { "dayOfWeek": "Monday", "switchpoints": [
+      { "dhwState": "On", "timeOfDay": "06:00:00" },
+      { "dhwState": "Off", "timeOfDay": "09:00:00" } ] },
+    { "dayOfWeek": "Tuesday", "switchpoints": [
+      { "dhwState": "On", "timeOfDay": "06:00:00" },
+      { "dhwState": "Off", "timeOfDay": "09:00:00" } ] },
+    { "dayOfWeek": "Wednesday", "switchpoints": [
+      { "dhwState": "On", "timeOfDay": "06:00:00" },
+      { "dhwState": "Off", "timeOfDay": "09:00:00" } ] },
+    { "dayOfWeek": "Thursday", "switchpoints": [
+      { "dhwState": "On", "timeOfDay": "06:00:00" },
+      { "dhwState": "Off", "timeOfDay": "09:00:00" } ] },
+    { "dayOfWeek": "Friday", "switchpoints": [
+      { "dhwState": "On", "timeOfDay": "06:00:00" },
+      { "dhwState": "Off", "timeOfDay": "09:00:00" } ] },
+    { "dayOfWeek": "Saturday", "switchpoints": [
+      { "dhwState": "On", "timeOfDay": "07:00:00" },
+      { "dhwState": "Off", "timeOfDay": "10:00:00" } ] },
+    { "dayOfWeek": "Sunday", "switchpoints": [
+      { "dhwState": "On", "timeOfDay": "07:00:00" },
+      { "dhwState": "Off", "timeOfDay": "10:00:00" } ] }
+  ]
+}

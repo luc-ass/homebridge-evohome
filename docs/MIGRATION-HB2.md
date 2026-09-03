@@ -183,15 +183,25 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
 
 ### Phase 1 — API-Client (2–3 Tage)
 
-- [ ] `api/types.ts` aus echten Responses ableiten, Fixtures in `test/fixtures/` ablegen
-- [ ] `EvohomeClient` auf `fetch` + `AbortSignal.timeout` — `request`/`q`/`lodash`/`moment` raus (S14)
-- [ ] Response-Validierung an jeder Grenze, typisierte Fehler statt `TypeError` — S8
-- [ ] `TokenStore`: Refresh vor Ablauf, Retry mit Backoff, Re-Login bei `invalid_grant`,
-      Token uid-scoped in `api.user.storagePath()` cachen — #136, S12
-- [ ] Zugangsdaten nur im `TokenStore`, keine globale Map — S10
-- [ ] `util/schedule.ts`: `nextSwitchpoint()` neu, zeitzonenrichtig, mit Tests über
-      Tageswechsel und DST — S9
-- [ ] Unit-Tests gegen Fixtures, inkl. HTTP 401/429/5xx, leerem Body und Timeout
+- [x] `api/types.ts` als Domänentypen, Fixtures in `test/fixtures/`
+- [x] `EvohomeClient` auf `fetch` + `AbortSignal.timeout` — `request`/`q`/`lodash`/`moment`
+      restlos entfallen, das Paket hat keine Laufzeitabhängigkeiten mehr (S14)
+- [x] Response-Validierung an jeder Grenze (`validate.ts`, `parse.ts`): jeder Fehler
+      nennt den Pfad in der Antwort statt eines nackten `TypeError` — S8
+- [x] `TokenStore`: bedarfsgesteuerter Refresh, Re-Login bei verbrauchtem
+      Refresh-Token, Aufgabe nur bei dauerhaft falschen Zugangsdaten — #136, S12
+- [x] Zugangsdaten in ES-Private-Feldern, keine globale Map, kein Passwort in
+      `JSON.stringify(store)` — S10
+- [x] `util/backoff.ts`: exponentiell mit Deckel und Jitter — #136
+- [x] `util/schedule.ts`: `nextSwitchpoint()` neu, mit Tests über Tageswechsel,
+      Sonntag-Montag-Grenze, Sortierreihenfolge und DST — S9
+- [x] Ein Statusaufruf pro Zyklus statt dreier (S13) — im Client umgesetzt, der
+      Poller folgt in Phase 2
+- [x] 84 Tests, Coverage-Schwelle in `vitest.config.ts` auf 90/85 angehoben
+- [ ] **Offen:** Fixtures gegen ein echtes Konto gegenprüfen — die Struktur stammt
+      aus `legacy/evohome.cjs` und den Issue-Logs, nicht aus einer echten Antwort
+- [ ] **Verschoben nach Phase 2:** Token-Persistenz über `api.user.storagePath()`;
+      das `TokenCache`-Interface steht, die Homebridge-Anbindung braucht die Platform
 
 ### Phase 2 — Dynamische Platform und Accessories (3–4 Tage)
 

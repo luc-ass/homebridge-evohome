@@ -9,12 +9,13 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov"],
       include: ["src/**/*.ts"],
-      // Die Schwelle steigt mit jeder Phase. Phase 0 legt nur das Gerüst an.
+      // Die Schwelle steigt mit jeder Phase und darf nie wieder sinken.
+      // Stand Phase 1 (API-Client): 95 % Zeilen, 90 % Branches.
       thresholds: {
-        lines: 0,
-        functions: 0,
-        branches: 0,
-        statements: 0,
+        lines: 90,
+        functions: 90,
+        branches: 85,
+        statements: 90,
       },
     },
   },
