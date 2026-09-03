@@ -1,0 +1,21 @@
+# Lokale Testumgebung: Homebridge 2.x mit dem gebauten Plugin.
+#
+# Start:  npm run build && docker compose -f test-instance/docker-compose.yml up
+# Config UI X: http://localhost:8581 (admin/admin beim ersten Start)
+#
+# Das Repo wird schreibgeschützt unter /plugin eingehängt und per
+# HOMEBRIDGE_PACKAGES als lokales Plugin geladen — kein npm link nötig.
+services:
+  homebridge:
+    image: homebridge/homebridge:latest
+    container_name: evohome-test
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - TZ=Europe/Berlin
+      - HOMEBRIDGE_CONFIG_UI_PORT=8581
+      # Plugins, die nicht aus der npm-Registry stammen:
+      - HOMEBRIDGE_PACKAGES=/plugin
+    volumes:
+      - ./data:/homebridge
+      - ..:/plugin:ro

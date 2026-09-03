@@ -1,0 +1,22 @@
+{
+  "bridge": {
+    "name": "Evohome Test",
+    "username": "0E:11:22:33:44:55",
+    "port": 51826,
+    "pin": "031-45-154"
+  },
+  "platforms": [
+    {
+      "platform": "Evohome",
+      "name": "Evohome",
+      "username": "DEINE@EMAIL.TLD",
+      "password": "DEIN-PASSWORT",
+      "locationIndex": 0
+    },
+    {
+      "name": "Config",
+      "port": 8581,
+      "platform": "config"
+    }
+  ]
+}

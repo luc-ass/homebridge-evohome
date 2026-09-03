@@ -27,3 +27,10 @@ build/Release
 node_modules
 
 .DS_Store
+
+# Build-Artefakte
+dist
+*.tsbuildinfo
+
+# Lokale Testumgebung (enthält Zugangsdaten und Pairing-Daten)
+test-instance/data

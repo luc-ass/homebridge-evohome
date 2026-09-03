@@ -1,17 +1,45 @@
+name: Publish to npm
+
 on:
   release:
     types: [published]
+
+permissions:
+  contents: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
       - uses: actions/setup-node@v5
         with:
-          node-version: 12
-      - run: npm install
-      - run: npm test
-      - uses: JS-DevTools/npm-publish@v3
+          # Niedrigste unterstützte Version aus engines.node (Entscheidung F2).
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      - name: Lint, Typecheck, Test
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+      # Vorabversionen (1.0.0-beta.x) landen unter dem Tag "beta", damit
+      # `npm install homebridge-evohome` weiterhin die stabile Version zieht.
+      - name: Tag bestimmen
+        id: tag
+        run: |
+          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+            echo "value=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: JS-DevTools/npm-publish@v4
         with:
           token: ${{ secrets.NPM_TOKEN }}
+          tag: ${{ steps.tag.outputs.value }}

@@ -5,11 +5,11 @@
 ![Honeywell Evohome Controller](assets/honeywell_evohome.png)
 
 # Honeywell Evohome support for Homebridge
+
 ![npm](https://img.shields.io/npm/dt/homebridge-evohome?logo=npm)
 ![npm](https://img.shields.io/npm/dw/homebridge-evohome?logo=npm)
 ![npm](https://img.shields.io/npm/v/homebridge-evohome?logo=npm)
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
-
 
 </span>
 
@@ -20,10 +20,12 @@ Up until now this plugin will only add your Thermostats and central functions (f
 ## 🚀 Getting Started
 
 **Homebridge with [Config UI X](https://github.com/oznu/homebridge-config-ui-x):**
+
 1. Go to the "Plugins" tab and search for `homebridge-evohome`
 2. Install the plugin and fill out the setup form
 
 **Terminal / NPM:**
+
 1. Install this plugin using `npm install -g homebridge-evohome@latest`
 2. Update your configuration file ([sample-config below](https://github.com/luc-ass/homebridge-evohome#%EF%B8%8F-configuration))
 
@@ -44,22 +46,21 @@ Configuration sample:
     ]
 ```
 
-| Parameter          | optional | accepted values               | info |
-| :--                | :--      | :--                           | :-- |
-| `platform`         | no       | `Evohome`                       | |
-| `name`             | no       | *any Name you want*           | |
-| `username`         | no       | *your Honeywell email adress* | |
-| `password`         | no       | *your Honeywell password*     | |
-| `temperatureUnit`  | yes      | `Celsius`, `Fahrenheit`           | defaults to `Celsius` |
-| `locationIndex`    | yes      | `0`, `1`, `2`, etc.                 | only needed if you have multiple locations |
-| `switchAway`       | yes      | `true`,  `false`                   | creates a switch for away mode |
-| `switchDayOff`     | yes      | `true`,  `false`                   | creates a switch for day off mode |
-| `switchEco`        | yes      | `true`,  `false`                   | creates a switch for eco settings |
-| `switchHeatingOff` | yes      | `true`,  `false`                   | creates a switch to tur off the heating |
-| `switchCustom`     | yes      | `true`,  `false`                   | creates a switch for your custom mode |
-| `childBridge`     | yes      | `true`,  `false`                   | allows you to have persistent accessories, if plugin is run inside a child bridge |
-| `temperatureAboveAsOff`     | yes      | `true`,  `false`                   | allows you to displays thermostats as off, if room temperature is above target temperature |
-
+| Parameter               | optional | accepted values               | info                                                                                       |
+| :---------------------- | :------- | :---------------------------- | :----------------------------------------------------------------------------------------- |
+| `platform`              | no       | `Evohome`                     |                                                                                            |
+| `name`                  | no       | _any Name you want_           |                                                                                            |
+| `username`              | no       | _your Honeywell email adress_ |                                                                                            |
+| `password`              | no       | _your Honeywell password_     |                                                                                            |
+| `temperatureUnit`       | yes      | `Celsius`, `Fahrenheit`       | defaults to `Celsius`                                                                      |
+| `locationIndex`         | yes      | `0`, `1`, `2`, etc.           | only needed if you have multiple locations                                                 |
+| `switchAway`            | yes      | `true`, `false`               | creates a switch for away mode                                                             |
+| `switchDayOff`          | yes      | `true`, `false`               | creates a switch for day off mode                                                          |
+| `switchEco`             | yes      | `true`, `false`               | creates a switch for eco settings                                                          |
+| `switchHeatingOff`      | yes      | `true`, `false`               | creates a switch to tur off the heating                                                    |
+| `switchCustom`          | yes      | `true`, `false`               | creates a switch for your custom mode                                                      |
+| `childBridge`           | yes      | `true`, `false`               | allows you to have persistent accessories, if plugin is run inside a child bridge          |
+| `temperatureAboveAsOff` | yes      | `true`, `false`               | allows you to displays thermostats as off, if room temperature is above target temperature |
 
 ## 📝 Roadmap
 
@@ -100,4 +101,5 @@ cd homebridge-evohome
 # install plugin
 npm install
 ```
+
 Now restart Homebridge

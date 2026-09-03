@@ -7,17 +7,17 @@ Ist-Zustand: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## 1. Zielumgebung (verifiziert, nicht aus dem Gedächtnis)
 
-| | Wert | Quelle |
-| :-- | :-- | :-- |
-| Homebridge | 2.4.0 (latest) | `npm view homebridge` |
-| Node | `^22 \|\| ^24 \|\| ^26` | `homebridge@2.4.0` engines |
-| HAP | `@homebridge/hap-nodejs` 2.2.x | homebridge dependencies |
-| Modulsystem homebridge | **ESM** (`"type": "module"`) | `homebridge@2.4.0` package.json |
-| Plugin-Laden | `await import(pathToFileURL(main))` | `homebridge/dist/plugin.js:164` |
+|                        | Wert                                | Quelle                          |
+| :--------------------- | :---------------------------------- | :------------------------------ |
+| Homebridge             | 2.4.0 (latest)                      | `npm view homebridge`           |
+| Node                   | `^22 \|\| ^24 \|\| ^26`             | `homebridge@2.4.0` engines      |
+| HAP                    | `@homebridge/hap-nodejs` 2.2.x      | homebridge dependencies         |
+| Modulsystem homebridge | **ESM** (`"type": "module"`)        | `homebridge@2.4.0` package.json |
+| Plugin-Laden           | `await import(pathToFileURL(main))` | `homebridge/dist/plugin.js:164` |
 
 **Wichtig:** Homebridge selbst ist ESM, lädt Plugins aber per dynamischem `import()`.
 CommonJS-Plugins funktionieren dadurch weiterhin, solange sie nicht `require("homebridge")`
-aufrufen — was dieses Plugin nie tut. Ein Rewrite ist also *nicht* durch das Modulsystem
+aufrufen — was dieses Plugin nie tut. Ein Rewrite ist also _nicht_ durch das Modulsystem
 erzwungen; er ist aus anderen Gründen sinnvoll (Abschnitt 3).
 
 Die Static-Platform-API (`accessories(callback)` + `getServices()`) existiert in 2.4.0
@@ -28,17 +28,17 @@ die Ursache mehrerer Dauerprobleme und sollte trotzdem aufgegeben werden.
 
 Verifiziert gegen `@homebridge/hap-nodejs@2.2.3`:
 
-| # | Bruch | Fundstelle im Plugin | Wirkung |
-| :-- | :-- | :-- | :-- |
-| B1 | `Characteristic` ist eine ES-Klasse; `Characteristic.call(this, …)` + `util.inherits` ist unmöglich | `index.js:29–69` | **Absturz beim Start** — `TypeError: Class constructor Characteristic cannot be invoked without 'new'` (Issue #205) |
-| B2 | `Characteristic.Formats/Units/Perms` als Statics entfernt, nur noch `api.hap.Formats/Units/Perms` | `index.js:36–38, 51, 63` | `undefined`-Zugriff |
-| B3 | `Characteristic.getValue()` entfernt | `index.js:498, 504` | `TypeError` in jedem `periodicUpdate` |
-| B4 | Node-Floor 22 | `engines.node: ">=0.12.0"` | Warnung, falsche Signalisierung |
-| B5 | `engines.homebridge` muss `^2` einschließen, sonst kein „HB2-ready"-Badge in Config UI X | `engines.homebridge: ">=0.3.1"` | Sichtbarkeit/Vertrauen |
-| B6 | Strengere Wertevalidierung | 5 °C bei `minHeatSetpoint: 10`, `NaN` bei leerer Batterie | Issue #94, Warn-Spam |
-| B7 | `new Buffer(...)` | `index.js:1038` | Deprecation, in Node 22 laut |
-| B8 | `Accessory.setPrimaryService()` entfernt | Plugin nutzt `Service.setPrimaryService()` (`index.js:1277`) | **kein Problem**, korrekte Variante |
-| B9 | `BatteryService` entfernt | nicht genutzt | kein Problem |
+| #   | Bruch                                                                                               | Fundstelle im Plugin                                         | Wirkung                                                                                                             |
+| :-- | :-------------------------------------------------------------------------------------------------- | :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
+| B1  | `Characteristic` ist eine ES-Klasse; `Characteristic.call(this, …)` + `util.inherits` ist unmöglich | `index.js:29–69`                                             | **Absturz beim Start** — `TypeError: Class constructor Characteristic cannot be invoked without 'new'` (Issue #205) |
+| B2  | `Characteristic.Formats/Units/Perms` als Statics entfernt, nur noch `api.hap.Formats/Units/Perms`   | `index.js:36–38, 51, 63`                                     | `undefined`-Zugriff                                                                                                 |
+| B3  | `Characteristic.getValue()` entfernt                                                                | `index.js:498, 504`                                          | `TypeError` in jedem `periodicUpdate`                                                                               |
+| B4  | Node-Floor 22                                                                                       | `engines.node: ">=0.12.0"`                                   | Warnung, falsche Signalisierung                                                                                     |
+| B5  | `engines.homebridge` muss `^2` einschließen, sonst kein „HB2-ready"-Badge in Config UI X            | `engines.homebridge: ">=0.3.1"`                              | Sichtbarkeit/Vertrauen                                                                                              |
+| B6  | Strengere Wertevalidierung                                                                          | 5 °C bei `minHeatSetpoint: 10`, `NaN` bei leerer Batterie    | Issue #94, Warn-Spam                                                                                                |
+| B7  | `new Buffer(...)`                                                                                   | `index.js:1038`                                              | Deprecation, in Node 22 laut                                                                                        |
+| B8  | `Accessory.setPrimaryService()` entfernt                                                            | Plugin nutzt `Service.setPrimaryService()` (`index.js:1277`) | **kein Problem**, korrekte Variante                                                                                 |
+| B9  | `BatteryService` entfernt                                                                           | nicht genutzt                                                | kein Problem                                                                                                        |
 
 ## 3. Schwachstellen des Ist-Standes
 
@@ -46,7 +46,7 @@ Unabhängig von HB2 — diese Punkte bestimmen, ob sich ein Rewrite lohnt.
 
 ### 3.1 Architektur
 
-* **S1 — Static Platform ⇒ keine persistenten Accessories.**
+- **S1 — Static Platform ⇒ keine persistenten Accessories.**
   Accessories werden bei jedem Start neu erzeugt. Ändert sich die `uuid_base`, legt
   HomeKit neue Geräte an: Räume, Namen, Szenen und Automationen sind weg. Genau das
   steht als „Known Issue" im README (#61) und ist der Grund für den `childBridge`-Schalter.
@@ -54,48 +54,48 @@ Unabhängig von HB2 — diese Punkte bestimmen, ob sich ein Rewrite lohnt.
   Hinzufügen einer Zone bei Honeywell verschiebt alle IDs.
   → Lösung: `DynamicPlatformPlugin` mit `configureAccessory()` + stabiler UUID aus `zoneId`.
 
-* **S2 — `childBridge`-Config ist ein Workaround für fehlende Fehlerbehandlung.**
+- **S2 — `childBridge`-Config ist ein Workaround für fehlende Fehlerbehandlung.**
   Der Schalter unterdrückt lediglich `callback([])` im Fehlerfall. Mit einer dynamischen
   Platform entfällt er ersatzlos.
 
-* **S3 — Callback-Pyramide.** `accessories()` und `periodicUpdate()` sind bis zu zehn
+- **S3 — Callback-Pyramide.** `accessories()` und `periodicUpdate()` sind bis zu zehn
   Ebenen tief verschachtelt (`index.js:106–360`, `385–677`), mit `.bind(this)`,
   `that`-Aliasen und teils widersprüchlichem `this`. Praktisch nicht erweiterbar.
 
 ### 3.2 Konkrete Bugs (im Code verifiziert)
 
-| ID | Fundstelle | Defekt |
-| :-- | :-- | :-- |
-| **S4** | `index.js:982` | `if ((this.model = "HeatingZone"))` — **Zuweisung statt Vergleich**. Setzt bei jedem `getTargetTemperature` das Modell jedes Accessories auf `"HeatingZone"`, überschreibt also auch `RoundWireless`/`RoundModulation`/`domesticHotWater`. Die `else`-Zweige an `:840`, `:947`, `:1016` werden dadurch faktisch nie erreicht. |
-| **S5** | `index.js:390 vs. 677` | `this.updating = true` steht im Kopf von `periodicUpdate`, `this.updating = false` **synchron am Ende der Funktion** — also lange bevor die Promise-Kette fertig ist. Das Reentrancy-Guard wirkt nicht; Updates können sich überlappen und stapeln. Heißer Kandidat für Issue #172 (CPU-Anstieg). |
-| **S6** | `index.js:90 vs. 956` | `temperatureAboveAsOff` wird auf der Platform gesetzt, aber nie an das Accessory übergeben. `that.temperatureAboveAsOff` ist immer `undefined` — **das Feature ist wirkungslos**, obwohl es in Config-Schema und README dokumentiert ist. |
-| **S7** | `index.js:1164, 1168–1187` | `EvohomeDhwAccessory.periodicCheckStatus` wird per `setInterval` ohne Argument aufgerufen, ruft im Fehlerfall aber `callback(err)` → `TypeError: callback is not a function`. Erklärt das „Failed to load Hot Water"-Dauerfeuer im Log (Kommentar zu #205). |
-| **S8** | `lib/evohome.js:138` | `getHotWater` baut `new DHW(json)` ohne Prüfung. Liefert die API einen Fehlerkörper, ist `json.temperatureStatus` `undefined` → `Cannot read properties of undefined (reading 'temperature')`. |
-| **S9** | `index.js:730–800` | `getNextScheduledTime()`: `proceed` wird zwischen den Wochentagen nicht zurückgesetzt, verglichen wird per lokalisiertem `toLocaleTimeString()`-String, und über Mitternacht fällt alles auf `"00:00:00"` zurück. Daher die README-Warnung zur Zeitzone. |
-| **S10** | `lib/evohome.js:21–33` | `sessionCredentials` speichert Benutzername + **Passwort im Klartext** in einer Modul-globalen Map, keyed auf das Bearer-Token. Die Map wird **nirgends gelesen** und nie geleert. Ersatzlos löschen. |
-| **S11** | `index.js:322, 326, 724, 1164` | `setInterval`-Handles werden nie gespeichert oder mit `clearInterval` abgeräumt. Bei N Zonen laufen N Timer à 5 s dauerhaft. |
-| **S12** | `lib/evohome.js:288–320` | Der Token-Refresh läuft per `setInterval` mit dem *initialen* `expires_in`. Schlägt ein Refresh fehl, gibt es keinen Retry und keinen Re-Login — das Plugin ist bis zum Neustart tot (Issue #136). |
-| **S13** | `index.js:130–135` | `getThermostats()` und `getSystemModeStatus()` rufen **denselben** Endpunkt auf. Jeder Poll macht drei Requests, wo einer reicht. |
+| ID      | Fundstelle                     | Defekt                                                                                                                                                                                                                                                                                                                        |
+| :------ | :----------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **S4**  | `index.js:982`                 | `if ((this.model = "HeatingZone"))` — **Zuweisung statt Vergleich**. Setzt bei jedem `getTargetTemperature` das Modell jedes Accessories auf `"HeatingZone"`, überschreibt also auch `RoundWireless`/`RoundModulation`/`domesticHotWater`. Die `else`-Zweige an `:840`, `:947`, `:1016` werden dadurch faktisch nie erreicht. |
+| **S5**  | `index.js:390 vs. 677`         | `this.updating = true` steht im Kopf von `periodicUpdate`, `this.updating = false` **synchron am Ende der Funktion** — also lange bevor die Promise-Kette fertig ist. Das Reentrancy-Guard wirkt nicht; Updates können sich überlappen und stapeln. Heißer Kandidat für Issue #172 (CPU-Anstieg).                             |
+| **S6**  | `index.js:90 vs. 956`          | `temperatureAboveAsOff` wird auf der Platform gesetzt, aber nie an das Accessory übergeben. `that.temperatureAboveAsOff` ist immer `undefined` — **das Feature ist wirkungslos**, obwohl es in Config-Schema und README dokumentiert ist.                                                                                     |
+| **S7**  | `index.js:1164, 1168–1187`     | `EvohomeDhwAccessory.periodicCheckStatus` wird per `setInterval` ohne Argument aufgerufen, ruft im Fehlerfall aber `callback(err)` → `TypeError: callback is not a function`. Erklärt das „Failed to load Hot Water"-Dauerfeuer im Log (Kommentar zu #205).                                                                   |
+| **S8**  | `lib/evohome.js:138`           | `getHotWater` baut `new DHW(json)` ohne Prüfung. Liefert die API einen Fehlerkörper, ist `json.temperatureStatus` `undefined` → `Cannot read properties of undefined (reading 'temperature')`.                                                                                                                                |
+| **S9**  | `index.js:730–800`             | `getNextScheduledTime()`: `proceed` wird zwischen den Wochentagen nicht zurückgesetzt, verglichen wird per lokalisiertem `toLocaleTimeString()`-String, und über Mitternacht fällt alles auf `"00:00:00"` zurück. Daher die README-Warnung zur Zeitzone.                                                                      |
+| **S10** | `lib/evohome.js:21–33`         | `sessionCredentials` speichert Benutzername + **Passwort im Klartext** in einer Modul-globalen Map, keyed auf das Bearer-Token. Die Map wird **nirgends gelesen** und nie geleert. Ersatzlos löschen.                                                                                                                         |
+| **S11** | `index.js:322, 326, 724, 1164` | `setInterval`-Handles werden nie gespeichert oder mit `clearInterval` abgeräumt. Bei N Zonen laufen N Timer à 5 s dauerhaft.                                                                                                                                                                                                  |
+| **S12** | `lib/evohome.js:288–320`       | Der Token-Refresh läuft per `setInterval` mit dem _initialen_ `expires_in`. Schlägt ein Refresh fehl, gibt es keinen Retry und keinen Re-Login — das Plugin ist bis zum Neustart tot (Issue #136).                                                                                                                            |
+| **S13** | `index.js:130–135`             | `getThermostats()` und `getSystemModeStatus()` rufen **denselben** Endpunkt auf. Jeder Poll macht drei Requests, wo einer reicht.                                                                                                                                                                                             |
 
 ### 3.3 Abhängigkeiten und Sicherheit
 
-* **S14** — `request` ist seit 2020 deprecated und unmaintained, `q` ebenfalls deprecated.
+- **S14** — `request` ist seit 2020 deprecated und unmaintained, `q` ebenfalls deprecated.
   Node 22 hat globales `fetch`; beide können ersatzlos entfallen. `lodash` (5 × `_.map`)
   und `moment` (3 × `.unix()`) ebenso.
-* **S15** — `fakegato-history` zieht `googleapis` (~100 MB) und `debug@^2` nach. Der
+- **S15** — `fakegato-history` zieht `googleapis` (~100 MB) und `debug@^2` nach. Der
   `googleapis`-Import ist genau die Fehlerquelle in Issue #166 (Hoobs). Der
   Google-Drive-Pfad wird von diesem Plugin nie benutzt (`storage: "fs"`).
-* **S16** — Keine `package-lock.json`, alle Runtime-Deps als offene Ranges (`>=`).
+- **S16** — Keine `package-lock.json`, alle Runtime-Deps als offene Ranges (`>=`).
   Ein kaputtes Transitiv-Update trifft alle Nutzer sofort.
 
 ### 3.4 Qualitätssicherung
 
-* **S17** — `.eslintrc` konfiguriert `@typescript-eslint` und `eslint-plugin-jest`; beide
+- **S17** — `.eslintrc` konfiguriert `@typescript-eslint` und `eslint-plugin-jest`; beide
   sind nicht installiert, es gibt keine `.ts`-Dateien und kein `lint`-Script. Die Config
   läuft nie.
-* **S18** — `npm-publish.yml` nutzt **Node 12** und ruft `npm test`, obwohl kein
+- **S18** — `npm-publish.yml` nutzt **Node 12** und ruft `npm test`, obwohl kein
   `test`-Script existiert. Der Release-Workflow ist in diesem Zustand nicht belastbar.
-* **S19** — Null Tests. Es gibt keine Möglichkeit, eine Verhaltensänderung ohne echtes
+- **S19** — Null Tests. Es gibt keine Möglichkeit, eine Verhaltensänderung ohne echtes
   Evohome-System zu prüfen — der Hauptgrund, warum sich Beiträge hier so zäh anfühlen.
 
 ## 4. Zielarchitektur
@@ -161,19 +161,27 @@ kaputt, bis 1.0.0 fertig ist (#205 seit Mai 2026 offen). Gegenmaßnahme: früh u
 verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
 
 ### Phase 0 — Fundament und Toolchain (1,5 Tage)
+
 - [x] Branch `homebridge-v2`
 - [x] Bestandsaufnahme und Plan
-- [ ] TypeScript strict, `tsconfig.json`, Build nach `dist/`, `"type": "module"`
-- [ ] ESLint 9 Flat Config mit `typescript-eslint` (ersetzt die tote `.eslintrc`) — S17
-- [ ] Vitest + `npm scripts`: `build`, `lint`, `test`, `watch`
-- [ ] CI-Workflow: Matrix Node 22/24/26, `lint` + `build` + `test` bei jedem PR — S19
-- [ ] `npm-publish.yml`: Node 22 statt 12, `npm ci`, Build vor Publish — S18
-- [ ] `package.json`: `files: ["dist", "config.schema.json", "assets"]`,
-      `engines: {"node": "^22 || ^24 || ^26", "homebridge": "^2.0.0"}` (F2) — B4/B5
-- [ ] `package-lock.json` committen, Deps auf `^` pinnen — S16
-- [ ] Testinstanz: Homebridge 2.4.0 + Node 22 im Container gegen ein echtes Konto
+- [x] TypeScript strict, `tsconfig.json`, Build nach `dist/`, `"type": "module"`
+- [x] ESLint 9 Flat Config mit `typescript-eslint` (ersetzt die tote `.eslintrc`) — S17
+- [x] Vitest + `npm scripts`: `build`, `lint`, `test`, `watch`, `check`
+- [x] CI-Workflow: Matrix Node 22/24/26, `lint` + `typecheck` + `test` + `build` — S19
+- [x] `npm-publish.yml`: Node 22 statt 12, `npm ci`, `npm run check`, Build vor
+      Publish, Prereleases automatisch unter dem npm-Tag `beta` — S18
+- [x] `package.json`: `files`, `engines` (F2), keine Laufzeitabhängigkeiten mehr — B4/B5
+- [x] `package-lock.json` committen — S16
+- [x] Altcode nach `legacy/*.cjs` verschoben (nötig wegen `"type": "module"`),
+      von Build, Lint und `files` ausgeschlossen
+- [x] Platform-Gerüst: `EvohomePlatform implements DynamicPlatformPlugin` mit
+      `configureAccessory()` — lädt unter Homebridge 2.x, legt noch keine Accessories an
+- [x] Testinstanz vorbereitet: `test-instance/docker-compose.yml` + `docs/TESTING.md`
+- [ ] **Offen:** Testinstanz einmal gegen ein echtes Honeywell-Konto starten
+      (braucht Zugangsdaten, siehe docs/TESTING.md Abschnitt 2)
 
 ### Phase 1 — API-Client (2–3 Tage)
+
 - [ ] `api/types.ts` aus echten Responses ableiten, Fixtures in `test/fixtures/` ablegen
 - [ ] `EvohomeClient` auf `fetch` + `AbortSignal.timeout` — `request`/`q`/`lodash`/`moment` raus (S14)
 - [ ] Response-Validierung an jeder Grenze, typisierte Fehler statt `TypeError` — S8
@@ -185,6 +193,7 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
 - [ ] Unit-Tests gegen Fixtures, inkl. HTTP 401/429/5xx, leerem Body und Timeout
 
 ### Phase 2 — Dynamische Platform und Accessories (3–4 Tage)
+
 - [ ] `EvohomePlatform implements DynamicPlatformPlugin`, `configureAccessory()`,
       `didFinishLaunching` → discovery, `unregisterPlatformAccessories` für verschwundene Zonen — S1
 - [ ] Stabile UUIDs aus `zoneId` / `dhwId` / `systemId+mode`
@@ -199,10 +208,11 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
 - [ ] `childBridge`-Option entfernen — S2
 
 ### Phase 3 — Verhalten und offene Issues (2–3 Tage)
+
 - [ ] `setpointMode`-Option: `untilNextSwitchpoint` (Default) | `permanent` |
       `keepExistingUntil` — #149
 - [ ] Off-Zustand über `TargetHeatingCoolingState` abbilden statt über 5 °C — #94
-- [ ] DHW-Set-Pfad antwortet in *allen* Zweigen — #180
+- [ ] DHW-Set-Pfad antwortet in _allen_ Zweigen — #180
 - [ ] `temperatureAboveAsOff` tatsächlich am Handler auswerten — S6
 - [ ] Modell-Erkennung sauber typisiert (`HeatingZone` | `RoundWireless` |
       `RoundModulation` | `domesticHotWater`) — S4
@@ -210,12 +220,14 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
 - [ ] Adressierung per `locationId` zusätzlich zu `locationIndex` — F5
 
 ### Phase 4 — Optionale Eve-History (0,5–1 Tag)
+
 - [ ] `fakegato-history` nach `optionalDependencies`, Option `history` (Default `true`) — F3
 - [ ] Dynamischer Import mit Fallback: fehlt das Modul, läuft alles ohne History weiter
 - [ ] Auswirkung auf #166 (Hoobs/`googleapis`) im README dokumentieren
 - [ ] Echte DHW-Zieltemperatur statt der hartkodierten `60`
 
 ### Phase 5 — Config, Doku, Release 1.0.0 (1–1,5 Tage)
+
 - [ ] `config.schema.json` v2: neue Optionen, `childBridge` raus, Migrationshinweis im Header
 - [ ] Sanfte Config-Migration: alte Keys werden gelesen, gewarnt, übersetzt
 - [ ] README neu: Anforderungen (HB 2.x, Node 22+), Migration, bekannte Einschränkungen
@@ -233,42 +245,42 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
 Da der alte Code nicht mehr gepatcht wird, muss jeder Befund aus Abschnitt 2 und 3 im
 neuen Code belegt sein. Zielzustand ist jeweils ein Test oder ein bewusster Verzicht.
 
-| Befund | Adressiert in | Nachweis |
-| :-- | :-- | :-- |
-| B1, B2, B7 | Phase 2 | Plugin startet unter HB 2.4.0 ohne `TypeError` |
-| B3 | Phase 2 | kein `getValue()` mehr im Code (Lint-Regel) |
-| B4, B5 | Phase 0 | `engines` korrekt, HB2-Badge in Config UI X |
-| B6 | Phase 2 + 3 | Unit-Test: Setpoint unter `minHeatSetpoint`, `NaN`-Eingabe |
-| S1, S2 | Phase 2 | Neustart-Test: Raumzuordnung bleibt erhalten |
-| S3 | Phase 1 + 2 | `async`/`await`, max. 3 Verschachtelungsebenen (Lint) |
-| S4 | Phase 3 | Typisierte Modell-Enum, kein `=` in Bedingungen (Lint `no-cond-assign`) |
-| S5, S11, S13 | Phase 2 | ein Timer, ein Request pro Zyklus; Test auf überlappende Polls |
-| S6 | Phase 3 | Unit-Test für `temperatureAboveAsOff` |
-| S7, S8 | Phase 1 + 2 | Fixture mit Fehlerkörper führt zu geloggtem Fehler, nicht zum Crash |
-| S9 | Phase 1 | Tests über Tageswechsel, DST-Umstellung, Zeitzonen ≠ Systemzeit |
-| S10 | Phase 1 | keine Klartext-Credentials außerhalb des `TokenStore` |
-| S12 | Phase 1 | Test: Refresh schlägt fehl → Backoff → Re-Login |
-| S14, S15, S16 | Phase 0 + 4 | `npm ls` ohne deprecated Pakete, Lockfile vorhanden |
-| S17, S18, S19 | Phase 0 | CI grün auf Node 22/24/26 |
+| Befund        | Adressiert in | Nachweis                                                                |
+| :------------ | :------------ | :---------------------------------------------------------------------- |
+| B1, B2, B7    | Phase 2       | Plugin startet unter HB 2.4.0 ohne `TypeError`                          |
+| B3            | Phase 2       | kein `getValue()` mehr im Code (Lint-Regel)                             |
+| B4, B5        | Phase 0       | `engines` korrekt, HB2-Badge in Config UI X                             |
+| B6            | Phase 2 + 3   | Unit-Test: Setpoint unter `minHeatSetpoint`, `NaN`-Eingabe              |
+| S1, S2        | Phase 2       | Neustart-Test: Raumzuordnung bleibt erhalten                            |
+| S3            | Phase 1 + 2   | `async`/`await`, max. 3 Verschachtelungsebenen (Lint)                   |
+| S4            | Phase 3       | Typisierte Modell-Enum, kein `=` in Bedingungen (Lint `no-cond-assign`) |
+| S5, S11, S13  | Phase 2       | ein Timer, ein Request pro Zyklus; Test auf überlappende Polls          |
+| S6            | Phase 3       | Unit-Test für `temperatureAboveAsOff`                                   |
+| S7, S8        | Phase 1 + 2   | Fixture mit Fehlerkörper führt zu geloggtem Fehler, nicht zum Crash     |
+| S9            | Phase 1       | Tests über Tageswechsel, DST-Umstellung, Zeitzonen ≠ Systemzeit         |
+| S10           | Phase 1       | keine Klartext-Credentials außerhalb des `TokenStore`                   |
+| S12           | Phase 1       | Test: Refresh schlägt fehl → Backoff → Re-Login                         |
+| S14, S15, S16 | Phase 0 + 4   | `npm ls` ohne deprecated Pakete, Lockfile vorhanden                     |
+| S17, S18, S19 | Phase 0       | CI grün auf Node 22/24/26                                               |
 
 ## 6. Zuordnung offener Issues
 
 Phasennummern beziehen sich auf den Plan in Abschnitt 5.
 
-| Issue | Titel | Bewertung | Phase |
-| :-- | :-- | :-- | :-- |
-| **#205** | `Class constructor Characteristic cannot be invoked without 'new'` unter HB2 | **Der Blocker.** Ursache B1/B2/B3. PR #207 löst B1/B2 im Altcode; im Rewrite wird das in `characteristics/eve.ts` neu umgesetzt. Die DHW-Fehlermeldung im selben Thread ist S7/S8. | 2 |
-| **#208** | „Out of compliance" beim Pairing | Kein Beleg für Plugin-Ursache; typische Auslöser sind ungültige Characteristic-Werte oder Service-Limits. B6 ist ein plausibler Kandidat und wird ohnehin behoben. Nach der Beta mit dem Melder erneut prüfen, sonst an Homebridge verweisen. | 2, dann beobachten |
-| **#172** | Steigende CPU-Last auf dem Pi | Sehr wahrscheinlich S5 (wirkungsloses `updating`-Guard) plus S11 (N Timer). Der `PollingCoordinator` löst beides strukturell. | 2 |
-| **#94** | „Target Temperature: illegal value" | B6: 5 °C als Off-Wert bei `minHeatSetpoint: 10`, zusätzlich `NaN` bei leerer Batterie. Werte klemmen, Off über `TargetHeatingCoolingState`. | 2 + 3 |
-| **#136** | Automatischer Retry bei fehlgeschlagenem Login | S12. `TokenStore` mit Backoff. | 1 |
-| **#149** | Temperaturänderung überschreibt aktiven Override | Bestätigt durch Code: es wird immer `TemporaryOverride` bis zum nächsten Switchpoint erzwungen. Die API kann auch `PermanentOverride` und `FollowSchedule`. → Option `setpointMode`. Deckt auch @DenyTsjapanovs Wunsch nach permanenten Sollwerten ab. | 3 |
-| **#146** | Änderungen der Ist-Temperatur wieder loggen | Option `logTemperatureChanges`, Vorlage PR #204. | 3 |
-| **#180** | Warmwasser-Szene schlägt fehl (Controller for HomeKit) | „Error Action Set Failed" nach ~15 s = HomeKit-Timeout. Ursache: `setHotWaterStatus` ruft den `callback` im Erfolgsfall **nie** auf (`index.js:1198–1265`). Mit `onSet` strukturell erledigt. | 2 + 3 |
-| **#130** | Thermostate erscheinen als Feuchtigkeitssensoren | Home-App-Verhalten: `Service.Thermostat` deklariert `CurrentRelativeHumidity` als optional. Mit Entscheidung **F4** bleibt es dabei → als bekannte Einschränkung dokumentieren, Issue mit Erklärung schließen. | 5 (Doku) |
-| **#166** | Hoobs-Plugin startet nicht | Fehler stammt aus `googleapis` unter `fakegato-history` (S15), nicht aus dem Plugin-Code. Löst sich, sobald FakeGato optional ist (F3). | 4 |
-| **#83** | Evohome-Security (Total Connect 2.0E) | Anderes Backend, anderes Produkt. Nicht Teil dieser Migration; als eigenes Plugin abgrenzen. | out of scope |
-| **#54** | Schedule-Support in FakeGato | Hängt an der History-Entscheidung. Sinnvoll erst nach Phase 4, und nur wenn `history` aktiv ist. | nach 4 |
+| Issue    | Titel                                                                        | Bewertung                                                                                                                                                                                                                                              | Phase              |
+| :------- | :--------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------- |
+| **#205** | `Class constructor Characteristic cannot be invoked without 'new'` unter HB2 | **Der Blocker.** Ursache B1/B2/B3. PR #207 löst B1/B2 im Altcode; im Rewrite wird das in `characteristics/eve.ts` neu umgesetzt. Die DHW-Fehlermeldung im selben Thread ist S7/S8.                                                                     | 2                  |
+| **#208** | „Out of compliance" beim Pairing                                             | Kein Beleg für Plugin-Ursache; typische Auslöser sind ungültige Characteristic-Werte oder Service-Limits. B6 ist ein plausibler Kandidat und wird ohnehin behoben. Nach der Beta mit dem Melder erneut prüfen, sonst an Homebridge verweisen.          | 2, dann beobachten |
+| **#172** | Steigende CPU-Last auf dem Pi                                                | Sehr wahrscheinlich S5 (wirkungsloses `updating`-Guard) plus S11 (N Timer). Der `PollingCoordinator` löst beides strukturell.                                                                                                                          | 2                  |
+| **#94**  | „Target Temperature: illegal value"                                          | B6: 5 °C als Off-Wert bei `minHeatSetpoint: 10`, zusätzlich `NaN` bei leerer Batterie. Werte klemmen, Off über `TargetHeatingCoolingState`.                                                                                                            | 2 + 3              |
+| **#136** | Automatischer Retry bei fehlgeschlagenem Login                               | S12. `TokenStore` mit Backoff.                                                                                                                                                                                                                         | 1                  |
+| **#149** | Temperaturänderung überschreibt aktiven Override                             | Bestätigt durch Code: es wird immer `TemporaryOverride` bis zum nächsten Switchpoint erzwungen. Die API kann auch `PermanentOverride` und `FollowSchedule`. → Option `setpointMode`. Deckt auch @DenyTsjapanovs Wunsch nach permanenten Sollwerten ab. | 3                  |
+| **#146** | Änderungen der Ist-Temperatur wieder loggen                                  | Option `logTemperatureChanges`, Vorlage PR #204.                                                                                                                                                                                                       | 3                  |
+| **#180** | Warmwasser-Szene schlägt fehl (Controller for HomeKit)                       | „Error Action Set Failed" nach ~15 s = HomeKit-Timeout. Ursache: `setHotWaterStatus` ruft den `callback` im Erfolgsfall **nie** auf (`index.js:1198–1265`). Mit `onSet` strukturell erledigt.                                                          | 2 + 3              |
+| **#130** | Thermostate erscheinen als Feuchtigkeitssensoren                             | Home-App-Verhalten: `Service.Thermostat` deklariert `CurrentRelativeHumidity` als optional. Mit Entscheidung **F4** bleibt es dabei → als bekannte Einschränkung dokumentieren, Issue mit Erklärung schließen.                                         | 5 (Doku)           |
+| **#166** | Hoobs-Plugin startet nicht                                                   | Fehler stammt aus `googleapis` unter `fakegato-history` (S15), nicht aus dem Plugin-Code. Löst sich, sobald FakeGato optional ist (F3).                                                                                                                | 4                  |
+| **#83**  | Evohome-Security (Total Connect 2.0E)                                        | Anderes Backend, anderes Produkt. Nicht Teil dieser Migration; als eigenes Plugin abgrenzen.                                                                                                                                                           | out of scope       |
+| **#54**  | Schedule-Support in FakeGato                                                 | Hängt an der History-Entscheidung. Sinnvoll erst nach Phase 4, und nur wenn `history` aktiv ist.                                                                                                                                                       | nach 4             |
 
 Nicht aus Issues, aber aus dem Code: **#61** (Accessories verlieren Raumzuordnung) ist
 S1 und wird durch Phase 2 strukturell erledigt.
@@ -293,22 +305,22 @@ Was Nutzer beim Update tun müssen, gehört so in den CHANGELOG und ins README:
 
 ## 8. Risiken
 
-| Risiko | Wirkung | Gegenmaßnahme |
-| :-- | :-- | :-- |
-| **Kein Zwischen-Release** (Folge von F1) | HB2-Nutzer bleiben bis 1.0.0 blockiert (#205 seit Mai 2026) | Früh Betas aus diesem Branch veröffentlichen (`--tag beta`) und in #205 verlinken; Phasen 0–2 priorisieren, denn danach ist das Plugin bereits lauffähig |
-| Kein Testsystem für alle Gerätetypen (DHW, RoundWireless, RoundModulation, UFH) | Regressionen bei Nutzern, die der Maintainer nicht reproduzieren kann | Fixtures aus echten Responses; in #205 haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten |
-| Undokumentierte TCC-EMEA-API kann sich ändern | Plugin bricht ohne Vorwarnung (wie beim Domain-Wechsel `honeywell.com` → `resideo.com`) | API-Zugriff isolieren; Basis-URL und Endpunkte konfigurierbar halten |
-| Rate-Limiting bei aggressiverem Retry | Konto temporär gesperrt | Exponentieller Backoff mit Cap, Mindest-Poll-Intervall im Schema erzwingen |
-| Maintainer-Kapazität (siehe Kommentar in #172) | Rewrite bleibt liegen | Phasen sind einzeln abschließbar; nach Phase 2 existiert ein lauffähiges Plugin, das als Beta nutzbar ist |
+| Risiko                                                                          | Wirkung                                                                                 | Gegenmaßnahme                                                                                                                                            |
+| :------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Kein Zwischen-Release** (Folge von F1)                                        | HB2-Nutzer bleiben bis 1.0.0 blockiert (#205 seit Mai 2026)                             | Früh Betas aus diesem Branch veröffentlichen (`--tag beta`) und in #205 verlinken; Phasen 0–2 priorisieren, denn danach ist das Plugin bereits lauffähig |
+| Kein Testsystem für alle Gerätetypen (DHW, RoundWireless, RoundModulation, UFH) | Regressionen bei Nutzern, die der Maintainer nicht reproduzieren kann                   | Fixtures aus echten Responses; in #205 haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten                                                        |
+| Undokumentierte TCC-EMEA-API kann sich ändern                                   | Plugin bricht ohne Vorwarnung (wie beim Domain-Wechsel `honeywell.com` → `resideo.com`) | API-Zugriff isolieren; Basis-URL und Endpunkte konfigurierbar halten                                                                                     |
+| Rate-Limiting bei aggressiverem Retry                                           | Konto temporär gesperrt                                                                 | Exponentieller Backoff mit Cap, Mindest-Poll-Intervall im Schema erzwingen                                                                               |
+| Maintainer-Kapazität (siehe Kommentar in #172)                                  | Rewrite bleibt liegen                                                                   | Phasen sind einzeln abschließbar; nach Phase 2 existiert ein lauffähiges Plugin, das als Beta nutzbar ist                                                |
 
 ## 9. Getroffene Entscheidungen
 
 Alle am 2026-09-03 entschieden.
 
-| | Frage | Entscheidung | Auswirkung |
-| :-- | :-- | :-- | :-- |
-| **F1** | Hotfix 0.12.0 zuerst oder direkt 1.0.0? | **direkt 1.0.0** | Kein Zwischen-Release; Altcode wird nicht mehr gepatcht. PRs #207/#204 dienen als Vorlage, werden nicht gemerged. Prüfliste 5.1 sichert die Befunde ab. Betas als Ausgleich. |
-| **F2** | Node-Floor? | **`^22 \|\| ^24 \|\| ^26`** — identisch zu Homebridge 2.4.0 | Kein Support für Homebridge 1.x nötig, `engines.homebridge: "^2.0.0"`. Erlaubt `fetch`, `AbortSignal.timeout` und moderne Syntax ohne Polyfills. |
-| **F3** | FakeGato behalten, ersetzen oder optional? | **optional** | `optionalDependencies` + Option `history` (Default `true`), dynamischer Import mit Fallback. Entschärft #166 und die `googleapis`-Last. |
-| **F4** | `Thermostat` oder `HeaterCooler`? | **`Thermostat`** | #130 (Feuchtigkeits-Kachel) wird als Home-App-Verhalten dokumentiert und das Issue geschlossen. Keine Änderung am Service-Typ. |
-| **F5** | Mehrere Locations in einer Instanz? | **Filter beibehalten** | Mehrere Systeme pro Account sind in der Regel verschiedene Haushalte. `singular: false` und `locationIndex` bleiben; zusätzlich wird `locationId` als stabilere Adressierung unterstützt. |
+|        | Frage                                      | Entscheidung                                                | Auswirkung                                                                                                                                                                                |
+| :----- | :----------------------------------------- | :---------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **F1** | Hotfix 0.12.0 zuerst oder direkt 1.0.0?    | **direkt 1.0.0**                                            | Kein Zwischen-Release; Altcode wird nicht mehr gepatcht. PRs #207/#204 dienen als Vorlage, werden nicht gemerged. Prüfliste 5.1 sichert die Befunde ab. Betas als Ausgleich.              |
+| **F2** | Node-Floor?                                | **`^22 \|\| ^24 \|\| ^26`** — identisch zu Homebridge 2.4.0 | Kein Support für Homebridge 1.x nötig, `engines.homebridge: "^2.0.0"`. Erlaubt `fetch`, `AbortSignal.timeout` und moderne Syntax ohne Polyfills.                                          |
+| **F3** | FakeGato behalten, ersetzen oder optional? | **optional**                                                | `optionalDependencies` + Option `history` (Default `true`), dynamischer Import mit Fallback. Entschärft #166 und die `googleapis`-Last.                                                   |
+| **F4** | `Thermostat` oder `HeaterCooler`?          | **`Thermostat`**                                            | #130 (Feuchtigkeits-Kachel) wird als Home-App-Verhalten dokumentiert und das Issue geschlossen. Keine Änderung am Service-Typ.                                                            |
+| **F5** | Mehrere Locations in einer Instanz?        | **Filter beibehalten**                                      | Mehrere Systeme pro Account sind in der Regel verschiedene Haushalte. `singular: false` und `locationIndex` bleiben; zusätzlich wird `locationId` als stabilere Adressierung unterstützt. |
