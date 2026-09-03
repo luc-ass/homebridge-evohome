@@ -44,7 +44,9 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "check": "npm run lint && npm run typecheck && npm run test",
-    "prepublishOnly": "npm run check && npm run build"
+    "prepublishOnly": "npm run check && npm run build",
+    "dev": "npm run build && homebridge -U ./test-instance/data -P . --strict-plugin-resolution -I",
+    "dev:debug": "npm run build && homebridge -U ./test-instance/data -P . --strict-plugin-resolution -I -D"
   },
   "optionalDependencies": {
     "fakegato-history": "^0.6.7"

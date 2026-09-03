@@ -27,26 +27,61 @@ absichern — siehe Kommentare in `eslint.config.js` und die Prüfliste in
 
 ## 2. Lokale Homebridge-2-Instanz
 
-Braucht Docker. Läuft gegen ein echtes Honeywell-Konto — deshalb liegt die `config.json`
-nicht im Repo (`.gitignore`).
+Homebridge 2.4.0 liegt als devDependency im Repo — es braucht weder eine globale
+Installation noch Docker.
 
 ```sh
+mkdir -p test-instance/data
 cp test-instance/config.example.json test-instance/data/config.json
 $EDITOR test-instance/data/config.json      # Zugangsdaten eintragen
-npm run build
-docker compose -f test-instance/docker-compose.yml up
+npm run dev                                 # baut und startet Homebridge
 ```
 
-Config UI X läuft danach auf <http://localhost:8581>. Das Repo wird schreibgeschützt
-unter `/plugin` eingehängt und über `HOMEBRIDGE_PACKAGES` als lokales Plugin geladen —
-kein `npm link` nötig. Nach Codeänderungen genügt `npm run build` plus ein Neustart des
-Containers.
+`npm run dev` entspricht:
 
-**Was in Phase 0 zu sehen sein soll:** Homebridge lädt das Plugin ohne Fehler und loggt
-`Phase-0-Gerüst geladen — es werden noch keine Accessories angelegt.` Damit ist belegt,
-dass das ESM-Build unter Homebridge 2.x geladen wird — genau der Punkt, an dem 0.11.2
-mit `TypeError: Class constructor Characteristic cannot be invoked without 'new'`
+```sh
+npm run build && homebridge -U ./test-instance/data -P . --strict-plugin-resolution -I
+```
+
+| Flag                         | Bedeutung                                                                                                                                                  |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-U ./test-instance/data`    | Storage-Pfad: Config, Pairing-Daten und Accessory-Cache landen dort (gitignored, enthält Zugangsdaten)                                                     |
+| `-P .`                       | lädt das Plugin aus dem Repo-Wurzelverzeichnis; Homebridge erkennt am `package.json`, dass der Pfad selbst ein Plugin ist                                  |
+| `--strict-plugin-resolution` | lädt **nur** aus `-P`, nicht zusätzlich aus den globalen `node_modules` — sonst mischen sich lokal installierte Fremd-Plugins samt ihrer Fehler in den Log |
+| `-I`                         | Insecure Mode, erlaubt Zugriff über Config UI X                                                                                                            |
+
+`npm run dev:debug` ergänzt `-D` für die `log.debug`-Ausgaben.
+
+**Was in Phase 0 zu sehen sein soll:**
+
+```
+[Evohome] Initializing Evohome platform...
+[Evohome] Phase-0-Gerüst geladen — es werden noch keine Accessories angelegt.
+```
+
+Damit ist belegt, dass das ESM-Build unter Homebridge 2.x geladen und die Platform
+registriert wird — genau der Punkt, an dem 0.11.2 mit
+`TypeError: Class constructor Characteristic cannot be invoked without 'new'`
 abbrach (Issue #205).
+
+### Fehlerbild „No plugin was found for the platform"
+
+Homebridge findet das Plugin nicht. Übliche Ursachen:
+
+- `npm run build` wurde nicht ausgeführt — ohne `dist/index.js` ist das Verzeichnis
+  für Homebridge kein ladbares Plugin.
+- Homebridge wurde ohne `-P` gestartet und sucht nur in den globalen `node_modules`.
+- Eine **ältere globale Installation** von `homebridge-evohome` überdeckt das lokale
+  Verzeichnis. Ohne `--strict-plugin-resolution` meldet der Log das explizit
+  (`skipping plugin found at ... since we already loaded the same plugin from ...`);
+  mit dem Flag kann es nicht mehr passieren.
+
+### Test auf einem produktionsnahen System
+
+Für Tests auf einem Raspberry Pi oder in einem Container gilt dasselbe: Repo auschecken,
+`npm ci && npm run build`, dann Homebridge mit `-P /pfad/zum/repo` starten. Beim
+offiziellen Docker-Image führt der Weg über das Startup-Skript in den Einstellungen von
+Config UI X — dafür gibt es **keine** Umgebungsvariable.
 
 ## 3. Fixtures aus einem echten Konto
 

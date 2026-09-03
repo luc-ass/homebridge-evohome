@@ -176,9 +176,10 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
       von Build, Lint und `files` ausgeschlossen
 - [x] Platform-Gerüst: `EvohomePlatform implements DynamicPlatformPlugin` mit
       `configureAccessory()` — lädt unter Homebridge 2.x, legt noch keine Accessories an
-- [x] Testinstanz vorbereitet: `test-instance/docker-compose.yml` + `docs/TESTING.md`
-- [ ] **Offen:** Testinstanz einmal gegen ein echtes Honeywell-Konto starten
-      (braucht Zugangsdaten, siehe docs/TESTING.md Abschnitt 2)
+- [x] Testinstanz: `npm run dev` startet Homebridge 2.4.0 aus den devDependencies mit
+      `-P .` gegen das Repo — verifiziert, das Plugin lädt und registriert die Platform
+- [ ] **Offen:** dasselbe einmal mit echten Zugangsdaten in der `config.json`
+      (relevant erst ab Phase 1, siehe docs/TESTING.md Abschnitt 2)
 
 ### Phase 1 — API-Client (2–3 Tage)
 
