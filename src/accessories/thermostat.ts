@@ -1,4 +1,5 @@
 import { REFRESH_DELAY_MS } from "../settings.js";
+import { faultKey, summarizeFaults } from "../util/faults.js";
 import { nextSwitchpoint } from "../util/schedule.js";
 import { decideOverride } from "../util/setpoint.js";
 
@@ -51,6 +52,7 @@ export const clampSetpoint = (
 
 export class ThermostatAccessory {
   private readonly service: Service;
+  private readonly battery: Service;
   private readonly log: Logging;
   private status: ZoneStatus | undefined;
 
@@ -121,6 +123,33 @@ export class ThermostatAccessory {
       .getCharacteristic(Characteristic.TemperatureDisplayUnits)
       .onGet(() => Characteristic.TemperatureDisplayUnits.CELSIUS);
 
+    // `activeFaults` used to end up in the log only, where nobody looks. A lost
+    // radio link to an actuator now reaches the Home app as well.
+    //
+    // StatusFault is not among the thermostat service's optional
+    // characteristics, so it has to be registered explicitly — as with the Eve
+    // characteristic below, getCharacteristic() would add it by itself but write
+    // an "Adding anyway" warning into the log while doing so.
+    this.service.addOptionalCharacteristic(Characteristic.StatusFault);
+    this.service
+      .getCharacteristic(Characteristic.StatusFault)
+      .onGet(() => this.statusFault());
+
+    // A battery service without `BatteryLevel`: the API reports whether a
+    // battery is low, never how full it is, and a made-up percentage would be
+    // worse than none — the same reasoning as for the hot water history.
+    //
+    // Every zone gets one, including the mains-powered ones (`ZoneValves`,
+    // `ElectricHeat`). Those simply never report a battery fault, which costs
+    // nothing; leaving out the service would need a zone-type allowlist that
+    // goes stale the moment Resideo adds a model.
+    this.battery =
+      this.accessory.getService(Service.Battery) ??
+      this.accessory.addService(Service.Battery, `${this.zone.name} Battery`);
+    this.battery
+      .getCharacteristic(Characteristic.StatusLowBattery)
+      .onGet(() => this.statusLowBattery());
+
     // Eve shows the valve position in its history. The value is derived; the API
     // reports no real valve position.
     //
@@ -139,9 +168,7 @@ export class ThermostatAccessory {
     this.status = status;
     const { Characteristic } = this.api.hap;
 
-    if (status.activeFaults.length > 0 && previous?.activeFaults.length === 0) {
-      this.log.warn(`${this.zone.name}: ${status.activeFaults.join(", ")}`);
-    }
+    this.logFaultChange(previous?.activeFaults, status.activeFaults);
 
     const temperature = status.temperatureStatus.temperature;
     if (temperature !== undefined) {
@@ -163,8 +190,58 @@ export class ThermostatAccessory {
     this.service
       .getCharacteristic(Characteristic.TargetHeatingCoolingState)
       .updateValue(this.targetState());
+    this.service
+      .getCharacteristic(Characteristic.StatusFault)
+      .updateValue(this.statusFault());
+    this.battery
+      .getCharacteristic(Characteristic.StatusLowBattery)
+      .updateValue(this.statusLowBattery());
 
     this.recordHistory(status);
+  }
+
+  /**
+   * Logs faults whenever the set of them changes.
+   *
+   * The earlier condition was `previous?.activeFaults.length === 0`, which is
+   * never true on the first update because `previous` is undefined then: a zone
+   * whose battery was already flat when Homebridge started stayed silent
+   * forever. Recovery was never reported either.
+   */
+  private logFaultChange(
+    previous: readonly string[] | undefined,
+    current: readonly string[],
+  ): void {
+    if (faultKey(previous ?? []) === faultKey(current)) {
+      return;
+    }
+    if (current.length === 0) {
+      this.log.info(`${this.zone.name}: no active faults any more.`);
+      return;
+    }
+    this.log.warn(`${this.zone.name}: ${current.join(", ")}.`);
+  }
+
+  /**
+   * Fault state for HomeKit.
+   *
+   * Unlike the other getters this one does not throw before the first poll.
+   * `StatusFault` has no "unknown" value, and answering NO_FAULT is the honest
+   * option — reporting a fault the system never mentioned would be a false
+   * alarm, and an error would make the whole accessory look unreachable.
+   */
+  private statusFault(): number {
+    const { StatusFault } = this.api.hap.Characteristic;
+    return summarizeFaults(this.status?.activeFaults ?? []).fault
+      ? StatusFault.GENERAL_FAULT
+      : StatusFault.NO_FAULT;
+  }
+
+  private statusLowBattery(): number {
+    const { StatusLowBattery } = this.api.hap.Characteristic;
+    return summarizeFaults(this.status?.activeFaults ?? []).lowBattery
+      ? StatusLowBattery.BATTERY_LEVEL_LOW
+      : StatusLowBattery.BATTERY_LEVEL_NORMAL;
   }
 
   /**

@@ -101,6 +101,27 @@ switched off should not come back on at the next switchpoint.
 | **Heat**      | An override is active                 |
 | **Off**       | The target is at the zone's minimum   |
 
+### Faults and batteries
+
+Evohome reports an `activeFaults` list per zone and for the hot water. Those
+faults now reach HomeKit instead of only the log:
+
+| Fault reported by Evohome                               | In HomeKit                                                   |
+| :------------------------------------------------------ | :----------------------------------------------------------- |
+| Low battery, e.g. `TempZoneActuatorLowBattery`          | Low battery on that accessory — the Home app shows a warning |
+| Anything else, e.g. `TempZoneActuatorCommunicationLost` | A fault on the accessory (`StatusFault`)                     |
+
+A low battery deliberately does **not** count as a fault: an HR92 with a weak
+battery still measures and still heats. Only a real failure — radio link lost,
+sensor defective — makes the values untrustworthy.
+
+The battery status carries no percentage. The API reports whether a battery is
+low, never how full it is, and an invented percentage would be worse than none.
+Every zone gets a battery status, including mains-powered ones such as a zone
+valve; those simply never report a battery fault.
+
+Faults are logged as well, both when they appear and when they clear.
+
 ## 🔄 Upgrading from 0.11.x
 
 **Your accessories are recreated once.** They appear in the default room and

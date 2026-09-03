@@ -134,6 +134,8 @@ export interface DhwStatus {
   readonly state: DhwState;
   readonly mode: SetpointMode;
   readonly until: Date | undefined;
+  /** Active faults, e.g. `DHWSensorLowBattery`. */
+  readonly activeFaults: readonly string[];
 }
 
 export interface SystemModeStatus {

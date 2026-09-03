@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Faults and battery status reach HomeKit.** A zone or the hot water reporting
+  `TempZoneActuatorLowBattery` now shows a low battery on that accessory, and
+  any other fault — a lost radio link, a defective sensor — shows as a fault
+  (`StatusFault`). Until now `activeFaults` was read from the API and then only
+  written to the log, where nobody looks. A low battery is deliberately _not_
+  treated as a fault: the valve still measures and still heats. No charge
+  percentage is reported, because the API does not provide one.
+
+### Fixed
+
+- **A fault that was already present when Homebridge started was never logged.**
+  The check compared against the previous status, which does not exist on the
+  first update, so a flat battery at start stayed silent forever. Faults are now
+  logged when they appear and when they clear.
+
 ## 1.0.0-beta.0
 
 A rewrite for **Homebridge 2**. The plugin is now TypeScript, ships as an ES

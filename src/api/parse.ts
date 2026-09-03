@@ -287,6 +287,10 @@ const parseDhwStatus = (raw: unknown, path: string): DhwStatus => {
     state: asEnum(state["state"], `${path}.stateStatus.state`, DHW_STATES),
     mode: asEnum(state["mode"], `${path}.stateStatus.mode`, SETPOINT_MODES),
     until: asDate(state["until"], `${path}.stateStatus.until`),
+    activeFaults: parseActiveFaults(
+      json["activeFaults"],
+      `${path}.activeFaults`,
+    ),
   };
 };
 

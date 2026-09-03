@@ -51,7 +51,7 @@ const serviceOf = (
 ): Service => {
   const service = accessory.getService(type as never);
   if (service === undefined) {
-    throw new Error("Service fehlt");
+    throw new Error("Service is missing");
   }
   return service;
 };
@@ -183,7 +183,7 @@ describe("EvohomePlatform", () => {
       await startPlatform();
       const accessory = test.registered.find((a) => nameOf(a) === name);
       if (accessory === undefined) {
-        throw new Error(`Accessory ${name} fehlt`);
+        throw new Error(`Accessory ${name} is missing`);
       }
       return serviceOf(accessory, hap.Service.Thermostat);
     };
@@ -358,6 +358,142 @@ describe("EvohomePlatform", () => {
           .getCharacteristic(hap.Characteristic.CurrentTemperature)
           .handleGetRequest(),
       ).resolves.toBe(54.5);
+    });
+  });
+
+  describe("faults and battery", () => {
+    /** The fixture with a replaced fault list on the "Wohnzimmer" zone. */
+    const statusWithZoneFault = (faultType: string): Response => {
+      const status = fixture("locationStatus.json") as {
+        gateways: {
+          temperatureControlSystems: {
+            zones: { activeFaults: unknown[] }[];
+          }[];
+        }[];
+      };
+      status.gateways[0]!.temperatureControlSystems[0]!.zones[0]!.activeFaults =
+        [{ faultType, since: "2026-09-01T07:12:00Z" }];
+      return jsonResponse(status);
+    };
+
+    const accessoryNamed = (name: string): PlatformAccessory => {
+      const accessory = test.registered.find((a) => nameOf(a) === name);
+      if (accessory === undefined) {
+        throw new Error(`Accessory ${name} is missing`);
+      }
+      return accessory;
+    };
+
+    it("reports a low battery on the zone that has one", async () => {
+      // The "Flur" zone reports TempZoneActuatorLowBattery in the fixture.
+      await startPlatform();
+      const flur = serviceOf(
+        accessoryNamed("Flur Thermostat"),
+        hap.Service.Battery,
+      );
+      const wohnzimmer = serviceOf(
+        accessoryNamed("Wohnzimmer Thermostat"),
+        hap.Service.Battery,
+      );
+
+      await expect(
+        flur
+          .getCharacteristic(hap.Characteristic.StatusLowBattery)
+          .handleGetRequest(),
+      ).resolves.toBe(hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW);
+      await expect(
+        wohnzimmer
+          .getCharacteristic(hap.Characteristic.StatusLowBattery)
+          .handleGetRequest(),
+      ).resolves.toBe(hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+    });
+
+    it("does not declare a zone faulty just because its battery is low", async () => {
+      await startPlatform();
+      const service = serviceOf(
+        accessoryNamed("Flur Thermostat"),
+        hap.Service.Thermostat,
+      );
+
+      await expect(
+        service
+          .getCharacteristic(hap.Characteristic.StatusFault)
+          .handleGetRequest(),
+      ).resolves.toBe(hap.Characteristic.StatusFault.NO_FAULT);
+    });
+
+    it("reports a lost radio link as a fault", async () => {
+      fetchMock = routedFetch({
+        "/status": () =>
+          statusWithZoneFault("TempZoneActuatorCommunicationLost"),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      await startPlatform();
+      const accessory = accessoryNamed("Wohnzimmer Thermostat");
+
+      await expect(
+        serviceOf(accessory, hap.Service.Thermostat)
+          .getCharacteristic(hap.Characteristic.StatusFault)
+          .handleGetRequest(),
+      ).resolves.toBe(hap.Characteristic.StatusFault.GENERAL_FAULT);
+      // …and the battery stays normal.
+      await expect(
+        serviceOf(accessory, hap.Service.Battery)
+          .getCharacteristic(hap.Characteristic.StatusLowBattery)
+          .handleGetRequest(),
+      ).resolves.toBe(hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+    });
+
+    it("registers StatusFault as optional to avoid a HAP warning", async () => {
+      // HAP does not list StatusFault among the thermostat service's optional
+      // characteristics. Without addOptionalCharacteristic() it is still added,
+      // but with a "Adding anyway" characteristic warning per zone and start.
+      await startPlatform();
+      const service = serviceOf(
+        accessoryNamed("Wohnzimmer Thermostat"),
+        hap.Service.Thermostat,
+      );
+
+      expect(
+        service.optionalCharacteristics.map(
+          (characteristic) => characteristic.UUID,
+        ),
+      ).toContain(hap.Characteristic.StatusFault.UUID);
+    });
+
+    it("warns about a fault that was already present at startup", async () => {
+      // The earlier condition compared against `previous?.activeFaults.length`,
+      // which is undefined on the first update: a flat battery at start was
+      // never logged at all.
+      await startPlatform();
+
+      expect(log.warnings.join("\n")).toContain(
+        "Flur: TempZoneActuatorLowBattery.",
+      );
+    });
+
+    it("reports faults for the hot water too", async () => {
+      const status = fixture("locationStatus.json") as {
+        gateways: {
+          temperatureControlSystems: { dhw: { activeFaults: unknown[] } }[];
+        }[];
+      };
+      status.gateways[0]!.temperatureControlSystems[0]!.dhw.activeFaults = [
+        { faultType: "DHWSensorLowBattery", since: "2026-09-01T07:12:00Z" },
+      ];
+      fetchMock = routedFetch({ "/status": () => jsonResponse(status) });
+      vi.stubGlobal("fetch", fetchMock);
+      await startPlatform();
+      const accessory = accessoryNamed("Evohome Hot Water");
+
+      await expect(
+        serviceOf(accessory, hap.Service.Battery)
+          .getCharacteristic(hap.Characteristic.StatusLowBattery)
+          .handleGetRequest(),
+      ).resolves.toBe(hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW);
+      expect(log.warnings.join("\n")).toContain(
+        "Hot water: DHWSensorLowBattery.",
+      );
     });
   });
 

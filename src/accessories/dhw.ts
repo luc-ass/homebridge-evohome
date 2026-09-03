@@ -1,4 +1,5 @@
 import { REFRESH_DELAY_MS } from "../settings.js";
+import { faultKey, summarizeFaults } from "../util/faults.js";
 import { nextSwitchpoint } from "../util/schedule.js";
 import { decideOverride } from "../util/setpoint.js";
 
@@ -31,6 +32,7 @@ import type {
 export class DomesticHotWaterAccessory {
   private readonly sensor: Service;
   private readonly toggle: Service;
+  private readonly battery: Service;
   private status: DhwStatus | undefined;
 
   constructor(
@@ -62,6 +64,24 @@ export class DomesticHotWaterAccessory {
       .getCharacteristic(Characteristic.CurrentTemperature)
       .onGet(() => this.temperature());
 
+    // The cylinder sensor (CS92A) runs on batteries and reports
+    // `DHWSensorLowBattery`; the actuator reports a lost connection. Both used
+    // to be parsed and then dropped on the floor.
+    //
+    // Unlike on the thermostat service, StatusFault is a proper optional
+    // characteristic of the temperature sensor, so no addOptionalCharacteristic
+    // is needed here.
+    this.sensor
+      .getCharacteristic(Characteristic.StatusFault)
+      .onGet(() => this.statusFault());
+
+    this.battery =
+      this.accessory.getService(Service.Battery) ??
+      this.accessory.addService(Service.Battery, `${this.name} Battery`);
+    this.battery
+      .getCharacteristic(Characteristic.StatusLowBattery)
+      .onGet(() => this.statusLowBattery());
+
     this.toggle =
       this.accessory.getService(Service.Switch) ??
       this.accessory.addService(Service.Switch, this.name, "dhw-toggle");
@@ -72,8 +92,11 @@ export class DomesticHotWaterAccessory {
   }
 
   update(status: DhwStatus): void {
+    const previous = this.status;
     this.status = status;
     const { Characteristic } = this.api.hap;
+
+    this.logFaultChange(previous?.activeFaults, status.activeFaults);
 
     const temperature = status.temperatureStatus.temperature;
     if (temperature !== undefined) {
@@ -84,6 +107,42 @@ export class DomesticHotWaterAccessory {
     this.toggle
       .getCharacteristic(Characteristic.On)
       .updateValue(status.state === "On");
+    this.sensor
+      .getCharacteristic(Characteristic.StatusFault)
+      .updateValue(this.statusFault());
+    this.battery
+      .getCharacteristic(Characteristic.StatusLowBattery)
+      .updateValue(this.statusLowBattery());
+  }
+
+  /** Logs faults whenever the set of them changes; see the thermostat. */
+  private logFaultChange(
+    previous: readonly string[] | undefined,
+    current: readonly string[],
+  ): void {
+    if (faultKey(previous ?? []) === faultKey(current)) {
+      return;
+    }
+    if (current.length === 0) {
+      this.log.info("Hot water: no active faults any more.");
+      return;
+    }
+    this.log.warn(`Hot water: ${current.join(", ")}.`);
+  }
+
+  /** NO_FAULT before the first poll, for the reasons given in the thermostat. */
+  private statusFault(): number {
+    const { StatusFault } = this.api.hap.Characteristic;
+    return summarizeFaults(this.status?.activeFaults ?? []).fault
+      ? StatusFault.GENERAL_FAULT
+      : StatusFault.NO_FAULT;
+  }
+
+  private statusLowBattery(): number {
+    const { StatusLowBattery } = this.api.hap.Characteristic;
+    return summarizeFaults(this.status?.activeFaults ?? []).lowBattery
+      ? StatusLowBattery.BATTERY_LEVEL_LOW
+      : StatusLowBattery.BATTERY_LEVEL_NORMAL;
   }
 
   get lastStatus(): DhwStatus | undefined {

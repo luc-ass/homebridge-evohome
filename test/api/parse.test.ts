@@ -140,6 +140,7 @@ describe("parseLocationStatus", () => {
       state: "On",
       mode: "TemporaryOverride",
       until: new Date("2026-09-03T20:00:00Z"),
+      activeFaults: [],
     });
   });
 });
