@@ -2,6 +2,7 @@ import { DomesticHotWaterAccessory } from "./accessories/dhw.js";
 import { SystemModeAccessory } from "./accessories/systemMode.js";
 import { TokenStore } from "./api/auth.js";
 import { EvohomeClient } from "./api/client.js";
+import { ScheduleCache } from "./api/scheduleCache.js";
 import { FileTokenCache } from "./api/tokenCache.js";
 import { createEveCharacteristics } from "./characteristics/eve.js";
 import {
@@ -178,12 +179,20 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     config: EvohomeConfig,
   ): void {
     const eve = createEveCharacteristics(this.api);
+    const schedules = new ScheduleCache(client, this.log);
 
-    this.registerZones(location, client, poller, config, eve);
+    this.registerZones(location, client, poller, schedules, config, eve);
     this.registerSwitches(location, client, poller, config);
 
     if (location.system.dhw !== undefined) {
-      this.registerDhw(location.system.dhw.dhwId, client, poller, config);
+      this.registerDhw(
+        location.system.dhw.dhwId,
+        location,
+        client,
+        poller,
+        schedules,
+        config,
+      );
     }
 
     poller.subscribe((status) => {
@@ -195,6 +204,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     location: Location,
     client: EvohomeClient,
     poller: PollingCoordinator,
+    schedules: ScheduleCache,
     config: EvohomeConfig,
     eve: ReturnType<typeof createEveCharacteristics>,
   ): void {
@@ -224,7 +234,9 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
           zone,
           client,
           poller,
+          schedules,
           config,
+          location.timeZone.currentOffsetMinutes,
           eve,
           this.log,
         ),
@@ -273,8 +285,10 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
 
   private registerDhw(
     dhwId: string,
+    location: Location,
     client: EvohomeClient,
     poller: PollingCoordinator,
+    schedules: ScheduleCache,
     config: EvohomeConfig,
   ): void {
     const name = `${config.name} Hot Water`;
@@ -286,6 +300,9 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       name,
       client,
       poller,
+      schedules,
+      config,
+      location.timeZone.currentOffsetMinutes,
       this.log,
     );
   }

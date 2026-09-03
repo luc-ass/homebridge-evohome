@@ -33,6 +33,12 @@ const routedFetch = (
     if (url.includes("/location/installationInfo")) {
       return Promise.resolve(jsonResponse(fixture("installationInfo.json")));
     }
+    if (url.includes("/domesticHotWater/") && url.includes("/schedule")) {
+      return Promise.resolve(jsonResponse(fixture("scheduleDhw.json")));
+    }
+    if (url.includes("/schedule")) {
+      return Promise.resolve(jsonResponse(fixture("scheduleZone.json")));
+    }
     if (url.includes("/status")) {
       return Promise.resolve(jsonResponse(fixture("locationStatus.json")));
     }
@@ -82,6 +88,7 @@ describe("EvohomePlatform", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   describe("Erkennung", () => {
@@ -240,6 +247,65 @@ describe("EvohomePlatform", () => {
       expect(
         JSON.parse((write?.[1] as { body: string }).body) as unknown,
       ).toMatchObject({ HeatSetpointValue: 10 });
+    });
+
+    it("behält die Endzeit eines laufenden Overrides bei (#149)", async () => {
+      // Zone „Bad" in der Fixture: TemporaryOverride bis 2026-09-03T18:30Z.
+      // 0.11.2 hätte diese Endzeit durch den nächsten Schaltpunkt ersetzt.
+      const service = await thermostatFor("Bad Thermostat");
+      vi.setSystemTime(new Date("2026-09-03T16:01:00Z"));
+
+      await service
+        .getCharacteristic(hap.Characteristic.TargetTemperature)
+        .handleSetRequest(21);
+
+      const write = fetchMock.mock.calls.find((call) =>
+        String(call[0]).includes("/heatSetpoint"),
+      );
+      expect(
+        JSON.parse((write?.[1] as { body: string }).body) as unknown,
+      ).toEqual({
+        HeatSetpointValue: 21,
+        SetpointMode: "TemporaryOverride",
+        TimeUntil: "2026-09-03T18:30:00Z",
+      });
+    });
+
+    it("nimmt den nächsten Schaltpunkt, wenn kein Override läuft (#149)", async () => {
+      // Zone „Wohnzimmer" folgt dem Zeitprogramm. Montag, 07:00 Ortszeit
+      // (CEST) — der nächste Schaltpunkt der Fixture ist 08:30.
+      const service = await thermostatFor("Wohnzimmer Thermostat");
+      vi.setSystemTime(new Date("2026-08-03T05:00:00Z"));
+
+      await service
+        .getCharacteristic(hap.Characteristic.TargetTemperature)
+        .handleSetRequest(21);
+
+      const write = fetchMock.mock.calls.find((call) =>
+        String(call[0]).includes("/heatSetpoint"),
+      );
+      const body = JSON.parse((write?.[1] as { body: string }).body) as Record<
+        string,
+        unknown
+      >;
+      expect(body["SetpointMode"]).toBe("TemporaryOverride");
+      expect(body["TimeUntil"]).toBe("2026-08-03T06:30:00Z");
+    });
+
+    it("holt das Zeitprogramm nur einmal je Zone", async () => {
+      const service = await thermostatFor("Wohnzimmer Thermostat");
+
+      await service
+        .getCharacteristic(hap.Characteristic.TargetTemperature)
+        .handleSetRequest(21);
+      await service
+        .getCharacteristic(hap.Characteristic.TargetTemperature)
+        .handleSetRequest(22);
+
+      const scheduleCalls = fetchMock.mock.calls.filter((call) =>
+        String(call[0]).includes("/schedule"),
+      );
+      expect(scheduleCalls).toHaveLength(1);
     });
 
     it("hebt den Override auf, wenn AUTO gewählt wird", async () => {

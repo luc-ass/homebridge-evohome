@@ -237,15 +237,35 @@ Phase 4.
 
 ### Phase 3 — Verhalten und offene Issues (2–3 Tage)
 
-- [ ] `setpointMode`-Option: `untilNextSwitchpoint` (Default) | `permanent` |
-      `keepExistingUntil` — #149
-- [ ] Off-Zustand über `TargetHeatingCoolingState` abbilden statt über 5 °C — #94
-- [ ] DHW-Set-Pfad antwortet in _allen_ Zweigen — #180
-- [ ] `temperatureAboveAsOff` tatsächlich am Handler auswerten — S6
-- [ ] Modell-Erkennung sauber typisiert (`HeatingZone` | `RoundWireless` |
-      `RoundModulation` | `domesticHotWater`) — S4
-- [ ] `logTemperatureChanges`-Option — #146 (Vorlage: PR #204)
-- [ ] Adressierung per `locationId` zusätzlich zu `locationIndex` — F5
+- [x] `setpointMode`-Option: **`keepExistingUntil` (Default)** | `untilNextSwitchpoint`
+      | `permanent` — #149, siehe Analyse unten
+- [x] `logTemperatureChanges`-Option — #146 (Vorlage: PR #204)
+- [x] `ScheduleCache`: Zeitprogramme werden zwischengespeichert statt bei jeder
+      Temperaturänderung neu geholt
+- [x] Off-Zustand über `TargetHeatingCoolingState` statt über 5 °C — #94 _(Phase 2)_
+- [x] DHW-Set-Pfad antwortet in _allen_ Zweigen — #180 _(Phase 2)_
+- [x] `temperatureAboveAsOff` am Handler ausgewertet — S6 _(Phase 2)_
+- [x] Modell-Erkennung typisiert — S4 _(Phase 1, `parse.ts`)_
+- [x] Adressierung per `locationId` zusätzlich zu `locationIndex` — F5 _(Phase 2)_
+
+#### Analyse zu #149
+
+Die API kennt **keinen** Modus „Wert ändern, Endzeit behalten":
+`PUT /temperatureZone/{id}/heatSetpoint` verlangt zwingend einen der drei
+`SetpointMode`-Werte. Die Vermutung im Issue, es gebe einen Endpunkt zum reinen
+Setzen der Temperatur, trifft nicht zu.
+
+Lösbar ist es trotzdem, weil `setpointStatus.until` die laufende Endzeit meldet
+(gegen die Schema-Definition von `evohome-async` geprüft: ISO-8601-Zeitstempel,
+nur bei zeitbegrenzten Modi vorhanden). Sie wird beim Schreiben einfach wieder
+mitgeschickt.
+
+Da HomeKit kein „bis wann" kennt, ist die Regel eine Konfigurationsentscheidung
+und keine pro Bedienvorgang. Gewählt wurde `keepExistingUntil` als Default: es
+verhält sich exakt wie 0.11.2, solange kein Override läuft, und behebt genau den
+gemeldeten Fall. „Aus" schreibt unabhängig davon immer einen dauerhaften
+Override — eine abgeschaltete Zone soll nicht am nächsten Schaltpunkt von selbst
+wieder angehen.
 
 ### Phase 4 — Optionale Eve-History (0,5–1 Tag)
 

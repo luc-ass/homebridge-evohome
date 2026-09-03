@@ -1,5 +1,8 @@
 import { REFRESH_DELAY_MS } from "../settings.js";
+import { nextSwitchpoint } from "../util/schedule.js";
+import { decideOverride } from "../util/setpoint.js";
 
+import type { ScheduleCache } from "../api/scheduleCache.js";
 import type { EvohomeClient } from "../api/client.js";
 import type { SetpointCapabilities, Zone, ZoneStatus } from "../api/types.js";
 import type { EvohomeConfig } from "../config.js";
@@ -56,7 +59,10 @@ export class ThermostatAccessory {
     private readonly zone: Zone,
     private readonly client: EvohomeClient,
     private readonly poller: PollingCoordinator,
+    private readonly schedules: ScheduleCache,
     private readonly config: EvohomeConfig,
+    /** Aktueller UTC-Offset der Location, für die Schaltpunkte. */
+    private readonly offsetMinutes: number,
     eve: EveCharacteristics,
     log: Logging,
   ) {
@@ -136,6 +142,10 @@ export class ThermostatAccessory {
 
     const temperature = status.temperatureStatus.temperature;
     if (temperature !== undefined) {
+      this.logTemperatureChange(
+        previous?.temperatureStatus.temperature,
+        temperature,
+      );
       this.service
         .getCharacteristic(Characteristic.CurrentTemperature)
         .updateValue(temperature);
@@ -150,6 +160,29 @@ export class ThermostatAccessory {
     this.service
       .getCharacteristic(Characteristic.TargetHeatingCoolingState)
       .updateValue(this.targetState());
+  }
+
+  /**
+   * Protokolliert Änderungen der Ist-Temperatur, wenn gewünscht.
+   *
+   * Issue #146: Beim Entschlacken des Logs war diese Zeile auf `debug`
+   * gerutscht. Sie ist nützlich, um im Nachhinein zu sehen, warum es morgens
+   * kalt war — aber nicht für jeden.
+   */
+  private logTemperatureChange(
+    previous: number | undefined,
+    current: number,
+  ): void {
+    if (!this.config.logTemperatureChanges || previous === undefined) {
+      return;
+    }
+    if (previous === current) {
+      return;
+    }
+    const direction = current > previous ? "gestiegen" : "gefallen";
+    this.log.info(
+      `${this.zone.name}: Temperatur ${direction} von ${String(previous)} °C auf ${String(current)} °C.`,
+    );
   }
 
   /** Der zuletzt bekannte Status — für die History in Phase 4. */
@@ -243,20 +276,42 @@ export class ThermostatAccessory {
     value: CharacteristicValue,
   ): Promise<void> {
     const target = clampSetpoint(Number(value), this.zone.setpointCapabilities);
+    const now = new Date();
 
-    // Phase 2 setzt den Sollwert dauerhaft. Die Wahl zwischen dauerhaft,
-    // bis zum nächsten Schaltpunkt und „laufenden Override beibehalten"
-    // kommt in Phase 3 als Option `setpointMode` (Issue #149).
+    // Issue #149: Läuft bereits ein befristeter Override, wird bei der
+    // Voreinstellung `keepExistingUntil` dessen Endzeit übernommen, statt sie
+    // durch den nächsten Schaltpunkt zu ersetzen.
+    const decision = decideOverride(
+      this.config.setpointMode,
+      this.required().setpointStatus,
+      await this.nextSwitchpoint(now),
+      now,
+    );
+
     this.log.info(
-      `${this.zone.name}: Solltemperatur auf ${String(target)} °C.`,
+      `${this.zone.name}: Solltemperatur auf ${String(target)} °C, ${decision.reason}.`,
     );
     await this.client.setHeatSetpoint(
       this.zone.zoneId,
-      "PermanentOverride",
+      decision.mode,
       target,
-      undefined,
+      decision.until,
     );
     this.poller.scheduleRefresh(REFRESH_DELAY_MS);
+  }
+
+  /**
+   * Nächster Schaltpunkt des Zeitprogramms dieser Zone.
+   *
+   * Bei `permanent` wird das Zeitprogramm gar nicht erst abgefragt — der
+   * Aufruf wäre reine Last auf den Honeywell-Servern.
+   */
+  private async nextSwitchpoint(now: Date): Promise<Date | undefined> {
+    if (this.config.setpointMode === "permanent") {
+      return undefined;
+    }
+    const schedule = await this.schedules.zone(this.zone.zoneId);
+    return nextSwitchpoint(schedule, now, this.offsetMinutes)?.at;
   }
 
   private async setTargetState(value: CharacteristicValue): Promise<void> {

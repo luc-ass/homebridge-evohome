@@ -1,7 +1,11 @@
 import { REFRESH_DELAY_MS } from "../settings.js";
+import { nextSwitchpoint } from "../util/schedule.js";
+import { decideOverride } from "../util/setpoint.js";
 
+import type { ScheduleCache } from "../api/scheduleCache.js";
 import type { EvohomeClient } from "../api/client.js";
 import type { DhwStatus } from "../api/types.js";
+import type { EvohomeConfig } from "../config.js";
 import type { PollingCoordinator } from "../polling.js";
 import type {
   API,
@@ -37,6 +41,10 @@ export class DomesticHotWaterAccessory {
     private readonly name: string,
     private readonly client: EvohomeClient,
     private readonly poller: PollingCoordinator,
+    private readonly schedules: ScheduleCache,
+    private readonly config: EvohomeConfig,
+    /** Aktueller UTC-Offset der Location, für die Schaltpunkte. */
+    private readonly offsetMinutes: number,
     private readonly log: Logging,
   ) {
     const { Service, Characteristic } = this.api.hap;
@@ -108,14 +116,31 @@ export class DomesticHotWaterAccessory {
 
   private async setOn(value: CharacteristicValue): Promise<void> {
     const state = value === true ? "On" : "Off";
-    this.log.info(`Warmwasser: ${state}.`);
+    const now = new Date();
 
+    // Warmwasser folgt derselben Regel wie die Heizzonen (Issue #149).
+    const decision = decideOverride(
+      this.config.setpointMode,
+      { setpointMode: this.required().mode, until: this.required().until },
+      await this.nextSwitchpoint(now),
+      now,
+    );
+
+    this.log.info(`Warmwasser: ${state}, ${decision.reason}.`);
     await this.client.setDhwState(
       this.dhwId,
-      "PermanentOverride",
+      decision.mode,
       state,
-      undefined,
+      decision.until,
     );
     this.poller.scheduleRefresh(REFRESH_DELAY_MS);
+  }
+
+  private async nextSwitchpoint(now: Date): Promise<Date | undefined> {
+    if (this.config.setpointMode === "permanent") {
+      return undefined;
+    }
+    const schedule = await this.schedules.dhw(this.dhwId);
+    return nextSwitchpoint(schedule, now, this.offsetMinutes)?.at;
   }
 }

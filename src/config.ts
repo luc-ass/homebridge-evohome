@@ -3,6 +3,12 @@ import {
   MIN_POLL_INTERVAL_SECONDS,
 } from "./settings.js";
 
+import {
+  DEFAULT_SETPOINT_STRATEGY,
+  SETPOINT_STRATEGIES,
+  type SetpointStrategy,
+} from "./util/setpoint.js";
+
 import type { SystemMode } from "./api/types.js";
 import type { Logging, PlatformConfig } from "homebridge";
 
@@ -59,7 +65,33 @@ export interface EvohomeConfig {
   readonly temperatureAboveAsOff: boolean;
   readonly showSwitches: Readonly<Record<SwitchableMode, boolean>>;
   readonly history: boolean;
+  /**
+   * Wie ein Sollwert aus HomeKit geschrieben wird (Issue #149).
+   * Siehe {@link SetpointStrategy}.
+   */
+  readonly setpointMode: SetpointStrategy;
+  /** Jede Änderung der Ist-Temperatur ins Log schreiben (Issue #146). */
+  readonly logTemperatureChanges: boolean;
 }
+
+const readSetpointStrategy = (
+  value: unknown,
+  log: Logging,
+): SetpointStrategy => {
+  if (value === undefined || value === null) {
+    return DEFAULT_SETPOINT_STRATEGY;
+  }
+  if (
+    typeof value === "string" &&
+    (SETPOINT_STRATEGIES as readonly string[]).includes(value)
+  ) {
+    return value as SetpointStrategy;
+  }
+  log.warn(
+    `Konfigurationswert "setpointMode" ist unbekannt (${JSON.stringify(value)}). Erlaubt sind ${SETPOINT_STRATEGIES.join(", ")}. Verwende ${DEFAULT_SETPOINT_STRATEGY}.`,
+  );
+  return DEFAULT_SETPOINT_STRATEGY;
+};
 
 const readBoolean = (
   value: unknown,
@@ -178,6 +210,13 @@ export const readConfig = (
     ),
     showSwitches,
     history: readBoolean(config["history"], true, "history", log),
+    setpointMode: readSetpointStrategy(config["setpointMode"], log),
+    logTemperatureChanges: readBoolean(
+      config["logTemperatureChanges"],
+      false,
+      "logTemperatureChanges",
+      log,
+    ),
   };
 };
 

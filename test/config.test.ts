@@ -150,6 +150,39 @@ describe("readConfig", () => {
     });
   });
 
+  describe("setpointMode (#149)", () => {
+    it("verwendet keepExistingUntil als Voreinstellung", () => {
+      expect(readConfig(base, makeLog()).setpointMode).toBe(
+        "keepExistingUntil",
+      );
+    });
+
+    it("übernimmt die anderen erlaubten Werte", () => {
+      for (const mode of ["untilNextSwitchpoint", "permanent"]) {
+        expect(
+          readConfig({ ...base, setpointMode: mode }, makeLog()).setpointMode,
+        ).toBe(mode);
+      }
+    });
+
+    it("weist unbekannte Werte mit Auflistung der erlaubten zurück", () => {
+      const log = makeLog();
+      const config = readConfig({ ...base, setpointMode: "sofort" }, log);
+
+      expect(config.setpointMode).toBe("keepExistingUntil");
+      expect(log.warnings.join()).toContain("keepExistingUntil");
+      expect(log.warnings.join()).toContain("untilNextSwitchpoint");
+    });
+  });
+
+  it("liest logTemperatureChanges, standardmäßig aus (#146)", () => {
+    expect(readConfig(base, makeLog()).logTemperatureChanges).toBe(false);
+    expect(
+      readConfig({ ...base, logTemperatureChanges: true }, makeLog())
+        .logTemperatureChanges,
+    ).toBe(true);
+  });
+
   it("liest temperatureAboveAsOff, das in 0.11.2 wirkungslos war (S6)", () => {
     expect(readConfig(base, makeLog()).temperatureAboveAsOff).toBe(false);
     expect(
