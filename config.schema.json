@@ -57,15 +57,21 @@
         "oneOf": [
           {
             "title": "Laufende Endzeit beibehalten (empfohlen)",
-            "enum": ["keepExistingUntil"]
+            "enum": [
+              "keepExistingUntil"
+            ]
           },
           {
             "title": "Bis zum nächsten Schaltpunkt",
-            "enum": ["untilNextSwitchpoint"]
+            "enum": [
+              "untilNextSwitchpoint"
+            ]
           },
           {
             "title": "Dauerhaft",
-            "enum": ["permanent"]
+            "enum": [
+              "permanent"
+            ]
           }
         ],
         "description": "Steuert, wie lange eine in HomeKit gesetzte Temperatur gilt. „Laufende Endzeit beibehalten“: Ist bereits ein befristeter Override aktiv, bleibt dessen Endzeit erhalten und nur die Temperatur ändert sich — sonst gilt sie bis zum nächsten Schaltpunkt. „Bis zum nächsten Schaltpunkt“ entspricht dem Verhalten der Versionen bis 0.11.2. „Dauerhaft“ setzt das Zeitprogramm außer Kraft, bis in HomeKit „Auto“ gewählt wird. Ein Thermostat auf „Aus“ gilt in allen Fällen dauerhaft."
@@ -113,6 +119,13 @@
         "type": "boolean",
         "default": true,
         "required": false
+      },
+      "history": {
+        "title": "Verlauf für die Eve-App aufzeichnen",
+        "type": "boolean",
+        "default": true,
+        "required": false,
+        "description": "Zeichnet Temperaturverlauf und Ventilstellung für die Elgato-Eve-App auf (über fakegato-history). Abschalten, wenn der Verlauf nicht gebraucht wird oder das Zusatzpaket beim Start Probleme macht — dann wird es gar nicht erst geladen."
       }
     }
   },
@@ -134,7 +147,10 @@
       "title": "Heizverhalten",
       "expandable": true,
       "expanded": false,
-      "items": ["setpointMode", "temperatureAboveAsOff"]
+      "items": [
+        "setpointMode",
+        "temperatureAboveAsOff"
+      ]
     },
     {
       "type": "fieldset",
@@ -158,7 +174,8 @@
         "locationId",
         "locationIndex",
         "pollIntervalSeconds",
-        "logTemperatureChanges"
+        "logTemperatureChanges",
+        "history"
       ]
     }
   ]

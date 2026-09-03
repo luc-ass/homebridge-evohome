@@ -3,6 +3,7 @@ import { nextSwitchpoint } from "../util/schedule.js";
 import { decideOverride } from "../util/setpoint.js";
 
 import type { ScheduleCache } from "../api/scheduleCache.js";
+import type { HistoryService } from "../history.js";
 import type { EvohomeClient } from "../api/client.js";
 import type { SetpointCapabilities, Zone, ZoneStatus } from "../api/types.js";
 import type { EvohomeConfig } from "../config.js";
@@ -63,6 +64,8 @@ export class ThermostatAccessory {
     private readonly config: EvohomeConfig,
     /** Aktueller UTC-Offset der Location, für die Schaltpunkte. */
     private readonly offsetMinutes: number,
+    /** Eve-Verlauf, falls aktiviert und verfügbar (Entscheidung F3). */
+    private readonly history: HistoryService | undefined,
     eve: EveCharacteristics,
     log: Logging,
   ) {
@@ -160,6 +163,28 @@ export class ThermostatAccessory {
     this.service
       .getCharacteristic(Characteristic.TargetHeatingCoolingState)
       .updateValue(this.targetState());
+
+    this.recordHistory(status);
+  }
+
+  /**
+   * Schreibt einen Messpunkt in den Eve-Verlauf.
+   *
+   * Nur mit echtem Messwert: 0.11.2 schrieb auch dann einen Eintrag, wenn die
+   * Zone gar keine Temperatur meldete, und erzeugte damit Lücken bzw. Nullen
+   * in der Kurve.
+   */
+  private recordHistory(status: ZoneStatus): void {
+    const currentTemp = status.temperatureStatus.temperature;
+    if (this.history === undefined || currentTemp === undefined) {
+      return;
+    }
+    this.history.addEntry({
+      time: Math.floor(Date.now() / 1000),
+      currentTemp,
+      setTemp: status.setpointStatus.targetHeatTemperature,
+      valvePosition: this.valvePosition(),
+    });
   }
 
   /**

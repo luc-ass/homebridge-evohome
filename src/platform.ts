@@ -5,6 +5,7 @@ import { EvohomeClient } from "./api/client.js";
 import { ScheduleCache } from "./api/scheduleCache.js";
 import { FileTokenCache } from "./api/tokenCache.js";
 import { createEveCharacteristics } from "./characteristics/eve.js";
+import { loadHistoryFactory, type HistoryFactory } from "./history.js";
 import {
   ConfigError,
   readConfig,
@@ -108,7 +109,12 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
         this.log,
       );
 
-      this.register(location, client, this.poller, config);
+      const history = await loadHistoryFactory(
+        this.api,
+        this.log,
+        config.history,
+      );
+      this.register(location, client, this.poller, config, history);
       await this.poller.start();
       this.removeStaleAccessories();
     } catch (error) {
@@ -177,11 +183,20 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     client: EvohomeClient,
     poller: PollingCoordinator,
     config: EvohomeConfig,
+    history: HistoryFactory,
   ): void {
     const eve = createEveCharacteristics(this.api);
     const schedules = new ScheduleCache(client, this.log);
 
-    this.registerZones(location, client, poller, schedules, config, eve);
+    this.registerZones(
+      location,
+      client,
+      poller,
+      schedules,
+      config,
+      history,
+      eve,
+    );
     this.registerSwitches(location, client, poller, config);
 
     if (location.system.dhw !== undefined) {
@@ -206,6 +221,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     poller: PollingCoordinator,
     schedules: ScheduleCache,
     config: EvohomeConfig,
+    history: HistoryFactory,
     eve: ReturnType<typeof createEveCharacteristics>,
   ): void {
     for (const zone of location.system.zones) {
@@ -237,6 +253,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
           schedules,
           config,
           location.timeZone.currentOffsetMinutes,
+          history(accessory),
           eve,
           this.log,
         ),

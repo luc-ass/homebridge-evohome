@@ -278,10 +278,28 @@ wieder angehen.
 
 ### Phase 4 — Optionale Eve-History (0,5–1 Tag)
 
-- [ ] `fakegato-history` nach `optionalDependencies`, Option `history` (Default `true`) — F3
-- [ ] Dynamischer Import mit Fallback: fehlt das Modul, läuft alles ohne History weiter
-- [ ] Auswirkung auf #166 (Hoobs/`googleapis`) im README dokumentieren
-- [ ] Echte DHW-Zieltemperatur statt der hartkodierten `60`
+- [x] `fakegato-history` in `optionalDependencies`, Option `history` (Default `true`) — F3
+- [x] Dynamischer Import mit Fallback: fehlt das Modul, läuft alles ohne Verlauf
+      weiter, statt beim Start zu scheitern
+- [x] `history: false` lädt `fakegato-history` **gar nicht erst** — damit auch
+      `googleapis` nicht, der eigentliche Auslöser von #166
+- [x] Option `history` im Config-Schema
+- [ ] Auswirkung auf #166 im README dokumentieren — gehört zu Phase 5
+
+**Zu #166 im Detail:** `fakegato-storage.js` lädt in Zeile 11 unbedingt
+`./lib/googleDrive` und damit `googleapis` — auch bei `storage: "fs"`, das dieses
+Plugin ausschließlich verwendet. Auf Hoobs scheiterte der Start an genau diesem
+Import. `optionalDependencies` allein hilft nicht, denn npm installiert die
+standardmäßig mit; entscheidend ist, dass der **Import** an der Option hängt.
+Betroffene setzen `"history": false`, wer die Abhängigkeit gar nicht will,
+installiert mit `--omit=optional`.
+
+**Bewusst nicht umgesetzt:** Warmwasser bekommt keinen Verlauf. 0.11.2 schrieb
+dafür einen fest einkodierten Sollwert von 60 °C (`// TODO, random value`); die
+EMEA-API liefert für DHW keine Zieltemperatur, aus der sich eine sinnvolle Kurve
+ergäbe. Eine erfundene Linie ist schlechter als keine — dieselbe Begründung wie
+bei `ProgramData` in Phase 2. Falls gewünscht, ließe sich der reine
+Temperaturverlauf ohne Sollwert nachrüsten.
 
 ### Phase 5 — Config, Doku, Release 1.0.0 (1–1,5 Tage)
 
