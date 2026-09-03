@@ -202,9 +202,13 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
       `/Auth/OAuth/Token`, `/userAccount`, `/location/installationInfo` und
       `/location/{id}/status` läuft ohne `EvohomeResponseError` durch — die
       Feldnamen in `parse.ts` stimmen also für diese vier Antworten
-- [ ] **Offen:** noch nicht am echten System bestätigt sind die Antwortformate von
-      `/schedule` (wird erst bei einer Temperaturänderung gelesen), der
-      Warmwasserstatus und die Quittungen der Schreiboperationen
+- [x] Schreibpfad am echten System bestätigt (2026-09-03): eine Temperaturänderung
+      aus HomeKit liest `/temperatureZone/{id}/schedule`, schreibt
+      `PUT …/heatSetpoint` und verarbeitet die Quittung — die Regel aus
+      `setpointMode` greift dabei wie vorgesehen (#149)
+- [ ] **Offen:** der Warmwasserstatus (`dhw` in `/location/{id}/status` sowie
+      `PUT /domesticHotWater/{id}/state`) ist noch ungeprüft — nur relevant für
+      Systeme mit Warmwasserbereitung
 - [ ] **Verschoben nach Phase 2:** Token-Persistenz über `api.user.storagePath()`;
       das `TokenCache`-Interface steht, die Homebridge-Anbindung braucht die Platform
 
