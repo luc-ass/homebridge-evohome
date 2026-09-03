@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Identisch zu engines.node und zu homebridge@2.4.0 (Entscheidung F2).
+        # Identical to engines.node and to homebridge@2.4.0 (decision F2).
         node: [22, 24, 26]
 
     steps:

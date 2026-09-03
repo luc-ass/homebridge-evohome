@@ -47,16 +47,29 @@ export class FileTokenCache implements TokenCache {
   }
 
   async write(tokens: Tokens | undefined): Promise<void> {
+    if (tokens === undefined) {
+      await this.remove();
+      return;
+    }
     try {
-      if (tokens === undefined) {
-        await unlink(this.file);
-        return;
-      }
       // 0o600: only the Homebridge user may read the token.
       await writeFile(this.file, JSON.stringify(tokens), { mode: 0o600 });
     } catch (error) {
+      // Every failure is reported here, ENOENT included: for a write that means
+      // the storage directory does not exist, and silently never persisting a
+      // session is precisely the kind of failure that is impossible to
+      // diagnose from a bug report.
+      this.log.debug(`Could not store the session: ${String(error)}`);
+    }
+  }
+
+  private async remove(): Promise<void> {
+    try {
+      await unlink(this.file);
+    } catch (error) {
+      // Nothing stored yet is the normal case, not a problem.
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-        this.log.debug(`Could not store the session: ${String(error)}`);
+        this.log.debug(`Could not delete the stored session: ${String(error)}`);
       }
     }
   }

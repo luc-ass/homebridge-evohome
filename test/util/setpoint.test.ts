@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   decideOverride,
   DEFAULT_SETPOINT_STRATEGY,
+  needsSwitchpoint,
 } from "../../src/util/setpoint.js";
 
 import type { CurrentOverride } from "../../src/util/setpoint.js";
@@ -18,6 +19,12 @@ const runningOverride: CurrentOverride = {
 const followingSchedule: CurrentOverride = {
   setpointMode: "FollowSchedule",
   until: undefined,
+};
+
+/** The same override, but its end time has already passed. */
+const expiredOverride: CurrentOverride = {
+  setpointMode: "TemporaryOverride",
+  until: new Date("2026-03-22T12:00:00Z"),
 };
 
 /** Next switchpoint per the schedule: 18:00. */
@@ -169,5 +176,61 @@ describe("decideOverride", () => {
       expect(decision.mode).toBe("TemporaryOverride");
       expect(decision.until).toEqual(runningOverride.until);
     });
+  });
+});
+
+describe("needsSwitchpoint", () => {
+  // The accessories ask this before fetching a schedule. Every answer of
+  // `false` has to match a branch of decideOverride that ignores the
+  // switchpoint, otherwise a decision silently loses its end time.
+
+  it("never needs one for permanent", () => {
+    expect(needsSwitchpoint("permanent", followingSchedule, NOW)).toBe(false);
+    expect(needsSwitchpoint("permanent", runningOverride, NOW)).toBe(false);
+  });
+
+  it("does not need one while an override is running under keepExistingUntil", () => {
+    expect(needsSwitchpoint("keepExistingUntil", runningOverride, NOW)).toBe(
+      false,
+    );
+  });
+
+  it("needs one once the running override has expired", () => {
+    expect(needsSwitchpoint("keepExistingUntil", expiredOverride, NOW)).toBe(
+      true,
+    );
+  });
+
+  it("needs one when the zone is simply following its schedule", () => {
+    expect(needsSwitchpoint("keepExistingUntil", followingSchedule, NOW)).toBe(
+      true,
+    );
+  });
+
+  it("always needs one for untilNextSwitchpoint", () => {
+    expect(needsSwitchpoint("untilNextSwitchpoint", runningOverride, NOW)).toBe(
+      true,
+    );
+    expect(
+      needsSwitchpoint("untilNextSwitchpoint", followingSchedule, NOW),
+    ).toBe(true);
+  });
+
+  it("agrees with decideOverride wherever it says no", () => {
+    // The contract: if no switchpoint is needed, passing one changes nothing.
+    for (const current of [
+      runningOverride,
+      followingSchedule,
+      expiredOverride,
+    ]) {
+      for (const strategy of ["permanent", "keepExistingUntil"] as const) {
+        if (needsSwitchpoint(strategy, current, NOW)) {
+          continue;
+        }
+        expect(
+          decideOverride(strategy, current, nextSwitchpointAt, NOW),
+        ).toEqual(decideOverride(strategy, current, undefined, NOW));
+      }
+    }
   });
 });

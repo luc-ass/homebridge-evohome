@@ -82,6 +82,25 @@ export const decideOverride = (
   };
 };
 
+/**
+ * Does the decision still need the next switchpoint?
+ *
+ * The accessories ask before fetching the schedule. With `permanent`, or with a
+ * running override under `keepExistingUntil`, {@link decideOverride} discards
+ * the switchpoint anyway — and fetching it costs a request on the write path,
+ * which is exactly what the schedule cache exists to avoid.
+ *
+ * The rule lives here rather than in the accessories so that it cannot drift
+ * apart from the decision it mirrors.
+ */
+export const needsSwitchpoint = (
+  strategy: SetpointStrategy,
+  current: CurrentOverride,
+  now: Date,
+): boolean =>
+  strategy !== "permanent" &&
+  !(strategy === "keepExistingUntil" && isRunning(current, now));
+
 /** Is a temporary override running whose end time is still ahead? */
 const isRunning = (current: CurrentOverride, now: Date): boolean =>
   current.setpointMode === "TemporaryOverride" &&

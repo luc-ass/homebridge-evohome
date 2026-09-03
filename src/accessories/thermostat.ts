@@ -1,7 +1,7 @@
 import { REFRESH_DELAY_MS } from "../settings.js";
 import { faultKey, summarizeFaults } from "../util/faults.js";
 import { nextSwitchpoint } from "../util/schedule.js";
-import { decideOverride } from "../util/setpoint.js";
+import { decideOverride, needsSwitchpoint } from "../util/setpoint.js";
 
 import type { ScheduleCache } from "../api/scheduleCache.js";
 import type { HistoryService } from "../history.js";
@@ -10,6 +10,7 @@ import type { SetpointCapabilities, Zone, ZoneStatus } from "../api/types.js";
 import type { EvohomeConfig } from "../config.js";
 import type { EveCharacteristics } from "../characteristics/eve.js";
 import type { PollingCoordinator } from "../polling.js";
+import type { CurrentOverride } from "../util/setpoint.js";
 import type {
   API,
   CharacteristicValue,
@@ -382,10 +383,11 @@ export class ThermostatAccessory {
     // Issue #149: if a temporary override is already running, the default
     // `keepExistingUntil` adopts its end time instead of replacing it with the
     // next switchpoint.
+    const current = this.required().setpointStatus;
     const decision = decideOverride(
       this.config.setpointMode,
-      this.required().setpointStatus,
-      await this.nextSwitchpoint(now),
+      current,
+      await this.nextSwitchpoint(now, current),
       now,
     );
 
@@ -404,11 +406,14 @@ export class ThermostatAccessory {
   /**
    * Next switchpoint in this zone's schedule.
    *
-   * With `permanent` the schedule is not fetched at all; the call would be pure
-   * load on Honeywell's servers.
+   * Fetched only when the decision can still use it; otherwise the call would
+   * be pure load on Honeywell's servers. See {@link needsSwitchpoint}.
    */
-  private async nextSwitchpoint(now: Date): Promise<Date | undefined> {
-    if (this.config.setpointMode === "permanent") {
+  private async nextSwitchpoint(
+    now: Date,
+    current: CurrentOverride,
+  ): Promise<Date | undefined> {
+    if (!needsSwitchpoint(this.config.setpointMode, current, now)) {
       return undefined;
     }
     const schedule = await this.schedules.zone(this.zone.zoneId);

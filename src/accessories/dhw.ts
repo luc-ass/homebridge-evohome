@@ -1,13 +1,14 @@
 import { REFRESH_DELAY_MS } from "../settings.js";
 import { faultKey, summarizeFaults } from "../util/faults.js";
 import { nextSwitchpoint } from "../util/schedule.js";
-import { decideOverride } from "../util/setpoint.js";
+import { decideOverride, needsSwitchpoint } from "../util/setpoint.js";
 
 import type { ScheduleCache } from "../api/scheduleCache.js";
 import type { EvohomeClient } from "../api/client.js";
 import type { DhwStatus } from "../api/types.js";
 import type { EvohomeConfig } from "../config.js";
 import type { PollingCoordinator } from "../polling.js";
+import type { CurrentOverride } from "../util/setpoint.js";
 import type {
   API,
   CharacteristicValue,
@@ -177,10 +178,14 @@ export class DomesticHotWaterAccessory {
     const now = new Date();
 
     // Hot water follows the same rule as the heating zones (issue #149).
+    const current: CurrentOverride = {
+      setpointMode: this.required().mode,
+      until: this.required().until,
+    };
     const decision = decideOverride(
       this.config.setpointMode,
-      { setpointMode: this.required().mode, until: this.required().until },
-      await this.nextSwitchpoint(now),
+      current,
+      await this.nextSwitchpoint(now, current),
       now,
     );
 
@@ -194,8 +199,12 @@ export class DomesticHotWaterAccessory {
     this.poller.scheduleRefresh(REFRESH_DELAY_MS);
   }
 
-  private async nextSwitchpoint(now: Date): Promise<Date | undefined> {
-    if (this.config.setpointMode === "permanent") {
+  /** Next switchpoint, fetched only when the decision can still use it. */
+  private async nextSwitchpoint(
+    now: Date,
+    current: CurrentOverride,
+  ): Promise<Date | undefined> {
+    if (!needsSwitchpoint(this.config.setpointMode, current, now)) {
       return undefined;
     }
     const schedule = await this.schedules.dhw(this.dhwId);
