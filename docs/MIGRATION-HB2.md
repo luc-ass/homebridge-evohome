@@ -308,13 +308,22 @@ Temperaturverlauf ohne Sollwert nachrüsten.
       die neuen Optionen über Config UI X testen lassen. Ein Test hält Schema und
       `src/config.ts` synchron: Voreinstellungen, Wertelisten und Layout-Verweise
       müssen übereinstimmen. `history` fehlt bewusst noch und kommt mit Phase 4
-- [ ] Sanfte Config-Migration: alte Keys werden gelesen, gewarnt, übersetzt
-- [ ] README neu: Anforderungen (HB 2.x, Node 22+), Migration, bekannte Einschränkungen
-      inkl. #130 als dokumentiertes Home-App-Verhalten (F4)
-- [ ] `CHANGELOG.md` mit expliziter Breaking-Change-Liste
-- [ ] Credits für die Vorarbeit aus PR #207 (@MGMsystems) und PR #204 (@PuzzledUser);
-      beide PRs mit Verweis auf die Umsetzung im Rewrite schließen
-- [ ] Beta-Releases über `npm publish --tag beta`, Testaufruf in #205
+- [x] Alle nutzersichtbaren Texte auf Englisch — Logausgaben, Fehlermeldungen,
+      Config-Schema, README und CHANGELOG. Die Nutzerschaft ist international,
+      sämtliche Issues sind englisch. Die Notizen in `docs/` bleiben deutsch
+- [x] Sanfte Config-Migration: `childBridge` und `temperatureUnit` werden mit
+      Hinweis ignoriert, fehlerhafte Werte mit genanntem Ersatzwert
+- [x] README neu: Anforderungen (HB 2.x, Node 22+), Migration, `setpointMode`
+      erklärt, bekannte Einschränkungen inkl. #130 als Home-App-Verhalten (F4)
+- [x] `CHANGELOG.md` mit expliziter Breaking-Change-Liste
+- [x] Credits für PR #207 (@MGMsystems) und PR #204 (@PuzzledUser) in README
+      und CHANGELOG
+- [x] Version auf `1.0.0-beta.0`; der Publish-Workflow veröffentlicht
+      Vorabversionen automatisch unter dem npm-Tag `beta`
+- [ ] **Offen (Entscheidung des Maintainers):** `npm publish` bzw. ein
+      GitHub-Release auslösen, Testaufruf in #205, PRs #207 und #204 mit Verweis
+      auf die Umsetzung schließen
+- [ ] **Offen:** Warmwasserpfad von einem Beta-Tester mit DHW bestätigen lassen
 - [ ] 1.0.0
 
 **Aufwandsschätzung gesamt:** ca. 10,5–14 Personentage.

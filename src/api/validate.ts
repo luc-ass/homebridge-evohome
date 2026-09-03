@@ -16,14 +16,14 @@ const describe = (value: unknown): string => {
     return "null";
   }
   if (Array.isArray(value)) {
-    return "Array";
+    return "an array";
   }
   return typeof value;
 };
 
 const fail = (path: string, expected: string, value: unknown): never => {
   throw new EvohomeResponseError(
-    `Unerwartete API-Antwort bei "${path}": ${expected} erwartet, ${describe(value)} erhalten.`,
+    `Unexpected API response at "${path}": expected ${expected}, got ${describe(value)}.`,
     path,
   );
 };
@@ -33,24 +33,24 @@ export const asRecord = (
   path: string,
 ): Record<string, unknown> => {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return fail(path, "Objekt", value);
+    return fail(path, "an object", value);
   }
   return value as Record<string, unknown>;
 };
 
 export const asArray = (value: unknown, path: string): unknown[] =>
-  Array.isArray(value) ? value : fail(path, "Array", value);
+  Array.isArray(value) ? value : fail(path, "an array", value);
 
 export const asString = (value: unknown, path: string): string =>
-  typeof value === "string" ? value : fail(path, "String", value);
+  typeof value === "string" ? value : fail(path, "a string", value);
 
 export const asNumber = (value: unknown, path: string): number =>
   typeof value === "number" && Number.isFinite(value)
     ? value
-    : fail(path, "endliche Zahl", value);
+    : fail(path, "a finite number", value);
 
 export const asBoolean = (value: unknown, path: string): boolean =>
-  typeof value === "boolean" ? value : fail(path, "Boolean", value);
+  typeof value === "boolean" ? value : fail(path, "a boolean", value);
 
 /** Wie {@link asString}, akzeptiert aber auch Zahlen und wandelt sie um. */
 export const asId = (value: unknown, path: string): string => {
@@ -60,7 +60,7 @@ export const asId = (value: unknown, path: string): string => {
   if (typeof value === "number" && Number.isFinite(value)) {
     return String(value);
   }
-  return fail(path, "String oder Zahl", value);
+  return fail(path, "a string or number", value);
 };
 
 /** Liest ein Feld, das fehlen darf. */
@@ -82,7 +82,7 @@ export const first = (value: unknown, path: string): unknown => {
   const items = asArray(value, path);
   if (items.length === 0) {
     throw new EvohomeResponseError(
-      `Unerwartete API-Antwort bei "${path}": Array ist leer.`,
+      `Unexpected API response at "${path}": array is empty.`,
       path,
     );
   }
@@ -100,7 +100,7 @@ export const asEnum = <T extends string>(
     return text as T;
   }
   throw new EvohomeResponseError(
-    `Unerwartete API-Antwort bei "${path}": erwartet eines von ${allowed.join(", ")}, erhalten "${text}".`,
+    `Unexpected API response at "${path}": expected one of ${allowed.join(", ")}, got "${text}".`,
     path,
   );
 };
@@ -109,7 +109,7 @@ export const asEnum = <T extends string>(
 export const parseJson = (text: string, path: string): unknown => {
   if (text.trim() === "") {
     throw new EvohomeResponseError(
-      `Unerwartete API-Antwort bei "${path}": leerer Body.`,
+      `Unexpected API response at "${path}": empty body.`,
       path,
     );
   }
@@ -117,7 +117,7 @@ export const parseJson = (text: string, path: string): unknown => {
     return JSON.parse(text);
   } catch (cause) {
     throw new EvohomeResponseError(
-      `Unerwartete API-Antwort bei "${path}": kein gültiges JSON (${String(cause)}).`,
+      `Unexpected API response at "${path}": not valid JSON (${String(cause)}).`,
       path,
     );
   }

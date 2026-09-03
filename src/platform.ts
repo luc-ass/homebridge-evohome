@@ -65,7 +65,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
   }
 
   configureAccessory(accessory: PlatformAccessory): void {
-    this.log.debug("Accessory aus dem Cache geladen:", accessory.displayName);
+    this.log.debug("Restored accessory from cache:", accessory.displayName);
     this.cachedAccessories.set(accessory.UUID, accessory);
   }
 
@@ -99,7 +99,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     try {
       const location = await this.findLocation(client, config);
       this.log.info(
-        `Location "${location.name}" mit ${String(location.system.zones.length)} Zone(n).`,
+        `Location "${location.name}" with ${String(location.system.zones.length)} zone(s).`,
       );
 
       this.poller = new PollingCoordinator(
@@ -121,10 +121,10 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       // Anders als 0.11.2 bleiben die Accessories aus dem Cache bestehen —
       // HomeKit meldet sie als „nicht erreichbar", statt sie zu verlieren.
       this.log.error(
-        `Start fehlgeschlagen: ${error instanceof Error ? error.message : String(error)}`,
+        `Startup failed: ${error instanceof Error ? error.message : String(error)}`,
       );
       this.log.info(
-        "Bereits bekannte Geräte bleiben erhalten. Beim nächsten erfolgreichen Abruf wird weitergearbeitet.",
+        "Known accessories are kept. The plugin will pick up again on the next successful request.",
       );
     }
   }
@@ -144,7 +144,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     const locations = await client.getLocations(account.userId);
 
     if (locations.length === 0) {
-      throw new Error("Das Honeywell-Konto enthält keine Location.");
+      throw new Error("The Honeywell account contains no location.");
     }
 
     if (config.locationId !== undefined) {
@@ -155,24 +155,24 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
         return match;
       }
       this.log.warn(
-        `Keine Location mit der ID "${config.locationId}" gefunden. Verfügbar: ${locations
+        `No location with ID "${config.locationId}" found. Available: ${locations
           .map((l) => `${l.name} (${l.locationId})`)
           .join(
             ", ",
-          )}. Weiche auf locationIndex ${String(config.locationIndex)} aus.`,
+          )}. Falling back to locationIndex ${String(config.locationIndex)}.`,
       );
     }
 
     const byIndex = locations[config.locationIndex];
     if (byIndex === undefined) {
       throw new Error(
-        `locationIndex ${String(config.locationIndex)} existiert nicht — das Konto hat ${String(locations.length)} Location(s).`,
+        `locationIndex ${String(config.locationIndex)} does not exist — the account has ${String(locations.length)} location(s).`,
       );
     }
 
     if (locations.length > 1 && config.locationId === undefined) {
       this.log.info(
-        `Das Konto hat ${String(locations.length)} Locations. Verwendet wird "${byIndex.name}" (locationId ${byIndex.locationId}). Zur stabilen Zuordnung "locationId" in der config.json setzen.`,
+        `The account has ${String(locations.length)} locations. Using "${byIndex.name}" (locationId ${byIndex.locationId}). Set "locationId" in your config.json for a stable mapping.`,
       );
     }
     return byIndex;
@@ -227,14 +227,14 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     for (const zone of location.system.zones) {
       if (zone.modelType === "Unknown") {
         this.log.warn(
-          `Zone "${zone.name}" hat ein unbekanntes Modell und wird übersprungen.`,
+          `Zone "${zone.name}" reports an unknown model and is skipped.`,
         );
         continue;
       }
       if (zone.name.trim() === "") {
         // Namenlose Zonen sind in aller Regel die Warmwasserbereitung, die
         // ein eigenes Accessory bekommt.
-        this.log.debug("Zone ohne Namen übersprungen.");
+        this.log.debug("Skipped a zone without a name.");
         continue;
       }
 
@@ -275,7 +275,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       // unterstützten Modus führt sonst zu einer Fehlermeldung beim Drücken.
       if (!location.system.allowedSystemModes.includes(mode)) {
         this.log.debug(
-          `Systemmodus ${mode} wird vom System nicht unterstützt und bekommt keinen Schalter.`,
+          `System mode ${mode} is not supported by this system; no switch created.`,
         );
         continue;
       }
@@ -354,7 +354,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       return cached;
     }
 
-    this.log.info(`Neues Gerät: ${displayName}`);
+    this.log.info(`New accessory: ${displayName}`);
     const accessory = new this.api.platformAccessory(displayName, uuid);
     accessory.context["key"] = key;
     this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
@@ -374,7 +374,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     }
 
     for (const [uuid, accessory] of stale) {
-      this.log.info(`Gerät entfernt: ${accessory.displayName}`);
+      this.log.info(`Removed accessory: ${accessory.displayName}`);
       this.cachedAccessories.delete(uuid);
     }
     this.api.unregisterPlatformAccessories(

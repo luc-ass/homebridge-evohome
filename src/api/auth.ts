@@ -219,7 +219,7 @@ export class TokenStore {
       });
     } catch (cause) {
       throw new EvohomeNetworkError(
-        `Anmeldung bei Evohome nicht möglich: ${String(cause)}`,
+        `Could not reach the Evohome login endpoint: ${String(cause)}`,
         { cause },
       );
     }
@@ -239,11 +239,11 @@ export class TokenStore {
     const permanent = code !== undefined && PERMANENT_ERRORS.has(code);
     const detail = description ?? code ?? text.slice(0, 200);
     const hint = permanent
-      ? " Bitte Benutzername und Passwort in der config.json prüfen."
+      ? " Please check the username and password in your config.json."
       : "";
 
     return new EvohomeAuthError(
-      `Anmeldung bei Evohome fehlgeschlagen (HTTP ${String(status)}): ${detail}.${hint}`,
+      `Evohome login failed (HTTP ${String(status)}): ${detail}.${hint}`,
       !permanent,
     );
   }

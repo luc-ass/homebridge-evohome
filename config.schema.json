@@ -2,8 +2,8 @@
   "pluginAlias": "Evohome",
   "pluginType": "platform",
   "singular": false,
-  "headerDisplay": "Bindet Honeywell/Resideo Evohome in HomeKit ein. Zugangsdaten sind die von https://getconnected.honeywellhome.com.\n\n**Beim Umstieg von 0.11.x:** Die Geräte bekommen einmalig neue Kennungen und erscheinen deshalb im Standardraum. Sie müssen einmal neu zugeordnet werden, Automationen und Szenen neu angelegt. Danach bleibt die Zuordnung dauerhaft erhalten — das bisherige Verhalten, bei dem Geräte ohne erkennbaren Grund verschwanden, ist damit behoben.\n\nDie Optionen `childBridge` und `temperatureUnit` gibt es nicht mehr und können aus der Konfiguration entfernt werden.",
-  "footerDisplay": "Für jedes weitere Zuhause (Location) im selben Honeywell-Konto einen eigenen Eintrag anlegen. Fragen und Fehlerberichte: https://github.com/luc-ass/homebridge-evohome",
+  "headerDisplay": "Connects Honeywell/Resideo Evohome to Apple HomeKit. Use the credentials from https://getconnected.honeywellhome.com.\n\n**Upgrading from 0.11.x:** Your devices get new identifiers once and will therefore appear in the default room. You need to move them back and recreate scenes and automations. After that the assignment stays put — the long-standing problem of accessories disappearing for no obvious reason is fixed.\n\nThe `childBridge` and `temperatureUnit` options no longer exist and can be removed from your configuration.",
+  "footerDisplay": "Add one entry per home (location) in your Honeywell account. Questions and bug reports: https://github.com/luc-ass/homebridge-evohome",
   "schema": {
     "type": "object",
     "properties": {
@@ -13,119 +13,110 @@
         "default": "Evohome",
         "minLength": 1,
         "required": true,
-        "description": "Erscheint im Homebridge-Log und als Präfix der Schalternamen."
+        "description": "Shown in the Homebridge log and used as the prefix for the system mode switches."
       },
       "username": {
-        "title": "Benutzername / E-Mail-Adresse",
+        "title": "Username / email address",
         "type": "string",
         "format": "email",
         "required": true
       },
       "password": {
-        "title": "Passwort",
+        "title": "Password",
         "type": "string",
         "required": true
       },
       "locationId": {
-        "title": "Location-ID",
+        "title": "Location ID",
         "type": "string",
         "required": false,
-        "description": "Nur nötig, wenn das Konto mehrere Zuhause enthält. Die ID steht beim Start im Log und ist stabil — anders als der Index. Bleibt das Feld leer, wird der Index verwendet."
+        "description": "Only needed if your account holds more than one home. The ID is printed in the log at startup and is stable — unlike the index. Leave empty to use the index instead."
       },
       "locationIndex": {
-        "title": "Location-Index",
+        "title": "Location index",
         "type": "integer",
         "minimum": 0,
         "default": 0,
         "required": false,
-        "description": "Rückfallebene, wenn keine Location-ID gesetzt ist. Zählt ab 0. Achtung: Der Index verschiebt sich, wenn bei Honeywell ein Zuhause hinzukommt."
+        "description": "Fallback when no location ID is set. Starts at 0. Note that the index shifts if a home is added to your Honeywell account."
       },
       "pollIntervalSeconds": {
-        "title": "Abfrageintervall (Sekunden)",
+        "title": "Polling interval (seconds)",
         "type": "integer",
         "minimum": 60,
         "maximum": 3600,
         "default": 300,
         "required": false,
-        "description": "Wie oft der Status bei Honeywell abgefragt wird. Kürzere Intervalle führen in die Anfragebegrenzung der Honeywell-Server; unter 60 Sekunden wird angehoben."
+        "description": "How often the status is fetched from Honeywell. Shorter intervals run into Honeywell's rate limit; anything below 60 seconds is raised to 60."
       },
       "setpointMode": {
-        "title": "Gültigkeit einer Temperaturänderung",
+        "title": "How long a temperature change applies",
         "type": "string",
         "default": "keepExistingUntil",
         "required": false,
         "oneOf": [
           {
-            "title": "Laufende Endzeit beibehalten (empfohlen)",
-            "enum": [
-              "keepExistingUntil"
-            ]
+            "title": "Keep the existing end time (recommended)",
+            "enum": ["keepExistingUntil"]
           },
           {
-            "title": "Bis zum nächsten Schaltpunkt",
-            "enum": [
-              "untilNextSwitchpoint"
-            ]
+            "title": "Until the next switchpoint",
+            "enum": ["untilNextSwitchpoint"]
           },
-          {
-            "title": "Dauerhaft",
-            "enum": [
-              "permanent"
-            ]
-          }
+          { "title": "Permanent", "enum": ["permanent"] }
         ],
-        "description": "Steuert, wie lange eine in HomeKit gesetzte Temperatur gilt. „Laufende Endzeit beibehalten“: Ist bereits ein befristeter Override aktiv, bleibt dessen Endzeit erhalten und nur die Temperatur ändert sich — sonst gilt sie bis zum nächsten Schaltpunkt. „Bis zum nächsten Schaltpunkt“ entspricht dem Verhalten der Versionen bis 0.11.2. „Dauerhaft“ setzt das Zeitprogramm außer Kraft, bis in HomeKit „Auto“ gewählt wird. Ein Thermostat auf „Aus“ gilt in allen Fällen dauerhaft."
+        "description": "Controls how long a temperature set from HomeKit stays in effect. \"Keep the existing end time\": if a temporary override is already running, its end time is preserved and only the temperature changes — otherwise the change applies until the next switchpoint. \"Until the next switchpoint\" matches the behaviour of 0.11.2 and earlier. \"Permanent\" overrides the schedule until you pick \"Auto\" in HomeKit. Turning a thermostat off is always permanent, regardless of this setting."
       },
       "temperatureAboveAsOff": {
-        "title": "Zone als „aus“ anzeigen, wenn die Raumtemperatur über dem Sollwert liegt",
+        "title": "Show a zone as off when the room is warmer than the target",
         "type": "boolean",
         "default": false,
         "required": false,
-        "description": "Rein kosmetisch: ändert nur die Anzeige in HomeKit, nicht die Heizung."
+        "description": "Purely cosmetic: changes the display in HomeKit, not the heating itself."
       },
       "logTemperatureChanges": {
-        "title": "Änderungen der Raumtemperatur protokollieren",
+        "title": "Log room temperature changes",
         "type": "boolean",
         "default": false,
         "required": false,
-        "description": "Schreibt bei jeder Abfrage eine Zeile ins Log, wenn sich eine Raumtemperatur geändert hat. Hilfreich, um im Nachhinein nachzuvollziehen, warum es morgens kalt war."
+        "description": "Writes a line to the log whenever a room temperature changed. Useful for working out after the fact why it was cold in the morning."
       },
       "switchAway": {
-        "title": "Schalter für „Away“ anzeigen",
+        "title": "Show an \"Away\" switch",
         "type": "boolean",
         "default": true,
         "required": false
       },
       "switchDayOff": {
-        "title": "Schalter für „Day Off“ anzeigen",
+        "title": "Show a \"Day Off\" switch",
         "type": "boolean",
         "default": true,
         "required": false
       },
       "switchEco": {
-        "title": "Schalter für „Eco“ anzeigen",
+        "title": "Show an \"Eco\" switch",
         "type": "boolean",
         "default": true,
         "required": false
       },
       "switchHeatingOff": {
-        "title": "Schalter für „Heating Off“ anzeigen",
+        "title": "Show a \"Heating Off\" switch",
         "type": "boolean",
         "default": true,
         "required": false
       },
       "switchCustom": {
-        "title": "Schalter für „Custom“ anzeigen",
+        "title": "Show a \"Custom\" switch",
         "type": "boolean",
         "default": true,
         "required": false
       },
       "history": {
-        "title": "Verlauf für die Eve-App aufzeichnen",
+        "title": "Record history for the Eve app",
         "type": "boolean",
         "default": true,
         "required": false,
-        "description": "Zeichnet Temperaturverlauf und Ventilstellung für die Elgato-Eve-App auf (über fakegato-history). Abschalten, wenn der Verlauf nicht gebraucht wird oder das Zusatzpaket beim Start Probleme macht — dann wird es gar nicht erst geladen."
+        "description": "Records temperature and valve position for the Elgato Eve app using fakegato-history. Turn this off if you do not need the graphs, or if that package causes trouble at startup — it is then never loaded at all."
       }
     }
   },
@@ -134,27 +125,18 @@
     {
       "type": "flex",
       "flex-flow": "row wrap",
-      "items": [
-        "username",
-        {
-          "key": "password",
-          "type": "password"
-        }
-      ]
+      "items": ["username", { "key": "password", "type": "password" }]
     },
     {
       "type": "fieldset",
-      "title": "Heizverhalten",
+      "title": "Heating behaviour",
       "expandable": true,
       "expanded": false,
-      "items": [
-        "setpointMode",
-        "temperatureAboveAsOff"
-      ]
+      "items": ["setpointMode", "temperatureAboveAsOff"]
     },
     {
       "type": "fieldset",
-      "title": "Schalter für Systemmodi",
+      "title": "System mode switches",
       "expandable": true,
       "expanded": false,
       "items": [
@@ -167,7 +149,7 @@
     },
     {
       "type": "fieldset",
-      "title": "Erweitert",
+      "title": "Advanced",
       "expandable": true,
       "expanded": false,
       "items": [

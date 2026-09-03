@@ -72,7 +72,7 @@ export class ScheduleCache {
         // Ohne Zeitprogramm lässt sich immer noch ein dauerhafter Override
         // setzen — das ist besser, als die Bedienung ganz zu verweigern.
         this.log.debug(
-          `Zeitprogramm für ${key} nicht abrufbar: ${String(error)}`,
+          `Could not fetch the schedule for ${key}: ${String(error)}`,
         );
         return [] as readonly DailySchedule[];
       })

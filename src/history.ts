@@ -60,7 +60,7 @@ export const loadHistoryFactory = async (
 ): Promise<HistoryFactory> => {
   if (!enabled) {
     log.debug(
-      'Verlauf für die Eve-App ist abgeschaltet ("history": false), fakegato-history wird nicht geladen.',
+      'Eve history is disabled ("history": false); fakegato-history will not be loaded.',
     );
     return noHistory;
   }
@@ -71,13 +71,13 @@ export const loadHistoryFactory = async (
     createHistory = module.default(api);
   } catch (error) {
     log.warn(
-      `Verlauf für die Eve-App nicht verfügbar: fakegato-history konnte nicht geladen werden (${String(error)}). ` +
-        'Mit "npm install fakegato-history" nachinstallieren oder "history": false setzen, um diese Meldung abzustellen.',
+      `Eve history unavailable: fakegato-history could not be loaded (${String(error)}). ` +
+        'Install it with "npm install fakegato-history", or set "history": false to silence this message.',
     );
     return noHistory;
   }
 
-  log.debug("Verlauf für die Eve-App aktiv (fakegato-history).");
+  log.debug("Eve history enabled (fakegato-history).");
 
   return (accessory) => {
     try {
@@ -89,7 +89,7 @@ export const loadHistoryFactory = async (
     } catch (error) {
       // Ein kaputter Verlauf darf das Thermostat nicht mitreißen.
       log.warn(
-        `Verlauf für "${accessory.displayName}" konnte nicht angelegt werden: ${String(error)}`,
+        `Could not set up history for "${accessory.displayName}": ${String(error)}`,
       );
       return undefined;
     }

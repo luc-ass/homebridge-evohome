@@ -88,7 +88,7 @@ const readSetpointStrategy = (
     return value as SetpointStrategy;
   }
   log.warn(
-    `Konfigurationswert "setpointMode" ist unbekannt (${JSON.stringify(value)}). Erlaubt sind ${SETPOINT_STRATEGIES.join(", ")}. Verwende ${DEFAULT_SETPOINT_STRATEGY}.`,
+    `Unknown value for "setpointMode" (${JSON.stringify(value)}). Allowed values are ${SETPOINT_STRATEGIES.join(", ")}. Using ${DEFAULT_SETPOINT_STRATEGY}.`,
   );
   return DEFAULT_SETPOINT_STRATEGY;
 };
@@ -106,7 +106,7 @@ const readBoolean = (
     return value;
   }
   log.warn(
-    `Konfigurationswert "${key}" ist kein Ja/Nein-Wert (${JSON.stringify(value)}). Verwende ${String(fallback)}.`,
+    `Configuration value "${key}" is not true/false (${JSON.stringify(value)}). Using ${String(fallback)}.`,
   );
   return fallback;
 };
@@ -121,7 +121,7 @@ const readPollInterval = (value: unknown, log: Logging): number => {
   const seconds = Number(value);
   if (!Number.isFinite(seconds)) {
     log.warn(
-      `Konfigurationswert "pollIntervalSeconds" ist keine Zahl (${JSON.stringify(value)}). Verwende ${String(DEFAULT_POLL_INTERVAL_SECONDS)} s.`,
+      `Configuration value "pollIntervalSeconds" is not a number (${JSON.stringify(value)}). Using ${String(DEFAULT_POLL_INTERVAL_SECONDS)}s.`,
     );
     return DEFAULT_POLL_INTERVAL_SECONDS;
   }
@@ -129,7 +129,7 @@ const readPollInterval = (value: unknown, log: Logging): number => {
     // Ein zu kurzes Intervall führt in den Rate-Limiter der Honeywell-Server
     // und trifft dann alle Nutzer desselben Kontos.
     log.warn(
-      `Pollingintervall ${String(seconds)} s ist zu kurz und würde den Rate-Limiter von Honeywell treffen. Verwende ${String(MIN_POLL_INTERVAL_SECONDS)} s.`,
+      `A polling interval of ${String(seconds)}s is too short and would hit Honeywell’s rate limit. Using ${String(MIN_POLL_INTERVAL_SECONDS)}s.`,
     );
     return MIN_POLL_INTERVAL_SECONDS;
   }
@@ -143,7 +143,7 @@ const readLocationIndex = (value: unknown, log: Logging): number => {
   const index = Number(value);
   if (!Number.isInteger(index) || index < 0) {
     log.warn(
-      `Konfigurationswert "locationIndex" ist kein gültiger Index (${JSON.stringify(value)}). Verwende 0.`,
+      `Configuration value "locationIndex" is not a valid index (${JSON.stringify(value)}). Using 0.`,
     );
     return 0;
   }
@@ -157,14 +157,14 @@ const warnAboutRemovedKeys = (config: PlatformConfig, log: Logging): void => {
     // Fehlerfall. Eine dynamische Platform verliert ihre Accessories bei
     // einem Fehler ohnehin nicht mehr (Befund S2).
     log.warn(
-      'Die Option "childBridge" gibt es nicht mehr und wird ignoriert. Accessories bleiben jetzt auch ohne Child Bridge erhalten — der Eintrag kann aus der config.json entfernt werden.',
+      'The "childBridge" option no longer exists and is ignored. Accessories now survive errors without a child bridge, so the entry can be removed from your config.json.',
     );
   }
   if (config["temperatureUnit"] !== undefined) {
     // HomeKit zeigt Temperaturen immer in der Einheit des iOS-Geräts an; die
     // Option hatte in 0.11.2 keine Wirkung auf die Anzeige.
     log.warn(
-      'Die Option "temperatureUnit" gibt es nicht mehr und wird ignoriert. Die Anzeigeeinheit steuert HomeKit selbst über die Einstellungen des iOS-Geräts.',
+      'The "temperatureUnit" option no longer exists and is ignored. HomeKit picks the display unit from the iOS device settings.',
     );
   }
 };
@@ -184,7 +184,7 @@ export const readConfig = (
   const password = readString(config["password"]);
   if (username === undefined || password === undefined) {
     throw new ConfigError(
-      'In der config.json fehlen "username" und/oder "password" für das Honeywell-Konto.',
+      'Your config.json is missing "username" and/or "password" for the Honeywell account.',
     );
   }
 

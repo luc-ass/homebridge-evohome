@@ -41,7 +41,7 @@ describe("decideOverride", () => {
 
       expect(decision.mode).toBe("TemporaryOverride");
       expect(decision.until).toEqual(new Date("2026-03-22T20:30:00Z"));
-      expect(decision.reason).toContain("laufenden Overrides");
+      expect(decision.reason).toContain("end time of the running override");
     });
 
     it("nimmt den nächsten Schaltpunkt, wenn kein Override läuft", () => {
@@ -56,7 +56,7 @@ describe("decideOverride", () => {
 
       expect(decision.mode).toBe("TemporaryOverride");
       expect(decision.until).toEqual(nextSwitchpointAt);
-      expect(decision.reason).toContain("nächster Schaltpunkt");
+      expect(decision.reason).toContain("next switchpoint");
     });
 
     it("ignoriert einen bereits abgelaufenen Override", () => {
@@ -145,7 +145,7 @@ describe("decideOverride", () => {
       );
 
       expect(decision.mode).toBe("PermanentOverride");
-      expect(decision.reason).toContain("kein Schaltpunkt");
+      expect(decision.reason).toContain("no switchpoint found");
     });
 
     it("nimmt keinen Schaltpunkt in der Vergangenheit", () => {

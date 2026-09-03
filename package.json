@@ -1,8 +1,8 @@
 {
   "displayName": "Homebridge Evohome",
   "name": "homebridge-evohome",
-  "version": "0.11.2",
-  "description": "Honeywell Evohome support for Homebridge",
+  "version": "1.0.0-beta.0",
+  "description": "Honeywell Evohome support for Homebridge 2",
   "license": "ISC",
   "type": "module",
   "main": "dist/index.js",
@@ -29,7 +29,8 @@
     "dist",
     "config.schema.json",
     "assets",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "clean": "rm -rf dist",

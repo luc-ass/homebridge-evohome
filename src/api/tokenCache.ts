@@ -42,9 +42,7 @@ export class FileTokenCache implements TokenCache {
       // Fehlt die Datei oder ist sie unbrauchbar, wird eben neu angemeldet —
       // das ist kein Grund, den Start abzubrechen.
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-        this.log.debug(
-          `Gespeicherte Sitzung konnte nicht gelesen werden: ${String(error)}`,
-        );
+        this.log.debug(`Could not read the stored session: ${String(error)}`);
       }
       return undefined;
     }
@@ -60,9 +58,7 @@ export class FileTokenCache implements TokenCache {
       await writeFile(this.file, JSON.stringify(tokens), { mode: 0o600 });
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-        this.log.debug(
-          `Sitzung konnte nicht gespeichert werden: ${String(error)}`,
-        );
+        this.log.debug(`Could not store the session: ${String(error)}`);
       }
     }
   }

@@ -140,7 +140,7 @@ describe("PollingCoordinator", () => {
     let fail = true;
     const client = makeClient(() =>
       fail
-        ? Promise.reject(new EvohomeNetworkError("keine Verbindung"))
+        ? Promise.reject(new EvohomeNetworkError("no connection"))
         : Promise.resolve(status),
     );
     const log = makeLog();
@@ -148,12 +148,12 @@ describe("PollingCoordinator", () => {
 
     await poller.start();
     expect(poller.status).toBeUndefined();
-    expect(log.warnings.join()).toContain("keine Verbindung");
+    expect(log.warnings.join()).toContain("no connection");
 
     fail = false;
     await poller.refresh();
     expect(poller.status).toBe(status);
-    expect(log.infos.join()).toContain("wiederhergestellt");
+    expect(log.infos.join()).toContain("Reconnected");
     poller.stop();
   });
 
@@ -161,7 +161,7 @@ describe("PollingCoordinator", () => {
     // Ein längerer Honeywell-Ausfall füllte in 0.11.2 das Log mit derselben
     // Meldung samt Stacktrace — der Anlass für PR #204.
     const client = makeClient(() =>
-      Promise.reject(new EvohomeNetworkError("keine Verbindung")),
+      Promise.reject(new EvohomeNetworkError("no connection")),
     );
     const log = makeLog();
     const poller = new PollingCoordinator(client, "9876543", 60, log);
@@ -172,20 +172,20 @@ describe("PollingCoordinator", () => {
 
     expect(client.calls).toBe(3);
     expect(
-      log.warnings.filter((w) => w.includes("keine Verbindung")),
+      log.warnings.filter((w) => w.includes("no connection")),
     ).toHaveLength(1);
     poller.stop();
   });
 
   it("weist auf dauerhafte Fehler gesondert hin", async () => {
     const client = makeClient(() =>
-      Promise.reject(new EvohomeApiError("nicht gefunden", 404)),
+      Promise.reject(new EvohomeApiError("not found", 404)),
     );
     const log = makeLog();
     const poller = new PollingCoordinator(client, "9876543", 60, log);
 
     await poller.start();
-    expect(log.warnings.join()).toContain("nicht von selbst weg");
+    expect(log.warnings.join()).toContain("unlikely to resolve");
     poller.stop();
   });
 

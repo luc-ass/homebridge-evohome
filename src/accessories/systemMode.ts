@@ -66,7 +66,7 @@ export class SystemModeAccessory {
 
   private async setActive(value: CharacteristicValue): Promise<void> {
     const target = value === true ? this.mode : "Auto";
-    this.log.info(`Systemmodus: ${target}.`);
+    this.log.info(`System mode: ${target}.`);
 
     await this.client.setSystemMode(this.systemId, target, undefined);
     // Die Honeywell-Server brauchen einen Moment, bis der neue Modus im

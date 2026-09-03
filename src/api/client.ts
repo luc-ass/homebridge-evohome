@@ -203,7 +203,7 @@ export class EvohomeClient {
 
     if (response.status === 429) {
       throw new EvohomeRateLimitError(
-        `Evohome-API meldet zu viele Anfragen für ${options.path}.`,
+        `Evohome API rate limit reached for ${options.path}.`,
         retryAfterMs(response.headers.get("retry-after")),
         text,
       );
@@ -211,7 +211,7 @@ export class EvohomeClient {
 
     if (!response.ok) {
       throw new EvohomeApiError(
-        `Evohome-API antwortete auf ${options.method} ${options.path} mit HTTP ${String(response.status)}.`,
+        `Evohome API responded to ${options.method} ${options.path} with HTTP ${String(response.status)}.`,
         response.status,
         text,
       );
@@ -242,7 +242,7 @@ export class EvohomeClient {
       });
     } catch (cause) {
       throw new EvohomeNetworkError(
-        `Evohome-API nicht erreichbar (${options.method} ${options.path}): ${String(cause)}`,
+        `Evohome API unreachable (${options.method} ${options.path}): ${String(cause)}`,
         { cause },
       );
     }

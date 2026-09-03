@@ -141,7 +141,7 @@ export class PollingCoordinator {
   private onSuccess(status: LocationStatus): void {
     if (this.consecutiveFailures > 0) {
       this.log.info(
-        `Verbindung zu Evohome nach ${String(this.consecutiveFailures)} Fehlversuch(en) wiederhergestellt.`,
+        `Reconnected to Evohome after ${String(this.consecutiveFailures)} failed attempt(s).`,
       );
     }
     this.consecutiveFailures = 0;
@@ -152,7 +152,9 @@ export class PollingCoordinator {
       try {
         listener(status);
       } catch (error) {
-        this.log.error(`Fehler beim Verarbeiten des Status: ${String(error)}`);
+        this.log.error(
+          `Error while handling the status update: ${String(error)}`,
+        );
       }
     }
   }
@@ -169,16 +171,16 @@ export class PollingCoordinator {
     const message = error instanceof Error ? error.message : String(error);
 
     if (this.consecutiveFailures === 1) {
-      this.log.warn(`Statusabfrage bei Evohome fehlgeschlagen: ${message}`);
+      this.log.warn(`Failed to fetch status from Evohome: ${message}`);
     } else {
       this.log.debug(
-        `Statusabfrage fehlgeschlagen (${String(this.consecutiveFailures)}. Versuch in Folge): ${message}`,
+        `Status request failed (${String(this.consecutiveFailures)} consecutive failures): ${message}`,
       );
     }
 
     if (!isRetryable(error) && this.consecutiveFailures === 1) {
       this.log.warn(
-        "Dieser Fehler geht voraussichtlich nicht von selbst weg. Bitte Konfiguration und Log prüfen.",
+        "This error is unlikely to resolve on its own. Please check your configuration and the log above.",
       );
     }
   }

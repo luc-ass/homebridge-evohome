@@ -204,9 +204,9 @@ export class ThermostatAccessory {
     if (previous === current) {
       return;
     }
-    const direction = current > previous ? "gestiegen" : "gefallen";
+    const direction = current > previous ? "rose" : "fell";
     this.log.info(
-      `${this.zone.name}: Temperatur ${direction} von ${String(previous)} °C auf ${String(current)} °C.`,
+      `${this.zone.name}: temperature ${direction} from ${String(previous)} °C to ${String(current)} °C.`,
     );
   }
 
@@ -314,7 +314,7 @@ export class ThermostatAccessory {
     );
 
     this.log.info(
-      `${this.zone.name}: Solltemperatur auf ${String(target)} °C, ${decision.reason}.`,
+      `${this.zone.name}: target temperature ${String(target)} °C, ${decision.reason}.`,
     );
     await this.client.setHeatSetpoint(
       this.zone.zoneId,
@@ -346,7 +346,7 @@ export class ThermostatAccessory {
     if (value === TargetHeatingCoolingState.OFF) {
       // Auf das Minimum des Systems statt auf feste 5 °C (Befund B6, #94).
       this.log.info(
-        `${this.zone.name}: aus (Sollwert ${String(minHeatSetpoint)} °C).`,
+        `${this.zone.name}: off (target ${String(minHeatSetpoint)} °C).`,
       );
       await this.client.setHeatSetpoint(
         this.zone.zoneId,
@@ -355,7 +355,7 @@ export class ThermostatAccessory {
         undefined,
       );
     } else if (value === TargetHeatingCoolingState.AUTO) {
-      this.log.info(`${this.zone.name}: folgt wieder dem Zeitprogramm.`);
+      this.log.info(`${this.zone.name}: following the schedule again.`);
       await this.client.setHeatSetpoint(
         this.zone.zoneId,
         "FollowSchedule",
@@ -368,9 +368,7 @@ export class ThermostatAccessory {
       if (this.targetState() !== TargetHeatingCoolingState.OFF) {
         return;
       }
-      this.log.info(
-        `${this.zone.name}: Heizen wieder aktiv, Override aufgehoben.`,
-      );
+      this.log.info(`${this.zone.name}: heating on again, override cancelled.`);
       await this.client.setHeatSetpoint(
         this.zone.zoneId,
         "FollowSchedule",

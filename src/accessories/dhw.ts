@@ -126,7 +126,7 @@ export class DomesticHotWaterAccessory {
       now,
     );
 
-    this.log.info(`Warmwasser: ${state}, ${decision.reason}.`);
+    this.log.info(`Hot water: ${state}, ${decision.reason}.`);
     await this.client.setDhwState(
       this.dhwId,
       decision.mode,

@@ -439,7 +439,7 @@ describe("EvohomePlatform", () => {
 
       expect(test.unregistered).toHaveLength(0);
       expect(platform.cachedAccessoryCount).toBe(1);
-      expect(log.infos.join()).toContain("bleiben erhalten");
+      expect(log.infos.join()).toContain("Known accessories are kept");
     });
 
     it("weist auf eine unbekannte locationId hin und weicht aus", async () => {

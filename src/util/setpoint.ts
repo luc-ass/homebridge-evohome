@@ -53,14 +53,14 @@ export const decideOverride = (
   now: Date,
 ): OverrideDecision => {
   if (strategy === "permanent") {
-    return { mode: "PermanentOverride", until: undefined, reason: "dauerhaft" };
+    return { mode: "PermanentOverride", until: undefined, reason: "permanent" };
   }
 
   if (strategy === "keepExistingUntil" && isRunning(current, now)) {
     return {
       mode: "TemporaryOverride",
       until: current.until,
-      reason: `bis ${formatTime(current.until)} (Endzeit des laufenden Overrides)`,
+      reason: `until ${formatTime(current.until)} (end time of the running override)`,
     };
   }
 
@@ -68,7 +68,7 @@ export const decideOverride = (
     return {
       mode: "TemporaryOverride",
       until: nextSwitchpointAt,
-      reason: `bis ${formatTime(nextSwitchpointAt)} (nächster Schaltpunkt)`,
+      reason: `until ${formatTime(nextSwitchpointAt)} (next switchpoint)`,
     };
   }
 
@@ -78,7 +78,7 @@ export const decideOverride = (
   return {
     mode: "PermanentOverride",
     until: undefined,
-    reason: "dauerhaft (kein Schaltpunkt im Zeitprogramm gefunden)",
+    reason: "permanent (no switchpoint found in the schedule)",
   };
 };
 
@@ -89,4 +89,4 @@ const isRunning = (current: CurrentOverride, now: Date): boolean =>
   current.until > now;
 
 const formatTime = (date: Date | undefined): string =>
-  date === undefined ? "unbekannt" : date.toISOString().slice(11, 16) + " UTC";
+  date === undefined ? "unknown" : date.toISOString().slice(11, 16) + " UTC";

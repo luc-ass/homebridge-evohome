@@ -93,7 +93,7 @@ describe("readConfig", () => {
       const config = readConfig({ ...base, pollIntervalSeconds: 5 }, log);
 
       expect(config.pollIntervalSeconds).toBe(MIN_POLL_INTERVAL_SECONDS);
-      expect(log.warnings.join()).toContain("Rate-Limiter");
+      expect(log.warnings.join()).toContain("rate limit");
     });
 
     it("weist unsinnige Werte zurück", () => {
@@ -132,7 +132,7 @@ describe("readConfig", () => {
       readConfig({ ...base, childBridge: true }, log);
 
       expect(log.warnings.join()).toContain("childBridge");
-      expect(log.warnings.join()).toContain("Child Bridge");
+      expect(log.warnings.join()).toContain("child bridge");
     });
 
     it("warnt bei temperatureUnit und ignoriert es", () => {

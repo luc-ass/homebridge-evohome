@@ -161,14 +161,14 @@ describe("Fehlerbehandlung beim Parsen", () => {
       expect((error as EvohomeResponseError).path).toBe(
         "locationStatus.gateways",
       );
-      expect((error as Error).message).toContain("Array erwartet");
+      expect((error as Error).message).toContain("expected an array");
     }
   });
 
   it("meldet ein leeres gateways-Array statt blind zuzugreifen", () => {
     expect(() =>
       parseLocationStatus({ locationId: "1", gateways: [] }),
-    ).toThrow(/Array ist leer/);
+    ).toThrow(/array is empty/);
   });
 
   it("meldet einen unbekannten Systemmodus mit den erlaubten Werten", () => {
@@ -180,7 +180,7 @@ describe("Fehlerbehandlung beim Parsen", () => {
     raw.gateways[0]!.temperatureControlSystems[0]!.systemModeStatus.mode =
       "AutoWithFrostProtect";
 
-    expect(() => parseLocationStatus(raw)).toThrow(/erwartet eines von/);
+    expect(() => parseLocationStatus(raw)).toThrow(/expected one of/);
   });
 });
 
