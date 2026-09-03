@@ -11,7 +11,17 @@
       "name": "Evohome",
       "username": "DEINE@EMAIL.TLD",
       "password": "DEIN-PASSWORT",
-      "locationIndex": 0
+
+      "_hinweis": "Alles ab hier ist optional. Die Voreinstellungen stehen in config.schema.json.",
+      "setpointMode": "keepExistingUntil",
+      "pollIntervalSeconds": 300,
+      "logTemperatureChanges": true,
+      "temperatureAboveAsOff": false,
+      "switchAway": true,
+      "switchDayOff": true,
+      "switchEco": true,
+      "switchHeatingOff": true,
+      "switchCustom": true
     }
   ]
 }

@@ -46,7 +46,8 @@
     "check": "npm run lint && npm run typecheck && npm run test:coverage",
     "prepublishOnly": "npm run check && npm run build",
     "dev": "npm run build && homebridge -U ./test-instance/data -P . --strict-plugin-resolution -I",
-    "dev:debug": "npm run build && homebridge -U ./test-instance/data -P . --strict-plugin-resolution -I -D"
+    "dev:debug": "npm run build && homebridge -U ./test-instance/data -P . --strict-plugin-resolution -I -D",
+    "dev:ui": "npm run build && homebridge -U ./test-instance/data -P . -I"
   },
   "optionalDependencies": {
     "fakegato-history": "^0.6.7"

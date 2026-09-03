@@ -52,17 +52,52 @@ npm run build && homebridge -U ./test-instance/data -P . --strict-plugin-resolut
 
 `npm run dev:debug` ergänzt `-D` für die `log.debug`-Ausgaben.
 
-**Was in Phase 0 zu sehen sein soll:**
+### Mit Config UI X testen
+
+`--strict-plugin-resolution` lädt **ausschließlich** das Plugin aus `-P` — also auch
+kein Config UI X. Wer das Formular aus `config.schema.json` im Browser prüfen will,
+braucht `npm run dev:ui`; das lässt das Flag weg.
+
+```sh
+npm install -g homebridge-config-ui-x
+npm run dev:ui        # http://localhost:8581
+```
+
+Dafür lädt Homebridge dann wieder alle global installierten Plugins mit. Sind dort
+ältere Plugins installiert, die die aktuelle Node-Version nicht unterstützen, füllen
+deren Stacktraces das Log — das hat nichts mit diesem Plugin zu tun. Für den
+normalen Entwicklungslauf ist `npm run dev` deshalb die ruhigere Wahl.
+
+**Was zu sehen sein soll**, sobald echte Zugangsdaten hinterlegt sind:
 
 ```
 [Evohome] Initializing Evohome platform...
-[Evohome] Phase-0-Gerüst geladen — es werden noch keine Accessories angelegt.
+[Evohome] Location "Zuhause" mit 6 Zone(n).
+[Evohome] Neues Gerät: Wohnzimmer Thermostat
+[Evohome] Neues Gerät: Bad Thermostat
+[Evohome] Neues Gerät: Evohome Hot Water
+[Evohome] Neues Gerät: Evohome Away Mode
+...
 ```
 
-Damit ist belegt, dass das ESM-Build unter Homebridge 2.x geladen und die Platform
-registriert wird — genau der Punkt, an dem 0.11.2 mit
+Damit ist belegt, dass das ESM-Build unter Homebridge 2.x geladen wird — genau der
+Punkt, an dem 0.11.2 mit
 `TypeError: Class constructor Characteristic cannot be invoked without 'new'`
 abbrach (Issue #205).
+
+Sinnvoll danach zu prüfen:
+
+| Prüfung                                | Erwartung                                                                                                                                  |
+| :------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| Homebridge neu starten                 | Die Geräte kommen aus dem Cache, `Neues Gerät` erscheint **nicht** erneut, die Raumzuordnung in der Home-App bleibt (S1, #61)              |
+| In der Home-App eine Temperatur ändern | Eine Logzeile `… Solltemperatur auf 21 °C, bis HH:MM UTC (…)` — die Begründung zeigt, welche Regel aus `setpointMode` gegriffen hat (#149) |
+| Thermostat auf „Aus"                   | Sollwert geht auf das Minimum der Zone, **nicht** auf feste 5 °C; keine `illegal value`-Warnung im Log (#94)                               |
+| Warmwasser schalten                    | Antwortet sofort, nicht erst nach ~15 s (#180)                                                                                             |
+| Ein paar Stunden laufen lassen         | Konstante CPU-Last, ein Statusabruf je Intervall (#172)                                                                                    |
+
+Ist in der Zwischenzeit eine Zone bei Honeywell hinzugekommen oder entfallen, meldet
+das Log `Neues Gerät:` bzw. `Gerät entfernt:` — die übrigen Geräte behalten ihre
+Identität.
 
 ### Fehlerbild „No plugin was found for the platform"
 
