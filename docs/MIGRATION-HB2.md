@@ -129,7 +129,7 @@ test/                       Vitest + aufgezeichnete API-Fixtures
    `/location/{id}/status` und verteilt das Ergebnis an alle Handler (behebt S13).
    Ein einziger Timer statt N+2 (behebt S11), mit echtem `async`-Guard (behebt S5).
 2. **Stabile Identität.** `api.hap.uuid.generate("evohome:" + zoneId)` statt Array-Index.
-   Für Bestandsnutzer eine dokumentierte, einmalige Migration (siehe Abschnitt 7).
+   Einmalige, dokumentierte Migration für Bestandsnutzer (Abschnitt 7).
 3. **`onGet`/`onSet` statt `.on("get"/"set")`.** Async-Handler, die einen Wert
    zurückgeben bzw. bei Fehlern `HapStatusError` werfen, statt Fehler zu verschlucken.
    Werte kommen aus dem Cache des Pollers — kein API-Call im HomeKit-Pfad.
@@ -137,136 +137,178 @@ test/                       Vitest + aufgezeichnete API-Fixtures
    zu einem definierten Zustand (`StatusFault` / letzter bekannter Wert), nicht zum Abbruch.
 5. **Login mit Backoff.** Exponentiell mit Cap, damit der Rate-Limiter nicht getroffen
    wird (Issue #136 fordert das explizit).
+6. **Eine Platform-Instanz = eine Location** (Entscheidung F5). `singular: false` und
+   `locationIndex` bleiben erhalten; mehrere Systeme pro Account sind in der Regel
+   verschiedene Haushalte und gehören in getrennte Config-Blöcke — ggf. in getrennte
+   Child Bridges. `locationIndex` wird zusätzlich per `locationId` adressierbar, damit
+   das Umsortieren bei Honeywell nicht die Zuordnung verschiebt.
+7. **`Service.Thermostat` bleibt** (Entscheidung F4). Die Feuchtigkeits-Kachel aus #130
+   ist Home-App-Verhalten und wird als Einschränkung dokumentiert, nicht umgangen.
+8. **Eve-History ist optional** (Entscheidung F3). `fakegato-history` wandert in
+   `optionalDependencies`, die Option `history` (Default `true`) schaltet sie ab. Fehlt
+   das Modul, läuft das Plugin ohne History weiter statt zu crashen.
 
 ## 5. Phasenplan
 
-Der Plan ist bewusst zweigeteilt: **Phase 1 liefert kurzfristig eine funktionierende
-0.12.0** für die Nutzer, die seit dem HB2-Update auf Homebridge 1.11.4 festhängen. Der
-Rewrite läuft danach ohne Zeitdruck.
+Mit Entscheidung **F1 (direkt auf 1.0.0)** entfällt der Zwischen-Release 0.12.0. Der
+bestehende Code wird nicht mehr angefasst — jede in Abschnitt 2 und 3 gefundene Schwäche
+muss stattdessen im neuen Code nachweislich adressiert sein. Abschnitt 5.1 hält das als
+Prüfliste fest, damit beim Wegwerfen des alten Codes nichts verloren geht.
 
-### Phase 0 — Absicherung (0,5 Tag)
-- [ ] Branch `homebridge-v2` (erledigt)
-- [ ] `package-lock.json` erzeugen und committen, Runtime-Deps auf `^` pinnen
-- [ ] `npm-publish.yml`: Node 22, `npm ci`, `npm test` erst wenn es Tests gibt
-- [ ] Testinstanz: Homebridge 2.4.0 + Node 22 im Docker-Container gegen ein echtes Konto
+**Konsequenz, die bewusst in Kauf genommen wird:** `master` bleibt für Homebridge-2-Nutzer
+kaputt, bis 1.0.0 fertig ist (#205 seit Mai 2026 offen). Gegenmaßnahme: früh und oft
+`npm publish --tag beta` aus diesem Branch und die Tester in #205 gezielt darauf
+verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
 
-### Phase 1 — HB2-Hotfix auf bestehendem Code (1–2 Tage) → **Release 0.12.0**
-Ziel: läuft unter Homebridge 1.8 *und* 2.x, kein Umbau der Architektur.
-- [ ] B1/B2/B7: PR **#207** übernehmen (Custom Characteristics als ES-Klassen,
-      `api.hap.Formats/Units/Perms`, `Buffer.from`, NaN-Guard) — schließt #205
-- [ ] B3: `.getValue()` in `periodicUpdate` durch `updateValue(...)` mit selbst
-      berechnetem Zustand ersetzen
-- [ ] B4/B5: `engines` → `{"node": "^22 || ^24 || ^26", "homebridge": "^1.8.0 || ^2.0.0"}`
-- [ ] S7/S8: DHW-Fehlerpfad reparieren (kein `callback` im Interval, Response prüfen)
-- [ ] S4: `(this.model = …)` → `===`
-- [ ] S5: `updating`-Flag korrekt im `finally` zurücksetzen
-- [ ] S6: `temperatureAboveAsOff` an das Accessory durchreichen
-- [ ] S10: `sessionCredentials` löschen
-- [ ] B6: Setpoint auf `[minHeatSetpoint, maxHeatSetpoint]` klemmen, `NaN` abfangen — #94
-- [ ] PR **#204** übernehmen (Fehler-Trapping bei Honeywell-Ausfällen) — #153, #146
-- [ ] README: HB2-Kompatibilität, Node-Anforderung
-
-### Phase 2 — Toolchain (1 Tag)
+### Phase 0 — Fundament und Toolchain (1,5 Tage)
+- [x] Branch `homebridge-v2`
+- [x] Bestandsaufnahme und Plan
 - [ ] TypeScript strict, `tsconfig.json`, Build nach `dist/`, `"type": "module"`
 - [ ] ESLint 9 Flat Config mit `typescript-eslint` (ersetzt die tote `.eslintrc`) — S17
 - [ ] Vitest + `npm scripts`: `build`, `lint`, `test`, `watch`
-- [ ] CI-Workflow: Node 22/24/26 Matrix, lint + build + test bei jedem PR — S18/S19
-- [ ] `.npmignore`/`files`: nur `dist/`, `config.schema.json`, Assets publizieren
+- [ ] CI-Workflow: Matrix Node 22/24/26, `lint` + `build` + `test` bei jedem PR — S19
+- [ ] `npm-publish.yml`: Node 22 statt 12, `npm ci`, Build vor Publish — S18
+- [ ] `package.json`: `files: ["dist", "config.schema.json", "assets"]`,
+      `engines: {"node": "^22 || ^24 || ^26", "homebridge": "^2.0.0"}` (F2) — B4/B5
+- [ ] `package-lock.json` committen, Deps auf `^` pinnen — S16
+- [ ] Testinstanz: Homebridge 2.4.0 + Node 22 im Container gegen ein echtes Konto
 
-### Phase 3 — API-Client (2–3 Tage)
+### Phase 1 — API-Client (2–3 Tage)
 - [ ] `api/types.ts` aus echten Responses ableiten, Fixtures in `test/fixtures/` ablegen
-- [ ] `EvohomeClient` auf `fetch` + `AbortSignal.timeout` — `request`/`q` raus (S14)
+- [ ] `EvohomeClient` auf `fetch` + `AbortSignal.timeout` — `request`/`q`/`lodash`/`moment` raus (S14)
+- [ ] Response-Validierung an jeder Grenze, typisierte Fehler statt `TypeError` — S8
 - [ ] `TokenStore`: Refresh vor Ablauf, Retry mit Backoff, Re-Login bei `invalid_grant`,
-      Token verschlüsselt/uid-scoped in `api.user.storagePath()` cachen — #136, S12
-- [ ] `lodash`/`moment` entfernen
+      Token uid-scoped in `api.user.storagePath()` cachen — #136, S12
+- [ ] Zugangsdaten nur im `TokenStore`, keine globale Map — S10
 - [ ] `util/schedule.ts`: `nextSwitchpoint()` neu, zeitzonenrichtig, mit Tests über
       Tageswechsel und DST — S9
-- [ ] Unit-Tests gegen Fixtures, inkl. HTTP 401/429/5xx und leerem Body
+- [ ] Unit-Tests gegen Fixtures, inkl. HTTP 401/429/5xx, leerem Body und Timeout
 
-### Phase 4 — Dynamische Platform (3–4 Tage)
+### Phase 2 — Dynamische Platform und Accessories (3–4 Tage)
 - [ ] `EvohomePlatform implements DynamicPlatformPlugin`, `configureAccessory()`,
-      `didFinishLaunching` → discovery, `unregisterPlatformAccessories` für verschwundene Zonen
-- [ ] Stabile UUIDs aus `zoneId` / `dhwId` / `systemId+mode` — S1
+      `didFinishLaunching` → discovery, `unregisterPlatformAccessories` für verschwundene Zonen — S1
+- [ ] Stabile UUIDs aus `zoneId` / `dhwId` / `systemId+mode`
 - [ ] `PollingCoordinator`: ein Request pro Zyklus, konfigurierbares Intervall,
-      `async`-Guard, `clearInterval` bei Shutdown — S5, S11, S13
-- [ ] Handler-Klassen mit `onGet`/`onSet`
+      `async`-Guard, `clearInterval` beim Shutdown — S5, S11, S13
+- [ ] `characteristics/eve.ts`: die drei Eve-Characteristics als ES-Klassen mit
+      `api.hap.Formats/Units/Perms` — B1, B2 (Vorlage: PR #207)
+- [ ] `ThermostatHandler`, `DomesticHotWaterHandler`, `SystemModeSwitchHandler` mit
+      `onGet`/`onSet`; `updateValue` statt `getValue()` — B3
+- [ ] Wertebereiche aus `setpointCapabilities` klemmen, nicht-finite Werte verwerfen — B6, #94
+- [ ] `Buffer.from` statt `new Buffer` — B7
 - [ ] `childBridge`-Option entfernen — S2
-- [ ] Migrationspfad für Bestands-Accessories (Abschnitt 7)
 
-### Phase 5 — Offene Issues abarbeiten (2–3 Tage)
-Siehe Mapping in Abschnitt 6.
+### Phase 3 — Verhalten und offene Issues (2–3 Tage)
+- [ ] `setpointMode`-Option: `untilNextSwitchpoint` (Default) | `permanent` |
+      `keepExistingUntil` — #149
+- [ ] Off-Zustand über `TargetHeatingCoolingState` abbilden statt über 5 °C — #94
+- [ ] DHW-Set-Pfad antwortet in *allen* Zweigen — #180
+- [ ] `temperatureAboveAsOff` tatsächlich am Handler auswerten — S6
+- [ ] Modell-Erkennung sauber typisiert (`HeatingZone` | `RoundWireless` |
+      `RoundModulation` | `domesticHotWater`) — S4
+- [ ] `logTemperatureChanges`-Option — #146 (Vorlage: PR #204)
+- [ ] Adressierung per `locationId` zusätzlich zu `locationIndex` — F5
 
-### Phase 6 — FakeGato-Entscheidung (0,5–1 Tag)
-Siehe offene Frage F3.
+### Phase 4 — Optionale Eve-History (0,5–1 Tag)
+- [ ] `fakegato-history` nach `optionalDependencies`, Option `history` (Default `true`) — F3
+- [ ] Dynamischer Import mit Fallback: fehlt das Modul, läuft alles ohne History weiter
+- [ ] Auswirkung auf #166 (Hoobs/`googleapis`) im README dokumentieren
+- [ ] Echte DHW-Zieltemperatur statt der hartkodierten `60`
 
-### Phase 7 — Release 1.0.0 (1 Tag)
-- [ ] `config.schema.json` v2 inkl. neuer Optionen und Entfernung von `childBridge`
-- [ ] README neu: Anforderungen, Migration, bekannte Einschränkungen
+### Phase 5 — Config, Doku, Release 1.0.0 (1–1,5 Tage)
+- [ ] `config.schema.json` v2: neue Optionen, `childBridge` raus, Migrationshinweis im Header
+- [ ] Sanfte Config-Migration: alte Keys werden gelesen, gewarnt, übersetzt
+- [ ] README neu: Anforderungen (HB 2.x, Node 22+), Migration, bekannte Einschränkungen
+      inkl. #130 als dokumentiertes Home-App-Verhalten (F4)
 - [ ] `CHANGELOG.md` mit expliziter Breaking-Change-Liste
-- [ ] Beta über `npm publish --tag beta`, Testaufruf in #205 (dort haben mehrere
-      Nutzer mit 12-Zonen-Systemen Hilfe angeboten)
+- [ ] Credits für die Vorarbeit aus PR #207 (@MGMsystems) und PR #204 (@PuzzledUser);
+      beide PRs mit Verweis auf die Umsetzung im Rewrite schließen
+- [ ] Beta-Releases über `npm publish --tag beta`, Testaufruf in #205
+- [ ] 1.0.0
 
-**Aufwandsschätzung gesamt:** ca. 11–16 Personentage, davon 1,5–2,5 bis zur
-funktionsfähigen 0.12.0.
+**Aufwandsschätzung gesamt:** ca. 10,5–14 Personentage.
+
+### 5.1 Prüfliste: nichts geht beim Rewrite verloren
+
+Da der alte Code nicht mehr gepatcht wird, muss jeder Befund aus Abschnitt 2 und 3 im
+neuen Code belegt sein. Zielzustand ist jeweils ein Test oder ein bewusster Verzicht.
+
+| Befund | Adressiert in | Nachweis |
+| :-- | :-- | :-- |
+| B1, B2, B7 | Phase 2 | Plugin startet unter HB 2.4.0 ohne `TypeError` |
+| B3 | Phase 2 | kein `getValue()` mehr im Code (Lint-Regel) |
+| B4, B5 | Phase 0 | `engines` korrekt, HB2-Badge in Config UI X |
+| B6 | Phase 2 + 3 | Unit-Test: Setpoint unter `minHeatSetpoint`, `NaN`-Eingabe |
+| S1, S2 | Phase 2 | Neustart-Test: Raumzuordnung bleibt erhalten |
+| S3 | Phase 1 + 2 | `async`/`await`, max. 3 Verschachtelungsebenen (Lint) |
+| S4 | Phase 3 | Typisierte Modell-Enum, kein `=` in Bedingungen (Lint `no-cond-assign`) |
+| S5, S11, S13 | Phase 2 | ein Timer, ein Request pro Zyklus; Test auf überlappende Polls |
+| S6 | Phase 3 | Unit-Test für `temperatureAboveAsOff` |
+| S7, S8 | Phase 1 + 2 | Fixture mit Fehlerkörper führt zu geloggtem Fehler, nicht zum Crash |
+| S9 | Phase 1 | Tests über Tageswechsel, DST-Umstellung, Zeitzonen ≠ Systemzeit |
+| S10 | Phase 1 | keine Klartext-Credentials außerhalb des `TokenStore` |
+| S12 | Phase 1 | Test: Refresh schlägt fehl → Backoff → Re-Login |
+| S14, S15, S16 | Phase 0 + 4 | `npm ls` ohne deprecated Pakete, Lockfile vorhanden |
+| S17, S18, S19 | Phase 0 | CI grün auf Node 22/24/26 |
 
 ## 6. Zuordnung offener Issues
 
+Phasennummern beziehen sich auf den Plan in Abschnitt 5.
+
 | Issue | Titel | Bewertung | Phase |
 | :-- | :-- | :-- | :-- |
-| **#205** | `Class constructor Characteristic cannot be invoked without 'new'` unter HB2 | **Der Blocker.** Ursache B1/B2, Fix liegt als PR #207 vor. Die DHW-Fehlermeldung im selben Thread ist S7/S8. | 1 |
-| **#208** | „Out of compliance" beim Pairing | Kein Beleg für Plugin-Ursache; typische Auslöser sind ungültige Characteristic-Werte oder Service-Limits. B6 (5 °C unter `minValue`, `NaN`) ist ein plausibler Kandidat und wird in Phase 1 ohnehin behoben. Danach mit Nutzer erneut prüfen, sonst an Homebridge verweisen. | 1, dann beobachten |
-| **#172** | Steigende CPU-Last auf dem Pi | Sehr wahrscheinlich S5 (wirkungsloses `updating`-Guard) plus S11 (N Timer). Phase 4 löst es strukturell, Phase 1 mildert es. | 1 + 4 |
-| **#94** | „Target Temperature: illegal value" | B6: 5 °C als Off-Wert bei `minHeatSetpoint: 10`, zusätzlich `NaN` bei leerer Batterie. Werte klemmen + Off über `TargetHeatingCoolingState` statt über 5 °C abbilden. | 1 |
-| **#136** | Automatischer Retry bei fehlgeschlagenem Login | S12. Ein `TokenStore` mit Backoff ist Teil von Phase 3. | 3 |
-| **#149** | Temperaturänderung überschreibt aktiven Override | Bestätigt durch Code: `periodicCheckSetTemperature` erzwingt immer `TemporaryOverride` bis zum nächsten Switchpoint. Die API kann laut `setHeatSetpoint` auch `PermanentOverride` und `FollowSchedule`. → Neue Option `setpointMode`: `untilNextSwitchpoint` (Default, heutiges Verhalten) \| `permanent` \| `keepExistingUntil` (Endzeit eines laufenden Overrides aus `setpointStatus` übernehmen). Deckt auch @DenyTsjapanovs Wunsch nach permanenten Sollwerten ab. | 5 |
-| **#146** | Änderungen der Ist-Temperatur wieder loggen | Trivial, liegt als PR #204 vor. Als Option `logTemperatureChanges` aufnehmen. | 1 |
-| **#180** | Warmwasser-Szene schlägt fehl (Controller for HomeKit) | „Error Action Set Failed" nach ~15 s = HomeKit-Timeout. Ursache: `setHotWaterStatus` ruft den `callback` im Erfolgsfall **nie** auf (`index.js:1198–1265`) — der Set-Handler antwortet nur im Fehlerfall. Klarer Bug, in Phase 1 oder 4 zu beheben. | 1 |
-| **#130** | Thermostate erscheinen als Feuchtigkeitssensoren | Verhalten der Home-App: der Thermostat-Service deklariert `CurrentRelativeHumidity` als optional. Nicht abstellbar, solange `Service.Thermostat` genutzt wird. → Als „won't fix" dokumentieren; optional als `HeaterCooler` anbieten (F4). | Doku |
-| **#166** | Hoobs-Plugin startet nicht | Fehler stammt aus `googleapis` unter `fakegato-history` (S15), nicht aus dem Plugin-Code. Löst sich, wenn FakeGato ersetzt oder optional wird (Phase 6). | 6 |
+| **#205** | `Class constructor Characteristic cannot be invoked without 'new'` unter HB2 | **Der Blocker.** Ursache B1/B2/B3. PR #207 löst B1/B2 im Altcode; im Rewrite wird das in `characteristics/eve.ts` neu umgesetzt. Die DHW-Fehlermeldung im selben Thread ist S7/S8. | 2 |
+| **#208** | „Out of compliance" beim Pairing | Kein Beleg für Plugin-Ursache; typische Auslöser sind ungültige Characteristic-Werte oder Service-Limits. B6 ist ein plausibler Kandidat und wird ohnehin behoben. Nach der Beta mit dem Melder erneut prüfen, sonst an Homebridge verweisen. | 2, dann beobachten |
+| **#172** | Steigende CPU-Last auf dem Pi | Sehr wahrscheinlich S5 (wirkungsloses `updating`-Guard) plus S11 (N Timer). Der `PollingCoordinator` löst beides strukturell. | 2 |
+| **#94** | „Target Temperature: illegal value" | B6: 5 °C als Off-Wert bei `minHeatSetpoint: 10`, zusätzlich `NaN` bei leerer Batterie. Werte klemmen, Off über `TargetHeatingCoolingState`. | 2 + 3 |
+| **#136** | Automatischer Retry bei fehlgeschlagenem Login | S12. `TokenStore` mit Backoff. | 1 |
+| **#149** | Temperaturänderung überschreibt aktiven Override | Bestätigt durch Code: es wird immer `TemporaryOverride` bis zum nächsten Switchpoint erzwungen. Die API kann auch `PermanentOverride` und `FollowSchedule`. → Option `setpointMode`. Deckt auch @DenyTsjapanovs Wunsch nach permanenten Sollwerten ab. | 3 |
+| **#146** | Änderungen der Ist-Temperatur wieder loggen | Option `logTemperatureChanges`, Vorlage PR #204. | 3 |
+| **#180** | Warmwasser-Szene schlägt fehl (Controller for HomeKit) | „Error Action Set Failed" nach ~15 s = HomeKit-Timeout. Ursache: `setHotWaterStatus` ruft den `callback` im Erfolgsfall **nie** auf (`index.js:1198–1265`). Mit `onSet` strukturell erledigt. | 2 + 3 |
+| **#130** | Thermostate erscheinen als Feuchtigkeitssensoren | Home-App-Verhalten: `Service.Thermostat` deklariert `CurrentRelativeHumidity` als optional. Mit Entscheidung **F4** bleibt es dabei → als bekannte Einschränkung dokumentieren, Issue mit Erklärung schließen. | 5 (Doku) |
+| **#166** | Hoobs-Plugin startet nicht | Fehler stammt aus `googleapis` unter `fakegato-history` (S15), nicht aus dem Plugin-Code. Löst sich, sobald FakeGato optional ist (F3). | 4 |
 | **#83** | Evohome-Security (Total Connect 2.0E) | Anderes Backend, anderes Produkt. Nicht Teil dieser Migration; als eigenes Plugin abgrenzen. | out of scope |
-| **#54** | Schedule-Support in FakeGato | Hängt an der FakeGato-Entscheidung. Erst nach Phase 6 sinnvoll. | 6 |
+| **#54** | Schedule-Support in FakeGato | Hängt an der History-Entscheidung. Sinnvoll erst nach Phase 4, und nur wenn `history` aktiv ist. | nach 4 |
 
 Nicht aus Issues, aber aus dem Code: **#61** (Accessories verlieren Raumzuordnung) ist
-S1 und wird durch Phase 4 strukturell erledigt.
+S1 und wird durch Phase 2 strukturell erledigt.
 
 ## 7. Migration der Bestandsnutzer
 
-Der Wechsel auf stabile UUIDs ist **einmalig breaking**: HomeKit sieht neue Accessories,
-Raumzuordnung und Automationen müssen neu gesetzt werden. Optionen:
+**Entschieden (F1): Variante A.** Der Wechsel auf stabile UUIDs ist einmalig breaking —
+HomeKit sieht neue Accessories, Raumzuordnung und Automationen müssen neu gesetzt werden.
+Der Bruch wird akzeptiert, als Major 1.0.0 releast und im README sowie im
+Config-UI-Header angekündigt. Danach ist die Identität dauerhaft stabil; genau der Punkt,
+der heute als „Known Issue" im README steht.
 
-* **A (empfohlen):** Bruch akzeptieren, als Major 1.0.0 releasen, im README und im
-  Config-UI-Header prominent ankündigen. Danach ist der Zustand dauerhaft stabil —
-  genau der Punkt, der heute im README als „Known Issue" steht.
-* **B:** Kompatibilitätsmodus, der die alte `systemId:index`-UUID weiterverwendet, wenn
-  ein Accessory mit dieser UUID im Cache liegt. Halbiert den Schmerz, konserviert aber
-  die instabile Identität und verdoppelt den Testaufwand.
+Ein Kompatibilitätsmodus, der alte `systemId:index`-UUIDs weiterverwendet, wurde
+verworfen: er konserviert die instabile Identität und verdoppelt den Testaufwand.
 
-Empfehlung: **A**, gebündelt mit allen anderen Breaking Changes in einem Release.
+Was Nutzer beim Update tun müssen, gehört so in den CHANGELOG und ins README:
+
+1. Vor dem Update Homebridge 2.x und Node 22+ sicherstellen.
+2. Nach dem Update erscheinen die Geräte einmalig im Standardraum und müssen neu
+   zugeordnet werden; Automationen und Szenen sind neu anzulegen.
+3. `childBridge` aus der Config entfernen (wird ignoriert, mit Warnung).
 
 ## 8. Risiken
 
 | Risiko | Wirkung | Gegenmaßnahme |
 | :-- | :-- | :-- |
-| Kein Testsystem für alle Gerätetypen (DHW, RoundWireless, RoundModulation, UFH) | Regressionen bei Nutzern, die der Maintainer nicht reproduzieren kann | Fixtures aus echten Responses (#205 hat Freiwillige mit 12 Zonen); Beta-Tag vor dem Release |
-| Undokumentierte TCC-EMEA-API kann sich ändern | Plugin bricht ohne Vorwarnung (wie beim Domain-Wechsel `honeywell.com` → `resideo.com`) | API-Zugriff isolieren; Endpunkte und Basis-URL konfigurierbar halten |
+| **Kein Zwischen-Release** (Folge von F1) | HB2-Nutzer bleiben bis 1.0.0 blockiert (#205 seit Mai 2026) | Früh Betas aus diesem Branch veröffentlichen (`--tag beta`) und in #205 verlinken; Phasen 0–2 priorisieren, denn danach ist das Plugin bereits lauffähig |
+| Kein Testsystem für alle Gerätetypen (DHW, RoundWireless, RoundModulation, UFH) | Regressionen bei Nutzern, die der Maintainer nicht reproduzieren kann | Fixtures aus echten Responses; in #205 haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten |
+| Undokumentierte TCC-EMEA-API kann sich ändern | Plugin bricht ohne Vorwarnung (wie beim Domain-Wechsel `honeywell.com` → `resideo.com`) | API-Zugriff isolieren; Basis-URL und Endpunkte konfigurierbar halten |
 | Rate-Limiting bei aggressiverem Retry | Konto temporär gesperrt | Exponentieller Backoff mit Cap, Mindest-Poll-Intervall im Schema erzwingen |
-| Maintainer-Kapazität (siehe Kommentar in #172) | Rewrite bleibt liegen | Phase 1 ist bewusst eigenständig releasebar und liefert den Nutzern sofort Wert |
+| Maintainer-Kapazität (siehe Kommentar in #172) | Rewrite bleibt liegen | Phasen sind einzeln abschließbar; nach Phase 2 existiert ein lauffähiges Plugin, das als Beta nutzbar ist |
 
-## 9. Offene Entscheidungen
+## 9. Getroffene Entscheidungen
 
-* **F1 — Reihenfolge:** Erst 0.12.0 als Hotfix veröffentlichen (Phase 1) und den Rewrite
-  danach in Ruhe machen, oder direkt auf 1.0.0 zuarbeiten? *Empfehlung: Hotfix zuerst* —
-  in #205 melden sich seit Mai 2026 Nutzer, die auf Homebridge 1.11.4 zurückmussten.
-* **F2 — Node-Floor:** `^22 || ^24 || ^26` (identisch zu Homebridge 2.4.0) oder `>=20`
-  für Homebridge-1.x-Nutzer? *Empfehlung: `^20.19 || ^22 || ^24 || ^26` in 0.12.0,
-  ab 1.0.0 dann `^22 || ^24 || ^26`.*
-* **F3 — FakeGato:** behalten (zieht `googleapis` mit, Ursache von #166), auf eine
-  schlanke eigene Eve-History-Implementierung wechseln, oder optional machen
-  (`history: true|false`, Default `true`)? *Empfehlung: optional machen und in
-  `optionalDependencies` verschieben.*
-* **F4 — Service-Typ:** `Thermostat` beibehalten (Feuchtigkeits-Kachel, #130) oder
-  `HeaterCooler` anbieten? *Empfehlung: bei `Thermostat` bleiben, #130 als
-  Home-App-Verhalten dokumentieren.*
-* **F5 — Mehrere Locations:** weiterhin ein Platform-Block pro Location
-  (`singular: false`), oder alle Locations in einer Instanz? *Empfehlung: alle Locations
-  in einer Instanz, `locationIndex` als Deprecated-Filter beibehalten.*
+Alle am 2026-09-03 entschieden.
+
+| | Frage | Entscheidung | Auswirkung |
+| :-- | :-- | :-- | :-- |
+| **F1** | Hotfix 0.12.0 zuerst oder direkt 1.0.0? | **direkt 1.0.0** | Kein Zwischen-Release; Altcode wird nicht mehr gepatcht. PRs #207/#204 dienen als Vorlage, werden nicht gemerged. Prüfliste 5.1 sichert die Befunde ab. Betas als Ausgleich. |
+| **F2** | Node-Floor? | **`^22 \|\| ^24 \|\| ^26`** — identisch zu Homebridge 2.4.0 | Kein Support für Homebridge 1.x nötig, `engines.homebridge: "^2.0.0"`. Erlaubt `fetch`, `AbortSignal.timeout` und moderne Syntax ohne Polyfills. |
+| **F3** | FakeGato behalten, ersetzen oder optional? | **optional** | `optionalDependencies` + Option `history` (Default `true`), dynamischer Import mit Fallback. Entschärft #166 und die `googleapis`-Last. |
+| **F4** | `Thermostat` oder `HeaterCooler`? | **`Thermostat`** | #130 (Feuchtigkeits-Kachel) wird als Home-App-Verhalten dokumentiert und das Issue geschlossen. Keine Änderung am Service-Typ. |
+| **F5** | Mehrere Locations in einer Instanz? | **Filter beibehalten** | Mehrere Systeme pro Account sind in der Regel verschiedene Haushalte. `singular: false` und `locationIndex` bleiben; zusätzlich wird `locationId` als stabilere Adressierung unterstützt. |
