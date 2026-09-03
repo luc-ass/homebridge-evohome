@@ -209,6 +209,7 @@ export const readConfig = (
       log,
     ),
     showSwitches,
+    // Noch nicht in config.schema.json — die Option wirkt erst ab Phase 4.
     history: readBoolean(config["history"], true, "history", log),
     setpointMode: readSetpointStrategy(config["setpointMode"], log),
     logTemperatureChanges: readBoolean(

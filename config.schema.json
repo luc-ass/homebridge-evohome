@@ -1,123 +1,165 @@
 {
-	"pluginAlias": "Evohome",
-	"pluginType": "platform",
-	"singular": false,
-	"headerDisplay": "This Plugin integrates your Honeywell Evohome into Homebridge. Please use your credentials from https://getconnected.honeywellhome.com. You should consider running this plugin as a child bridge, as it allows for persistent accessories, thus prevent breaking your automations!",
-	"footerDisplay": "It is important, that your Homebridge time zone is set correct. Please double check this! If you encounter any problems don't hesitate to have a look at https://github.com/luc-ass/homebridge-evohome.",
-	"schema": {
-		"type": "object",
-		"properties": {
-			"name": {
-				"title": "Name",
-				"type": "string",
-				"default": "Evohome",
-				"minLength": 1,
-				"required": true,
-				"description": "Plugin name as displayed in the Homebridge log"
-			},
-			"username": {
-				"title": "Username/Email adress",
-				"type": "string",
-				"format": "email",
-				"required": true
-			},
-			"password": {
-				"title": "Password",
-				"type": "string",
-				"required": true
-			},
-			"temperatureUnit": {
-				"title": "Temperature Unit",
-				"type": "string",
-				"default": "Celsius",
-				"oneOf": [
-					{ "title": "Celsius", "enum": ["Celsius"] },
-					{ "title": "Fahrenheit", "enum": ["Fahrenheit"] }
-				],
-				"required": true
-			},
-			"locationIndex": {
-				"title": "Location Index",
-				"type": "integer",
-				"minimum": 0,
-				"default": 0,
-				"required": false,
-				"description": "This should only be changed if you have more than one location. The index starts with \"0\" and counts up for each added home."
-			},
-			"switchAway": {
-				"title": "Display \"Away Switch\"",
-				"type": "boolean",
-				"default": true,
-				"required": false
-			},
-			"switchDayOff": {
-				"title": "Display \"Day Off Switch\"",
-				"type": "boolean",
-				"default": true,
-				"required": false
-			},
-			"switchEco": {
-				"title": "Display \"Eco Mode Switch\"",
-				"type": "boolean",
-				"default": true,
-				"required": false
-			},
-			"switchHeatingOff": {
-				"title": "Display \"Heating Off Switch\"",
-				"type": "boolean",
-				"default": true,
-				"required": false
-			},
-			"switchCustom": {
-				"title": "Display \"Custom Mode Switch\"",
-				"type": "boolean",
-				"default": true,
-				"required": false
-			},
-			"childBridge": {
-				"title": "This accessory runs in a child bridge (recommended)",
-				"description": "This switch should be turned on, if the platform is run as a child bridge. This ensures, that accessories are not lost on error.",
-				"type": "boolean",
-				"default": false,
-				"required": false
+  "pluginAlias": "Evohome",
+  "pluginType": "platform",
+  "singular": false,
+  "headerDisplay": "Bindet Honeywell/Resideo Evohome in HomeKit ein. Zugangsdaten sind die von https://getconnected.honeywellhome.com.\n\n**Beim Umstieg von 0.11.x:** Die Geräte bekommen einmalig neue Kennungen und erscheinen deshalb im Standardraum. Sie müssen einmal neu zugeordnet werden, Automationen und Szenen neu angelegt. Danach bleibt die Zuordnung dauerhaft erhalten — das bisherige Verhalten, bei dem Geräte ohne erkennbaren Grund verschwanden, ist damit behoben.\n\nDie Optionen `childBridge` und `temperatureUnit` gibt es nicht mehr und können aus der Konfiguration entfernt werden.",
+  "footerDisplay": "Für jedes weitere Zuhause (Location) im selben Honeywell-Konto einen eigenen Eintrag anlegen. Fragen und Fehlerberichte: https://github.com/luc-ass/homebridge-evohome",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Evohome",
+        "minLength": 1,
+        "required": true,
+        "description": "Erscheint im Homebridge-Log und als Präfix der Schalternamen."
       },
-			"temperatureAboveAsOff": {
-				"title": "Represent room temperature above set temperature as off",
-				"type": "boolean",
-				"default": false,
-				"required": true
-			}
-		}
-	},
-	"layout": [
-		"name",
-		{
-			"type": "flex",
-			"flex-flow": "row wrap",
-			"items": [
-				"username",
-				{
-					"key": "password",
-					"type": "password"
-				}
-			]
-		},
-		{
-			"type": "fieldset",
-			"title": "Optional Settings",
-			"expandable": true,
-			"expanded": false,
-			"items": [
-				"temperatureUnit",
-				"locationIndex",
-				"switchAway",
-				"switchDayOff",
-				"switchEco",
-				"switchHeatingOff",
-				"switchCustom",
-				"childBridge",
-				"temperatureAboveAsOff"
-			]
-		}
-	]
+      "username": {
+        "title": "Benutzername / E-Mail-Adresse",
+        "type": "string",
+        "format": "email",
+        "required": true
+      },
+      "password": {
+        "title": "Passwort",
+        "type": "string",
+        "required": true
+      },
+      "locationId": {
+        "title": "Location-ID",
+        "type": "string",
+        "required": false,
+        "description": "Nur nötig, wenn das Konto mehrere Zuhause enthält. Die ID steht beim Start im Log und ist stabil — anders als der Index. Bleibt das Feld leer, wird der Index verwendet."
+      },
+      "locationIndex": {
+        "title": "Location-Index",
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "required": false,
+        "description": "Rückfallebene, wenn keine Location-ID gesetzt ist. Zählt ab 0. Achtung: Der Index verschiebt sich, wenn bei Honeywell ein Zuhause hinzukommt."
+      },
+      "pollIntervalSeconds": {
+        "title": "Abfrageintervall (Sekunden)",
+        "type": "integer",
+        "minimum": 60,
+        "maximum": 3600,
+        "default": 300,
+        "required": false,
+        "description": "Wie oft der Status bei Honeywell abgefragt wird. Kürzere Intervalle führen in die Anfragebegrenzung der Honeywell-Server; unter 60 Sekunden wird angehoben."
+      },
+      "setpointMode": {
+        "title": "Gültigkeit einer Temperaturänderung",
+        "type": "string",
+        "default": "keepExistingUntil",
+        "required": false,
+        "oneOf": [
+          {
+            "title": "Laufende Endzeit beibehalten (empfohlen)",
+            "enum": ["keepExistingUntil"]
+          },
+          {
+            "title": "Bis zum nächsten Schaltpunkt",
+            "enum": ["untilNextSwitchpoint"]
+          },
+          {
+            "title": "Dauerhaft",
+            "enum": ["permanent"]
+          }
+        ],
+        "description": "Steuert, wie lange eine in HomeKit gesetzte Temperatur gilt. „Laufende Endzeit beibehalten“: Ist bereits ein befristeter Override aktiv, bleibt dessen Endzeit erhalten und nur die Temperatur ändert sich — sonst gilt sie bis zum nächsten Schaltpunkt. „Bis zum nächsten Schaltpunkt“ entspricht dem Verhalten der Versionen bis 0.11.2. „Dauerhaft“ setzt das Zeitprogramm außer Kraft, bis in HomeKit „Auto“ gewählt wird. Ein Thermostat auf „Aus“ gilt in allen Fällen dauerhaft."
+      },
+      "temperatureAboveAsOff": {
+        "title": "Zone als „aus“ anzeigen, wenn die Raumtemperatur über dem Sollwert liegt",
+        "type": "boolean",
+        "default": false,
+        "required": false,
+        "description": "Rein kosmetisch: ändert nur die Anzeige in HomeKit, nicht die Heizung."
+      },
+      "logTemperatureChanges": {
+        "title": "Änderungen der Raumtemperatur protokollieren",
+        "type": "boolean",
+        "default": false,
+        "required": false,
+        "description": "Schreibt bei jeder Abfrage eine Zeile ins Log, wenn sich eine Raumtemperatur geändert hat. Hilfreich, um im Nachhinein nachzuvollziehen, warum es morgens kalt war."
+      },
+      "switchAway": {
+        "title": "Schalter für „Away“ anzeigen",
+        "type": "boolean",
+        "default": true,
+        "required": false
+      },
+      "switchDayOff": {
+        "title": "Schalter für „Day Off“ anzeigen",
+        "type": "boolean",
+        "default": true,
+        "required": false
+      },
+      "switchEco": {
+        "title": "Schalter für „Eco“ anzeigen",
+        "type": "boolean",
+        "default": true,
+        "required": false
+      },
+      "switchHeatingOff": {
+        "title": "Schalter für „Heating Off“ anzeigen",
+        "type": "boolean",
+        "default": true,
+        "required": false
+      },
+      "switchCustom": {
+        "title": "Schalter für „Custom“ anzeigen",
+        "type": "boolean",
+        "default": true,
+        "required": false
+      }
+    }
+  },
+  "layout": [
+    "name",
+    {
+      "type": "flex",
+      "flex-flow": "row wrap",
+      "items": [
+        "username",
+        {
+          "key": "password",
+          "type": "password"
+        }
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Heizverhalten",
+      "expandable": true,
+      "expanded": false,
+      "items": ["setpointMode", "temperatureAboveAsOff"]
+    },
+    {
+      "type": "fieldset",
+      "title": "Schalter für Systemmodi",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "switchAway",
+        "switchDayOff",
+        "switchEco",
+        "switchHeatingOff",
+        "switchCustom"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Erweitert",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "locationId",
+        "locationIndex",
+        "pollIntervalSeconds",
+        "logTemperatureChanges"
+      ]
+    }
+  ]
 }

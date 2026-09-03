@@ -276,7 +276,11 @@ wieder angehen.
 
 ### Phase 5 — Config, Doku, Release 1.0.0 (1–1,5 Tage)
 
-- [ ] `config.schema.json` v2: neue Optionen, `childBridge` raus, Migrationshinweis im Header
+- [x] `config.schema.json` v2: neue Optionen, `childBridge` und `temperatureUnit`
+      raus, Migrationshinweis im Header — **aus Phase 5 vorgezogen**, damit sich
+      die neuen Optionen über Config UI X testen lassen. Ein Test hält Schema und
+      `src/config.ts` synchron: Voreinstellungen, Wertelisten und Layout-Verweise
+      müssen übereinstimmen. `history` fehlt bewusst noch und kommt mit Phase 4
 - [ ] Sanfte Config-Migration: alte Keys werden gelesen, gewarnt, übersetzt
 - [ ] README neu: Anforderungen (HB 2.x, Node 22+), Migration, bekannte Einschränkungen
       inkl. #130 als dokumentiertes Home-App-Verhalten (F4)
