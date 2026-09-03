@@ -23,8 +23,16 @@
 
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "verbatimModuleSyntax": true
+    "skipLibCheck": true
+
+    // verbatimModuleSyntax bleibt bewusst aus: hap-nodejs deklariert
+    // HAPStatus, Formats, Perms und Units als "ambient const enum". Mit der
+    // Option sind die laut TS2748 nicht zugreifbar — und statt diesen Fehler
+    // zu melden, stürzt der Compiler bei langen Property-Ketten wie
+    // api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE ab
+    // ("Unhandled case in GetFirstIdentifier", reproduziert mit tsc 5.9.3
+    // und 7.0.2). Explizite Typ-Importe erzwingt stattdessen die ESLint-Regel
+    // @typescript-eslint/consistent-type-imports.
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "legacy", "test"]

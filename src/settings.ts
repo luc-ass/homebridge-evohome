@@ -32,3 +32,11 @@ export const MIN_POLL_INTERVAL_SECONDS = 60;
 
 /** Timeout für einzelne HTTP-Requests in Millisekunden. */
 export const REQUEST_TIMEOUT_MS = 30_000;
+
+/**
+ * Wartezeit vor der Nachkontrolle eines Schreibvorgangs, in Millisekunden.
+ *
+ * Die Honeywell-Server übernehmen eine Änderung nicht sofort in den Status.
+ * 0.11.2 wartete an dieser Stelle ebenfalls drei Sekunden.
+ */
+export const REFRESH_DELAY_MS = 3000;

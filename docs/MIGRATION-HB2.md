@@ -205,18 +205,35 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
 
 ### Phase 2 — Dynamische Platform und Accessories (3–4 Tage)
 
-- [ ] `EvohomePlatform implements DynamicPlatformPlugin`, `configureAccessory()`,
-      `didFinishLaunching` → discovery, `unregisterPlatformAccessories` für verschwundene Zonen — S1
-- [ ] Stabile UUIDs aus `zoneId` / `dhwId` / `systemId+mode`
-- [ ] `PollingCoordinator`: ein Request pro Zyklus, konfigurierbares Intervall,
-      `async`-Guard, `clearInterval` beim Shutdown — S5, S11, S13
-- [ ] `characteristics/eve.ts`: die drei Eve-Characteristics als ES-Klassen mit
-      `api.hap.Formats/Units/Perms` — B1, B2 (Vorlage: PR #207)
-- [ ] `ThermostatHandler`, `DomesticHotWaterHandler`, `SystemModeSwitchHandler` mit
-      `onGet`/`onSet`; `updateValue` statt `getValue()` — B3
-- [ ] Wertebereiche aus `setpointCapabilities` klemmen, nicht-finite Werte verwerfen — B6, #94
-- [ ] `Buffer.from` statt `new Buffer` — B7
-- [ ] `childBridge`-Option entfernen — S2
+- [x] `EvohomePlatform implements DynamicPlatformPlugin`, `configureAccessory()`,
+      `didFinishLaunching` → Discovery, `unregisterPlatformAccessories` für
+      verschwundene Zonen — S1, #61
+- [x] Stabile UUIDs aus `zoneId` / `dhwId` / `systemId+mode`
+- [x] `PollingCoordinator`: ein Request pro Zyklus, konfigurierbares Intervall,
+      echter Reentrancy-Schutz, `clearTimeout` beim Shutdown — S5, S11, S13, #172
+- [x] `characteristics/eve.ts`: `ValvePosition` als ES-Klasse mit
+      `api.hap.Formats/Units/Perms` — B1, B2 (Vorlage: PR #207).
+      `ProgramCommand`/`ProgramData` **bewusst weggelassen**, siehe unten
+- [x] `ThermostatAccessory`, `DomesticHotWaterAccessory`, `SystemModeAccessory`
+      mit `onGet`/`onSet`; `updateValue` statt `getValue()` — B3
+- [x] Sollwerte auf `setpointCapabilities` geklemmt, „Aus" über
+      `TargetHeatingCoolingState` statt über 5 °C — B6, #94
+- [x] `new Buffer` entfällt mit `ProgramData` — B7
+- [x] `childBridge` entfernt, wird mit Hinweis ignoriert — S2
+- [x] `config.ts`: geprüfte Konfiguration mit Warnungen statt `!= false`;
+      `temperatureAboveAsOff` wirkt jetzt tatsächlich — S6 (aus Phase 3 vorgezogen)
+- [x] Token-Persistenz über `api.user.storagePath()` — aus Phase 1 nachgeholt
+- [x] Schreibpfad blockiert nicht mehr: `scheduleRefresh()` statt `await refresh(3000)`
+- [x] Tests gegen das **echte** `@homebridge/hap-nodejs` statt gegen eine Attrappe;
+      140 Tests, Coverage 92 %
+- [x] Verifiziert: Plugin lädt unter Homebridge 2.4.0 und registriert die Platform
+
+**Bewusst abgewichen:** `ProgramCommand` und `ProgramData` aus 0.11.2 wurden nicht
+übernommen. Beide waren nie implementiert; `ProgramData` lieferte einen fest
+einkodierten Hex-Blob, der nichts mit dem tatsächlichen Zeitprogramm zu tun hatte.
+Der Eve-App ein erfundenes Programm zu melden ist schlechter, als die
+Characteristics gar nicht anzubieten. Bei Bedarf gehören sie zusammen mit #54 in
+Phase 4.
 
 ### Phase 3 — Verhalten und offene Issues (2–3 Tage)
 
