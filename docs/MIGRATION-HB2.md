@@ -178,8 +178,8 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
       `configureAccessory()` — lädt unter Homebridge 2.x, legt noch keine Accessories an
 - [x] Testinstanz: `npm run dev` startet Homebridge 2.4.0 aus den devDependencies mit
       `-P .` gegen das Repo — verifiziert, das Plugin lädt und registriert die Platform
-- [ ] **Offen:** dasselbe einmal mit echten Zugangsdaten in der `config.json`
-      (relevant erst ab Phase 1, siehe docs/TESTING.md Abschnitt 2)
+- [x] Lauf mit echten Zugangsdaten gegen ein produktives Honeywell-Konto:
+      Anmeldung, Erkennung und Anlage der Geräte funktionieren (2026-09-03)
 
 ### Phase 1 — API-Client (2–3 Tage)
 
@@ -198,8 +198,13 @@ verweisen — dort haben mehrere Nutzer mit 12-Zonen-Systemen Hilfe angeboten.
 - [x] Ein Statusaufruf pro Zyklus statt dreier (S13) — im Client umgesetzt, der
       Poller folgt in Phase 2
 - [x] 84 Tests, Coverage-Schwelle in `vitest.config.ts` auf 90/85 angehoben
-- [ ] **Offen:** Fixtures gegen ein echtes Konto gegenprüfen — die Struktur stammt
-      aus `legacy/evohome.cjs` und den Issue-Logs, nicht aus einer echten Antwort
+- [x] Teilweise gegen ein echtes Konto bestätigt (2026-09-03): der Lesepfad
+      `/Auth/OAuth/Token`, `/userAccount`, `/location/installationInfo` und
+      `/location/{id}/status` läuft ohne `EvohomeResponseError` durch — die
+      Feldnamen in `parse.ts` stimmen also für diese vier Antworten
+- [ ] **Offen:** noch nicht am echten System bestätigt sind die Antwortformate von
+      `/schedule` (wird erst bei einer Temperaturänderung gelesen), der
+      Warmwasserstatus und die Quittungen der Schreiboperationen
 - [ ] **Verschoben nach Phase 2:** Token-Persistenz über `api.user.storagePath()`;
       das `TokenCache`-Interface steht, die Homebridge-Anbindung braucht die Platform
 
