@@ -13,7 +13,7 @@ const baseConfig: PlatformConfig = {
   password: "geheim",
 };
 
-/** Beantwortet Anfragen anhand der URL aus den Fixtures. */
+/** Answers requests from the fixtures, routed by URL. */
 const routedFetch = (
   overrides: Record<string, () => Response> = {},
 ): ReturnType<typeof vi.fn> =>
@@ -72,7 +72,7 @@ describe("EvohomePlatform", () => {
       platform.configureAccessory(accessory);
     }
     test.emit("didFinishLaunching");
-    // Der Start läuft asynchron im Event-Handler.
+    // Startup runs asynchronously inside the event handler.
     await vi.waitFor(() => {
       expect(test.registered.length > 0 || log.errors.length > 0).toBe(true);
     });
@@ -91,8 +91,8 @@ describe("EvohomePlatform", () => {
     vi.useRealTimers();
   });
 
-  describe("Erkennung", () => {
-    it("legt für jede Heizzone ein Thermostat an", async () => {
+  describe("discovery", () => {
+    it("creates a thermostat for every heating zone", async () => {
       await startPlatform();
 
       const names = test.registered.map(nameOf);
@@ -101,8 +101,8 @@ describe("EvohomePlatform", () => {
       expect(names).toContain("Flur Thermostat");
     });
 
-    it("überspringt Zonen mit unbekanntem Modell", async () => {
-      // Fixture-Zone 3004 hat modelType "NeuesVentilModell2027".
+    it("skips zones with an unknown model", async () => {
+      // Fixture zone 3004 has modelType "NeuesVentilModell2027".
       await startPlatform();
 
       expect(test.registered.map(nameOf)).not.toContain(
@@ -111,12 +111,12 @@ describe("EvohomePlatform", () => {
       expect(log.warnings.join()).toContain("Wintergarten");
     });
 
-    it("legt ein Warmwasser-Accessory an", async () => {
+    it("creates a hot water accessory", async () => {
       await startPlatform();
       expect(test.registered.map(nameOf)).toContain("Evohome Hot Water");
     });
 
-    it("legt nur Schalter für unterstützte Systemmodi an", async () => {
+    it("only creates switches for supported system modes", async () => {
       await startPlatform();
 
       const names = test.registered.map(nameOf);
@@ -125,14 +125,14 @@ describe("EvohomePlatform", () => {
       expect(names).toContain("Evohome Custom Mode");
     });
 
-    it("lässt abgeschaltete Schalter weg", async () => {
+    it("omits disabled switches", async () => {
       await startPlatform({ ...baseConfig, switchAway: false });
 
       expect(test.registered.map(nameOf)).not.toContain("Evohome Away Mode");
       expect(test.registered.map(nameOf)).toContain("Evohome Eco Mode");
     });
 
-    it("fragt Zonen, Modus und Warmwasser mit einem Statusaufruf ab (S13)", async () => {
+    it("fetches zones, mode and hot water with a single status call", async () => {
       await startPlatform();
 
       const statusCalls = fetchMock.mock.calls.filter((call) =>
@@ -142,8 +142,8 @@ describe("EvohomePlatform", () => {
     });
   });
 
-  describe("Stabile Identität (S1, #61)", () => {
-    it("bildet die UUID aus der zoneId, nicht aus der Position", async () => {
+  describe("stable identity (#61)", () => {
+    it("derives the UUID from the zoneId, not from the position", async () => {
       await startPlatform();
 
       const wohnzimmer = test.registered.find(
@@ -152,7 +152,7 @@ describe("EvohomePlatform", () => {
       expect(wohnzimmer?.UUID).toBe(hap.uuid.generate("evohome:zone:3001"));
     });
 
-    it("verwendet ein zwischengespeichertes Accessory wieder", async () => {
+    it("reuses a cached accessory", async () => {
       const uuid = hap.uuid.generate("evohome:zone:3001");
       const cached = new test.api.platformAccessory(
         "Wohnzimmer Thermostat",
@@ -162,11 +162,11 @@ describe("EvohomePlatform", () => {
       const platform = await startPlatform(baseConfig, [cached]);
 
       expect(platform.cachedAccessoryCount).toBeGreaterThan(0);
-      // Das gecachte Accessory darf nicht erneut registriert werden.
+      // The cached accessory must not be registered again.
       expect(test.registered.map((a) => a.UUID)).not.toContain(uuid);
     });
 
-    it("entfernt Accessories, die es nicht mehr gibt", async () => {
+    it("removes accessories that no longer exist", async () => {
       const stale = new test.api.platformAccessory(
         "Abgerissene Zone",
         hap.uuid.generate("evohome:zone:9999"),
@@ -178,7 +178,7 @@ describe("EvohomePlatform", () => {
     });
   });
 
-  describe("Thermostat-Charakteristiken", () => {
+  describe("thermostat characteristics", () => {
     const thermostatFor = async (name: string): Promise<Service> => {
       await startPlatform();
       const accessory = test.registered.find((a) => nameOf(a) === name);
@@ -188,7 +188,7 @@ describe("EvohomePlatform", () => {
       return serviceOf(accessory, hap.Service.Thermostat);
     };
 
-    it("meldet die aktuelle Temperatur", async () => {
+    it("reports the current temperature", async () => {
       const service = await thermostatFor("Wohnzimmer Thermostat");
 
       await expect(
@@ -198,9 +198,9 @@ describe("EvohomePlatform", () => {
       ).resolves.toBe(21.5);
     });
 
-    it("klemmt den Sollwert auf das Minimum der Zone (#94)", async () => {
-      // Zone „Flur" meldet targetHeatTemperature 5 bei minHeatSetpoint 5 —
-      // Zone „Bad" hat Minimum 10 und einen Sollwert von 22.
+    it("clamps the setpoint to the zone minimum (#94)", async () => {
+      // The "Flur" zone reports targetHeatTemperature 5 with minHeatSetpoint 5;
+      // the "Bad" zone has minimum 10 and a target of 22.
       const service = await thermostatFor("Bad Thermostat");
 
       await expect(
@@ -210,9 +210,9 @@ describe("EvohomePlatform", () => {
       ).resolves.toBe(22);
     });
 
-    it("meldet einen Fehler statt NaN, wenn die Zone keinen Messwert liefert", async () => {
-      // Zone „Flur" hat isAvailable: false — in 0.11.2 wurde daraus die
-      // Warnung "expected valid finite number and received NaN" (#94).
+    it("reports an error rather than NaN when the zone has no reading", async () => {
+      // The "Flur" zone has isAvailable: false, which in 0.11.2 produced the
+      // warning "expected valid finite number and received NaN" (#94).
       const service = await thermostatFor("Flur Thermostat");
 
       await expect(
@@ -222,18 +222,18 @@ describe("EvohomePlatform", () => {
       ).rejects.toBeDefined();
     });
 
-    it("bietet die Eve-Ventilstellung an, ohne HAP-Warnung", async () => {
+    it("offers the Eve valve position without a HAP warning", async () => {
       const service = await thermostatFor("Wohnzimmer Thermostat");
       const valve = service.characteristics.find(
         (c) => c.UUID === "E863F12E-079E-48FF-8F27-9C2605A29F52",
       );
 
       expect(valve).toBeDefined();
-      // Wohnzimmer: 21,5 °C ist über dem Sollwert von 20 °C — Ventil zu.
+      // Wohnzimmer: 21.5 °C is above the 20 °C target, so the valve is closed.
       await expect(valve?.handleGetRequest()).resolves.toBe(0);
     });
 
-    it("schreibt einen geklemmten Sollwert an die API", async () => {
+    it("writes a clamped setpoint to the API", async () => {
       const service = await thermostatFor("Bad Thermostat");
 
       await service
@@ -249,9 +249,9 @@ describe("EvohomePlatform", () => {
       ).toMatchObject({ HeatSetpointValue: 10 });
     });
 
-    it("behält die Endzeit eines laufenden Overrides bei (#149)", async () => {
-      // Zone „Bad" in der Fixture: TemporaryOverride bis 2026-09-03T18:30Z.
-      // 0.11.2 hätte diese Endzeit durch den nächsten Schaltpunkt ersetzt.
+    it("keeps the end time of a running override (#149)", async () => {
+      // The "Bad" zone in the fixture: TemporaryOverride until 2026-09-03T18:30Z.
+      // 0.11.2 would have replaced that end time with the next switchpoint.
       const service = await thermostatFor("Bad Thermostat");
       vi.setSystemTime(new Date("2026-09-03T16:01:00Z"));
 
@@ -271,9 +271,9 @@ describe("EvohomePlatform", () => {
       });
     });
 
-    it("nimmt den nächsten Schaltpunkt, wenn kein Override läuft (#149)", async () => {
-      // Zone „Wohnzimmer" folgt dem Zeitprogramm. Montag, 07:00 Ortszeit
-      // (CEST) — der nächste Schaltpunkt der Fixture ist 08:30.
+    it("uses the next switchpoint when no override is running (#149)", async () => {
+      // The "Wohnzimmer" zone follows the schedule. Monday, 07:00 local time
+      // (CEST); the next switchpoint in the fixture is 08:30.
       const service = await thermostatFor("Wohnzimmer Thermostat");
       vi.setSystemTime(new Date("2026-08-03T05:00:00Z"));
 
@@ -292,7 +292,7 @@ describe("EvohomePlatform", () => {
       expect(body["TimeUntil"]).toBe("2026-08-03T06:30:00Z");
     });
 
-    it("holt das Zeitprogramm nur einmal je Zone", async () => {
+    it("fetches the schedule only once per zone", async () => {
       const service = await thermostatFor("Wohnzimmer Thermostat");
 
       await service
@@ -308,7 +308,7 @@ describe("EvohomePlatform", () => {
       expect(scheduleCalls).toHaveLength(1);
     });
 
-    it("hebt den Override auf, wenn AUTO gewählt wird", async () => {
+    it("cancels the override when AUTO is selected", async () => {
       const service = await thermostatFor("Bad Thermostat");
 
       await service
@@ -324,10 +324,10 @@ describe("EvohomePlatform", () => {
     });
   });
 
-  describe("Warmwasser (#180)", () => {
-    it("antwortet auf das Einschalten, statt in den Timeout zu laufen", async () => {
-      // 0.11.2 rief seinen Callback nur im Fehlerfall auf — HomeKit lief
-      // deshalb nach etwa 15 s in "Error Action Set Failed".
+  describe("hot water (#180)", () => {
+    it("answers a switch-on instead of running into a timeout", async () => {
+      // 0.11.2 called its callback only on failure, so HomeKit ran into
+      // "Error Action Set Failed" after about 15 seconds.
       await startPlatform();
       const accessory = test.registered.find(
         (a) => nameOf(a) === "Evohome Hot Water",
@@ -346,7 +346,7 @@ describe("EvohomePlatform", () => {
       ).toMatchObject({ State: "On" });
     });
 
-    it("meldet die Warmwassertemperatur", async () => {
+    it("reports the hot water temperature", async () => {
       await startPlatform();
       const accessory = test.registered.find(
         (a) => nameOf(a) === "Evohome Hot Water",
@@ -361,9 +361,9 @@ describe("EvohomePlatform", () => {
     });
   });
 
-  describe("Systemmodus-Schalter", () => {
-    it("spiegelt den aktiven Modus aus dem Status", async () => {
-      // Die Fixture meldet AutoWithEco als aktiven Modus.
+  describe("system mode switches", () => {
+    it("mirrors the active mode from the status", async () => {
+      // The fixture reports AutoWithEco as the active mode.
       await startPlatform();
 
       const eco = test.registered.find((a) => nameOf(a) === "Evohome Eco Mode");
@@ -383,7 +383,7 @@ describe("EvohomePlatform", () => {
       ).resolves.toBe(false);
     });
 
-    it("setzt beim Ausschalten auf Auto zurück", async () => {
+    it("resets to Auto when switched off", async () => {
       await startPlatform();
       const eco = test.registered.find((a) => nameOf(a) === "Evohome Eco Mode");
 
@@ -400,8 +400,8 @@ describe("EvohomePlatform", () => {
     });
   });
 
-  describe("Fehlerfälle", () => {
-    it("bricht mit klarer Meldung ab, wenn Zugangsdaten fehlen", async () => {
+  describe("failure cases", () => {
+    it("aborts with a clear message when credentials are missing", async () => {
       const platform = new EvohomePlatform(
         log,
         { platform: "Evohome" },
@@ -417,8 +417,8 @@ describe("EvohomePlatform", () => {
       expect(platform.cachedAccessoryCount).toBe(0);
     });
 
-    it("behält bekannte Geräte, wenn der Start scheitert (S1)", async () => {
-      // 0.11.2 rief in diesem Fall callback([]) — HomeKit verlor alle Geräte.
+    it("keeps known accessories when startup fails", async () => {
+      // In this case 0.11.2 called callback([]) and HomeKit lost every accessory.
       fetchMock = routedFetch({
         "/location/installationInfo": () =>
           jsonResponse("service unavailable", { status: 503 }),
@@ -442,14 +442,14 @@ describe("EvohomePlatform", () => {
       expect(log.infos.join()).toContain("Known accessories are kept");
     });
 
-    it("weist auf eine unbekannte locationId hin und weicht aus", async () => {
+    it("warns about an unknown locationId and falls back", async () => {
       await startPlatform({ ...baseConfig, locationId: "nicht-vorhanden" });
 
       expect(log.warnings.join()).toContain("nicht-vorhanden");
       expect(test.registered.map(nameOf)).toContain("Wohnzimmer Thermostat");
     });
 
-    it("verwendet eine passende locationId ohne Warnung", async () => {
+    it("uses a matching locationId without warning", async () => {
       await startPlatform({ ...baseConfig, locationId: "9876543" });
 
       expect(log.warnings.join()).not.toContain("9876543");
@@ -457,7 +457,7 @@ describe("EvohomePlatform", () => {
     });
   });
 
-  it("stoppt den Poller beim Herunterfahren (S11)", async () => {
+  it("stops the poller on shutdown", async () => {
     await startPlatform();
     const before = fetchMock.mock.calls.length;
 

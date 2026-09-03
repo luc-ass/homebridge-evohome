@@ -13,7 +13,7 @@ const tokenBody = (accessToken: string, refreshToken: string): unknown => ({
   expires_in: 1799,
 });
 
-/** Liest den Formularkörper des letzten fetch-Aufrufs. */
+/** Reads the form body of a fetch call. */
 const bodyOf = (call: unknown[]): URLSearchParams =>
   new URLSearchParams((call[1] as { body: string }).body);
 
@@ -40,7 +40,7 @@ describe("TokenStore", () => {
     vi.unstubAllGlobals();
   });
 
-  it("meldet sich mit Benutzername und Passwort an", async () => {
+  it("logs in with username and password", async () => {
     fetchMock.mockResolvedValue(jsonResponse(tokenBody("aaa", "bbb")));
     const store = new TokenStore("user@example.com", "geheim", undefined);
 
@@ -52,9 +52,9 @@ describe("TokenStore", () => {
     expect(body.get("Password")).toBe("geheim");
   });
 
-  it("kodiert Sonderzeichen im Passwort korrekt", async () => {
-    // Das README warnt bis heute, das Passwort dürfe kein "&" enthalten.
-    // URLSearchParams kodiert es korrekt — die Einschränkung ist damit weg.
+  it("encodes special characters in the password correctly", async () => {
+    // The README warned that a password must not contain "&".
+    // URLSearchParams encodes it correctly, so that limitation is gone.
     fetchMock.mockResolvedValue(jsonResponse(tokenBody("aaa", "bbb")));
     const store = new TokenStore("user@example.com", "a&b=c+d%e", undefined);
     await store.authorization();
@@ -62,7 +62,7 @@ describe("TokenStore", () => {
     expect(bodyOf(fetchMock.mock.calls[0]!).get("Password")).toBe("a&b=c+d%e");
   });
 
-  it("verwendet einen gültigen Token weiter, ohne erneut anzufragen", async () => {
+  it("keeps using a valid token without asking again", async () => {
     fetchMock.mockImplementation(() =>
       Promise.resolve(jsonResponse(tokenBody("aaa", "bbb"))),
     );
@@ -75,7 +75,7 @@ describe("TokenStore", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("erneuert den Token kurz vor dem Ablauf per refresh_token", async () => {
+  it("refreshes the token shortly before expiry using refresh_token", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ ...(tokenBody("aaa", "bbb") as object), expires_in: 30 }),
     );
@@ -83,7 +83,7 @@ describe("TokenStore", () => {
 
     const store = new TokenStore("u", "p", undefined);
     expect(await store.authorization()).toBe("bearer aaa");
-    // expires_in 30 s liegt innerhalb der Sicherheitsmarge von 60 s.
+    // expires_in of 30s is inside the 60s safety margin.
     expect(await store.authorization()).toBe("bearer ccc");
 
     expect(bodyOf(fetchMock.mock.calls[1]!).get("grant_type")).toBe(
@@ -92,9 +92,9 @@ describe("TokenStore", () => {
     expect(bodyOf(fetchMock.mock.calls[1]!).get("refresh_token")).toBe("bbb");
   });
 
-  it("meldet sich neu an, wenn der Refresh-Token verbraucht ist", async () => {
-    // Der Fall aus Issue #136: 0.11.2 gab hier auf und war bis zum Neustart
-    // tot, weil der Fehlerpfad nur geloggt hat (Befund S12).
+  it("logs in again when the refresh token is spent", async () => {
+    // The case from issue #136: 0.11.2 gave up here and stayed dead until
+    // restart, because the error path only logged.
     const cache = memoryCache();
     cache.value = {
       accessToken: "alt",
@@ -116,9 +116,8 @@ describe("TokenStore", () => {
     expect(bodyOf(fetchMock.mock.calls[1]!).get("grant_type")).toBe("password");
   });
 
-  it("gibt bei falschen Zugangsdaten auf, statt in den Rate-Limiter zu laufen", async () => {
-    // Ein Response-Objekt lässt sich nur einmal auslesen, daher pro Aufruf ein
-    // frisches erzeugen.
+  it("gives up on bad credentials instead of running into the rate limit", async () => {
+    // A Response body can only be read once, so build a fresh one per call.
     fetchMock.mockImplementation(() =>
       Promise.resolve(
         jsonResponse(
@@ -133,7 +132,7 @@ describe("TokenStore", () => {
 
     try {
       await store.authorization();
-      expect.unreachable("hätte werfen müssen");
+      expect.unreachable("should have thrown");
     } catch (error) {
       expect((error as EvohomeAuthError).retryable).toBe(false);
       expect((error as Error).message).toContain("Bad credentials");
@@ -141,16 +140,16 @@ describe("TokenStore", () => {
     }
   });
 
-  it("wertet einen Fehler auch dann aus, wenn er mit HTTP 200 kommt", async () => {
-    // Die TCC-API quittiert manche Anmeldefehler mit Status 200 und einem
-    // error-Feld im Body.
+  it("detects an error even when it arrives with HTTP 200", async () => {
+    // The TCC API acknowledges some login errors with status 200 and an error
+    // field in the body.
     fetchMock.mockResolvedValue(jsonResponse({ error: "invalid_grant" }));
 
     const store = new TokenStore("u", "p", undefined);
     await expect(store.authorization()).rejects.toThrowError(EvohomeAuthError);
   });
 
-  it("behandelt Serverfehler als vorübergehend", async () => {
+  it("treats server errors as temporary", async () => {
     fetchMock.mockResolvedValue(
       jsonResponse("<html>502</html>", { status: 502 }),
     );
@@ -161,7 +160,7 @@ describe("TokenStore", () => {
     );
   });
 
-  it("verpackt Netzwerkfehler statt sie durchzureichen", async () => {
+  it("wraps network errors instead of passing them through", async () => {
     fetchMock.mockRejectedValue(new Error("getaddrinfo ENOTFOUND"));
 
     const store = new TokenStore("u", "p", undefined);
@@ -170,7 +169,7 @@ describe("TokenStore", () => {
     );
   });
 
-  it("bündelt gleichzeitige Aufrufe zu einer einzigen Anmeldung", async () => {
+  it("coalesces concurrent calls into a single login", async () => {
     fetchMock.mockImplementation(() =>
       Promise.resolve(jsonResponse(tokenBody("aaa", "bbb"))),
     );
@@ -186,7 +185,7 @@ describe("TokenStore", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("nimmt einen zwischengespeicherten Token über den Neustart mit", async () => {
+  it("carries a cached token across a restart", async () => {
     const cache = memoryCache();
     fetchMock.mockImplementation(() =>
       Promise.resolve(jsonResponse(tokenBody("aaa", "bbb"))),
@@ -195,15 +194,15 @@ describe("TokenStore", () => {
     await new TokenStore("u", "p", cache).authorization();
     expect(cache.value?.accessToken).toBe("aaa");
 
-    // Zweite Instanz, wie nach einem Homebridge-Neustart: der gecachte Token
-    // ist noch gültig, es darf keine neue Anmeldung geben.
+    // A second instance, as after a Homebridge restart: the cached token is
+    // still valid, so there must be no new login.
     fetchMock.mockClear();
     const restored = new TokenStore("u", "p", cache);
     expect(await restored.authorization()).toBe("bearer aaa");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("verwirft den Token bei invalidate und meldet sich neu an", async () => {
+  it("drops the token on invalidate and logs in again", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(tokenBody("aaa", "bbb")));
     const cache = memoryCache();
     const store = new TokenStore("u", "p", cache);
@@ -217,11 +216,11 @@ describe("TokenStore", () => {
     expect(await store.authorization()).toBe("bearer neu");
   });
 
-  it("legt die Zugangsdaten nicht offen (S10)", async () => {
-    // 0.11.2 legte Benutzername und Passwort in einer modulglobalen Map ab,
-    // die nie gelesen und nie geleert wurde. Hier liegen sie in
-    // ES-Private-Feldern und tauchen damit in keinem Objekt-Dump auf —
-    // relevant, weil Homebridge im Fehlerfall ganze Objekte protokolliert.
+  it("does not expose the credentials", async () => {
+    // 0.11.2 kept username and password in a module-level map that was never
+    // read and never cleared. Here they live in ES private fields and so appear
+    // in no object dump — relevant because Homebridge logs whole objects on
+    // failure.
     fetchMock.mockImplementation(() =>
       Promise.resolve(jsonResponse(tokenBody("aaa", "bbb"))),
     );
@@ -233,7 +232,7 @@ describe("TokenStore", () => {
     expect(Object.keys(store)).not.toContain("username");
     expect(Object.getOwnPropertyNames(store)).not.toContain("password");
 
-    // Und das Modul selbst hält keinen Zustand über Instanzen hinweg.
+    // And the module itself keeps no state across instances.
     const second = new TokenStore("anderer@example.com", "anders", undefined);
     expect(second.current).toBeUndefined();
   });

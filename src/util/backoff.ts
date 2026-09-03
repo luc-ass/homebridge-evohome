@@ -1,20 +1,20 @@
 /**
- * Exponentieller Backoff mit Obergrenze und Jitter.
+ * Exponential backoff with a cap and jitter.
  *
- * Issue #136 fordert einen automatischen Neuversuch nach fehlgeschlagenem
- * Login, warnt aber ausdrücklich davor, dabei in den Rate-Limiter der
- * Honeywell-Server zu laufen. Der Jitter verhindert außerdem, dass viele
- * Homebridge-Instanzen nach einem Serverausfall im Gleichtakt zurückkommen.
+ * Issue #136 asks for an automatic retry after a failed login but explicitly
+ * warns against running into Honeywell's rate limit while doing so. The jitter
+ * also keeps many Homebridge instances from coming back in lockstep after an
+ * outage.
  */
 
 export interface BackoffOptions {
-  /** Wartezeit nach dem ersten Fehlschlag, in Millisekunden. */
+  /** Delay after the first failure, in milliseconds. */
   readonly initialMs: number;
-  /** Obergrenze der Wartezeit, in Millisekunden. */
+  /** Upper bound for the delay, in milliseconds. */
   readonly maxMs: number;
-  /** Faktor je weiterem Fehlschlag. */
+  /** Multiplier applied per additional failure. */
   readonly factor: number;
-  /** Anteil zufälliger Streuung, 0 bis 1. */
+  /** Amount of random spread, 0 to 1. */
   readonly jitter: number;
 }
 
@@ -26,10 +26,10 @@ export const DEFAULT_BACKOFF: BackoffOptions = {
 };
 
 /**
- * Berechnet die Wartezeit vor dem Versuch mit der Nummer `attempt`.
+ * Computes the delay before attempt number `attempt`.
  *
- * @param attempt Anzahl der bisherigen Fehlschläge, beginnend bei 1.
- * @param random Zufallsquelle, in Tests ersetzbar.
+ * @param attempt Number of failures so far, starting at 1.
+ * @param random Source of randomness, replaceable in tests.
  */
 export const backoffDelay = (
   attempt: number,
@@ -41,13 +41,13 @@ export const backoffDelay = (
     options.maxMs,
     options.initialMs * options.factor ** exponent,
   );
-  // Streuung nach oben und unten um den Basiswert, aber nie negativ.
+  // Spread above and below the base value, but never negative.
   const spread = base * options.jitter;
   const delay = base + (random() * 2 - 1) * spread;
   return Math.max(0, Math.round(delay));
 };
 
-/** Wartet die angegebene Zeit ab. */
+/** Waits for the given duration. */
 export const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);

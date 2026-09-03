@@ -15,22 +15,22 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          # Niedrigste unterstützte Version aus engines.node (Entscheidung F2).
+          # Lowest supported version from engines.node.
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
 
       - run: npm ci
 
-      - name: Lint, Typecheck, Test
+      - name: Lint, typecheck and test
         run: npm run check
 
       - name: Build
         run: npm run build
 
-      # Vorabversionen (1.0.0-beta.x) landen unter dem Tag "beta", damit
-      # `npm install homebridge-evohome` weiterhin die stabile Version zieht.
-      - name: Tag bestimmen
+      # Pre-releases (1.0.0-beta.x) go out under the "beta" tag so that
+      # `npm install homebridge-evohome` still yields the stable version.
+      - name: Determine npm tag
         id: tag
         run: |
           if [ "${{ github.event.release.prerelease }}" = "true" ]; then

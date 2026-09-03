@@ -1,19 +1,20 @@
-# API-Fixtures
+# API fixtures
 
-Anonymisierte Antworten der TCC-EMEA-API, wie sie `src/api/parse.ts` erwartet.
+Anonymised responses from the TCC EMEA API, in the shape `src/api/parse.ts`
+expects.
 
-Die Daten sind erfunden, die **Struktur** stammt aus `legacy/evohome.cjs` und aus den
-Logausschnitten in den Issues. IDs sind innerhalb aller Fixtures konsistent
-(Location `9876543`, System `444001`, Zonen `3001`–`3004`, DHW `2001`), damit
-Zuordnungstests greifen.
+The data is made up; the **structure** comes from `legacy/evohome.cjs` and from
+log excerpts in the issues. IDs are consistent across all fixtures (location
+`9876543`, system `444001`, zones `3001`–`3004`, DHW `2001`) so that mapping
+tests work.
 
-`locationStatus.json` deckt bewusst die Grenzfälle ab, an denen 0.11.2 scheiterte:
+`locationStatus.json` deliberately covers the edge cases 0.11.2 failed on:
 
-| Zone | Fall | Befund |
+| Zone | Case | Issue |
 | :-- | :-- | :-- |
-| 3002 Bad | laufender `TemporaryOverride` mit `until` | #149 |
-| 3003 Flur | `isAvailable: false`, keine `temperature`, aktive Störung | #94, S8 |
-| 3004 Wintergarten | unbekannter `modelType` in `installationInfo.json` | Robustheit |
+| 3002 Bad | a running `TemporaryOverride` with `until` | #149 |
+| 3003 Flur | `isAvailable: false`, no `temperature`, active fault | #94 |
+| 3004 Wintergarten | unknown `modelType` in `installationInfo.json` | robustness |
 
-Neue Fixtures aus echten Konten bitte vor dem Commit anonymisieren — siehe
-[../../docs/TESTING.md](../../docs/TESTING.md) Abschnitt 3.
+Please anonymise new fixtures taken from real accounts before committing them —
+see [../../docs/TESTING.md](../../docs/TESTING.md) section 3.

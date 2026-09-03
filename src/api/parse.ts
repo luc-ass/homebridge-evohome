@@ -35,11 +35,11 @@ import {
 } from "./types.js";
 
 /**
- * Übersetzt die rohen API-Antworten in die Domänentypen aus `types.ts`.
+ * Translates raw API responses into the domain types from `types.ts`.
  *
- * Jeder Zugriff läuft über die Helfer aus `validate.ts`, damit eine
- * unvollständige Antwort einen benannten `EvohomeResponseError` erzeugt statt
- * eines `TypeError` an irgendeiner späteren Stelle (Befund S8).
+ * Every access goes through the helpers in `validate.ts` so an incomplete
+ * response yields a named `EvohomeResponseError` rather than a `TypeError`
+ * somewhere further down.
  */
 
 const asDate = (value: unknown, path: string): Date | undefined => {
@@ -107,10 +107,10 @@ const parseSetpointCapabilities = (
 };
 
 /**
- * Unbekannte `modelType`-Werte werden zu `Unknown` statt zu einem Fehler.
+ * Unknown `modelType` values become `Unknown` rather than an error.
  *
- * Ein neues Ventilmodell bei Resideo soll nicht das ganze Plugin lahmlegen —
- * die betroffene Zone wird später übersprungen und dabei protokolliert.
+ * A new valve model at Resideo must not take down the whole plugin; the zone is
+ * skipped later and logged while doing so.
  */
 const parseZoneModel = (raw: unknown, path: string): ZoneModel => {
   const text = asString(raw, path);
@@ -134,8 +134,8 @@ const parseZone = (raw: unknown, path: string): Zone => {
 };
 
 /**
- * `allowedSystemModes` ist eine Liste von Objekten, nicht von Strings.
- * Unbekannte Modi werden verworfen statt zu einem Fehler zu führen.
+ * `allowedSystemModes` is a list of objects, not of strings. Unknown modes are
+ * dropped rather than treated as an error.
  */
 const parseAllowedSystemModes = (
   raw: unknown,
@@ -180,7 +180,7 @@ const parseSystem = (raw: unknown, path: string): TemperatureControlSystem => {
   };
 };
 
-/** Liest `gateways[0].temperatureControlSystems[0]` mit sprechenden Fehlern. */
+/** Reads `gateways[0].temperatureControlSystems[0]` with useful errors. */
 const firstSystem = (json: Record<string, unknown>, path: string): unknown => {
   const gateway = asRecord(
     first(json["gateways"], `${path}.gateways`),
@@ -219,9 +219,9 @@ const parseTemperatureStatus = (
 ): TemperatureStatus => {
   const json = asRecord(raw, path);
   const isAvailable = asBoolean(json["isAvailable"], `${path}.isAvailable`);
-  // Bei nicht verfügbaren Zonen fehlt `temperature` oder ist unbrauchbar.
-  // 0.11.2 reichte den Wert ungeprüft an HomeKit weiter — daher die
-  // "characteristic value expected valid finite number" aus Issue #94.
+  // Unavailable zones either omit `temperature` or report something unusable.
+  // 0.11.2 passed the value straight to HomeKit, hence the
+  // "characteristic value expected valid finite number" from issue #94.
   const temperature = isAvailable
     ? optional(json["temperature"], `${path}.temperature`, asNumber)
     : undefined;
@@ -244,7 +244,7 @@ const parseSetpointStatus = (raw: unknown, path: string): SetpointStatus => {
   };
 };
 
-/** `activeFaults` ist eine Liste von Objekten mit `faultType` und `since`. */
+/** `activeFaults` is a list of objects with `faultType` and `since`. */
 const parseActiveFaults = (raw: unknown, path: string): readonly string[] => {
   const entries = optional(raw, path, asArray) ?? [];
   return entries.map((entry, index) =>
@@ -303,10 +303,10 @@ const parseSystemModeStatus = (
 };
 
 /**
- * Liest den Status einer kompletten Location aus einer einzigen Antwort.
+ * Reads the status of a whole location from a single response.
  *
- * 0.11.2 rief denselben Endpunkt zweimal auf — einmal für die Zonen, einmal für
- * den Systemmodus (Befund S13). Hier fällt beides zusammen an.
+ * 0.11.2 called the same endpoint twice, once for the zones and once for the
+ * system mode. Here both come from one call.
  */
 export const parseLocationStatus = (raw: unknown): LocationStatus => {
   const path = "locationStatus";

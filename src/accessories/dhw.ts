@@ -16,18 +16,17 @@ import type {
 } from "homebridge";
 
 /**
- * Warmwasserbereitung als Temperatursensor mit Schalter.
+ * Domestic hot water as a temperature sensor with a switch.
  *
- * Zwei Fehler aus 0.11.2 verschwinden hier strukturell:
+ * Two bugs from 0.11.2 disappear structurally here:
  *
- * - `setHotWaterStatus` rief seinen Callback **nur im Fehlerfall** auf. Aus
- *   HomeKit-Sicht antwortete das Accessory bei Erfolg nie, was nach etwa 15 s
- *   in einen Timeout lief — das „Error Action Set Failed" aus Issue #180.
- *   Mit `onSet` erledigt das die Promise.
- * - `periodicCheckStatus` lief über `setInterval` ohne Argument, rief im
- *   Fehlerfall aber `callback(err)` und starb an
- *   `callback is not a function` (Befund S7). Der Status kommt jetzt aus dem
- *   gemeinsamen Poller, ganz ohne eigenen Timer.
+ * - `setHotWaterStatus` called its callback **only on failure**. From HomeKit's
+ *   point of view the accessory never answered on success, which ran into a
+ *   timeout after about 15 seconds — the "Error Action Set Failed" from issue
+ *   #180. With `onSet` the promise takes care of that.
+ * - `periodicCheckStatus` ran via `setInterval` without arguments but called
+ *   `callback(err)` on failure and died with `callback is not a function`. The
+ *   status now comes from the shared poller, with no timer of its own.
  */
 export class DomesticHotWaterAccessory {
   private readonly sensor: Service;
@@ -43,7 +42,7 @@ export class DomesticHotWaterAccessory {
     private readonly poller: PollingCoordinator,
     private readonly schedules: ScheduleCache,
     private readonly config: EvohomeConfig,
-    /** Aktueller UTC-Offset der Location, für die Schaltpunkte. */
+    /** Current UTC offset of the location, used for switchpoints. */
     private readonly offsetMinutes: number,
     private readonly log: Logging,
   ) {
@@ -118,7 +117,7 @@ export class DomesticHotWaterAccessory {
     const state = value === true ? "On" : "Off";
     const now = new Date();
 
-    // Warmwasser folgt derselben Regel wie die Heizzonen (Issue #149).
+    // Hot water follows the same rule as the heating zones (issue #149).
     const decision = decideOverride(
       this.config.setpointMode,
       { setpointMode: this.required().mode, until: this.required().until },

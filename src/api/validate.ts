@@ -1,14 +1,14 @@
 import { EvohomeResponseError } from "./errors.js";
 
 /**
- * Minimale Validierung für API-Antworten.
+ * Minimal validation for API responses.
  *
- * Bewusst von Hand statt mit zod o. ä.: das Plugin soll keine
- * Laufzeitabhängigkeiten haben (Befund S14). Der Umfang reicht für die
- * flachen, gut bekannten Strukturen der TCC-EMEA-API.
+ * Hand-written rather than zod or similar, because the plugin is meant to have
+ * no runtime dependencies. The scope is enough for the flat, well-known shapes
+ * of the TCC EMEA API.
  *
- * Jeder Fehler nennt den Pfad in der Antwort, damit im Log steht, *welches*
- * Feld fehlte — statt eines nackten `TypeError` wie in 0.11.2 (Befund S8).
+ * Every error names the path inside the response, so the log says *which* field
+ * was missing instead of producing a bare `TypeError` like 0.11.2 did.
  */
 
 const describe = (value: unknown): string => {
@@ -52,7 +52,7 @@ export const asNumber = (value: unknown, path: string): number =>
 export const asBoolean = (value: unknown, path: string): boolean =>
   typeof value === "boolean" ? value : fail(path, "a boolean", value);
 
-/** Wie {@link asString}, akzeptiert aber auch Zahlen und wandelt sie um. */
+/** Like {@link asString}, but also accepts numbers and converts them. */
 export const asId = (value: unknown, path: string): string => {
   if (typeof value === "string") {
     return value;
@@ -63,7 +63,7 @@ export const asId = (value: unknown, path: string): string => {
   return fail(path, "a string or number", value);
 };
 
-/** Liest ein Feld, das fehlen darf. */
+/** Reads a field that is allowed to be absent. */
 export const optional = <T>(
   value: unknown,
   path: string,
@@ -72,11 +72,10 @@ export const optional = <T>(
   value === undefined || value === null ? undefined : read(value, path);
 
 /**
- * Liest das erste Element eines Arrays.
+ * Reads the first element of an array.
  *
- * Die TCC-API verschachtelt alles in `gateways[0].temperatureControlSystems[0]`.
- * 0.11.2 griff darauf ungeprüft zu; hier gibt es stattdessen eine
- * Fehlermeldung, die den Pfad nennt.
+ * The TCC API nests everything under `gateways[0].temperatureControlSystems[0]`.
+ * 0.11.2 accessed that blindly; here it produces an error naming the path.
  */
 export const first = (value: unknown, path: string): unknown => {
   const items = asArray(value, path);
@@ -89,7 +88,7 @@ export const first = (value: unknown, path: string): unknown => {
   return items[0];
 };
 
-/** Wandelt einen unbekannten Wert in einen der erlaubten String-Literale. */
+/** Narrows an unknown value to one of the allowed string literals. */
 export const asEnum = <T extends string>(
   value: unknown,
   path: string,
@@ -105,7 +104,7 @@ export const asEnum = <T extends string>(
   );
 };
 
-/** Parst einen JSON-Text und meldet Syntaxfehler mit Kontext. */
+/** Parses JSON text and reports syntax errors with context. */
 export const parseJson = (text: string, path: string): unknown => {
   if (text.trim() === "") {
     throw new EvohomeResponseError(

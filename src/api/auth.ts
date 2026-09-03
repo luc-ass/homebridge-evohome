@@ -6,26 +6,26 @@ import { parseJson } from "./validate.js";
 import type { Tokens } from "./types.js";
 
 /**
- * Verwaltet die Sitzung gegenüber der TCC-EMEA-API.
+ * Manages the session against the TCC EMEA API.
  *
- * Gegenüber 0.11.2 ändert sich dreierlei:
+ * Three things changed compared with 0.11.2:
  *
- * - Der Token wird **bedarfsgesteuert** vor dem Ablauf erneuert, statt über ein
- *   `setInterval` mit dem einmalig gelesenen `expires_in`. Scheitert die
- *   Erneuerung, folgt eine vollständige Neuanmeldung — vorher war das Plugin
- *   bis zum Neustart tot (Befund S12, Issue #136).
- * - Zugangsdaten liegen ausschließlich hier, nicht in einer modulglobalen Map,
- *   die nie gelesen und nie geleert wurde (Befund S10).
- * - Parallele Aufrufe teilen sich einen laufenden Anmeldeversuch, statt jeder
- *   für sich eine Anfrage zu stellen.
+ * - The token is refreshed **on demand** before it expires, instead of via a
+ *   `setInterval` using the `expires_in` read once at startup. If the refresh
+ *   fails, a full re-login follows; previously the plugin stayed dead until
+ *   restart (issue #136).
+ * - Credentials live only here, not in a module-level map that was never read
+ *   and never cleared.
+ * - Concurrent callers share one in-flight login instead of each issuing their
+ *   own request.
  */
 
 /**
- * OAuth-Client-Credentials der Honeywell-Mobile-App, Base64-kodiert.
+ * OAuth client credentials of the Honeywell mobile app, base64 encoded.
  *
- * Fest im Protokoll verankert und in jeder Evohome-Integration identisch — es
- * ist kein Geheimnis des Nutzers. Über `AuthOptions.basicAuth` überschreibbar,
- * falls Resideo sie austauscht.
+ * Baked into the protocol and identical in every Evohome integration; this is not
+ * a user secret. Overridable via `AuthOptions.basicAuth` should Resideo rotate
+ * them.
  */
 const APP_BASIC_AUTH =
   "Basic NGEyMzEwODktZDJiNi00MWJkLWE1ZWItMTZhMGE0MjJiOTk5OjFhMTVjZGI4LTQyZGUtNDA3Yi1hZGQwLTA1OWY5MmM1MzBjYg==";
@@ -33,7 +33,7 @@ const APP_BASIC_AUTH =
 const SCOPE =
   "EMEA-V1-Basic EMEA-V1-Anonymous EMEA-V1-Get-Current-User-Account";
 
-/** Zeitpuffer vor dem Ablauf, ab dem vorsorglich erneuert wird. */
+/** Safety margin before expiry at which we refresh pre-emptively. */
 const REFRESH_MARGIN_MS = 60_000;
 
 export interface AuthOptions {
@@ -42,7 +42,7 @@ export interface AuthOptions {
   readonly timeoutMs?: number;
 }
 
-/** Speicher für Tokens über Neustarts hinweg. */
+/** Storage for tokens across restarts. */
 export interface TokenCache {
   read(): Promise<Tokens | undefined>;
   write(tokens: Tokens | undefined): Promise<void>;
@@ -54,29 +54,28 @@ interface OAuthErrorBody {
 }
 
 /**
- * Fehlerkennungen, bei denen ein Neuversuch sinnlos ist.
+ * Error codes for which retrying is pointless.
  *
- * `invalid_grant` steht bei `grant_type=password` für falsche Zugangsdaten,
- * bei `grant_type=refresh_token` für einen verbrauchten Refresh-Token — dort
- * hilft eine Neuanmeldung, was der Aufrufer separat behandelt.
+ * For `grant_type=password`, `invalid_grant` means bad credentials; for
+ * `grant_type=refresh_token` it means a spent refresh token, where a re-login
+ * helps — handled separately by the caller.
  */
 const PERMANENT_ERRORS = new Set(["invalid_grant", "unauthorized_client"]);
 
 export class TokenStore {
   private tokens: Tokens | undefined;
 
-  /** Läuft gerade eine Anmeldung oder Erneuerung, wird sie hier geteilt. */
+  /** A login or refresh in flight, shared between concurrent callers. */
   private pending: Promise<Tokens> | undefined;
 
   private readonly baseUrl: string;
   private readonly basicAuth: string;
   private readonly timeoutMs: number;
 
-  // Zugangsdaten liegen in ES-Private-Feldern: die sind nicht aufzählbar und
-  // tauchen daher weder in JSON.stringify noch in einem Objekt-Dump im Log auf.
-  // Befund S10 betraf zwar die modulglobale Map aus 0.11.2 — dass Homebridge
-  // im Fehlerfall ganze Objekte protokolliert, macht das hier trotzdem zur
-  // richtigen Ablage.
+  // Credentials live in ES private fields: those are not enumerable and so
+  // appear neither in JSON.stringify nor in an object dump in the log.
+  // Homebridge logs whole objects on failure, which makes this the right place
+  // for them.
   readonly #username: string;
   readonly #password: string;
 
@@ -94,26 +93,25 @@ export class TokenStore {
   }
 
   /**
-   * Liefert einen gültigen `Authorization`-Header und erneuert die Sitzung,
-   * falls nötig.
+   * Returns a valid `Authorization` header, refreshing the session if needed.
    */
   async authorization(): Promise<string> {
     const tokens = await this.valid();
     return `bearer ${tokens.accessToken}`;
   }
 
-  /** Erzwingt eine Erneuerung, etwa nachdem die API mit 401 geantwortet hat. */
+  /** Forces a refresh, e.g. after the API answered with 401. */
   async invalidate(): Promise<void> {
     this.tokens = undefined;
     await this.cache?.write(undefined);
   }
 
-  /** Nur für Tests und Diagnose: der aktuell gehaltene Token. */
+  /** For tests and diagnostics only: the token currently held. */
   get current(): Tokens | undefined {
     return this.tokens;
   }
 
-  /** Läuft der Token bald ab und sollte erneuert werden? */
+  /** Is the token about to expire and due for a refresh? */
   private expiresSoon(tokens: Tokens): boolean {
     return tokens.expiresAt - Date.now() <= REFRESH_MARGIN_MS;
   }
@@ -123,7 +121,7 @@ export class TokenStore {
       return this.tokens;
     }
 
-    // Mehrere gleichzeitige Aufrufe teilen sich denselben Versuch.
+    // Concurrent callers share the same attempt.
     this.pending ??= this.acquire().finally(() => {
       this.pending = undefined;
     });
@@ -133,9 +131,9 @@ export class TokenStore {
   private async acquire(): Promise<Tokens> {
     const cached = this.tokens ?? (await this.cache?.read());
 
-    // Nach einem Homebridge-Neustart liegt oft noch ein gültiger Token im
-    // Cache. Den einfach zu übernehmen spart eine Anfrage pro Start und
-    // verbraucht nicht unnötig den Refresh-Token.
+    // After a Homebridge restart the cache often still holds a valid token.
+    // Adopting it saves one request per start and does not burn the refresh
+    // token needlessly.
     if (cached !== undefined && !this.expiresSoon(cached)) {
       return this.remember(cached);
     }
@@ -151,10 +149,10 @@ export class TokenStore {
   }
 
   /**
-   * Versucht die Erneuerung und gibt `undefined` zurück, wenn sie scheitert.
+   * Attempts the refresh and returns `undefined` if it fails.
    *
-   * Ein verbrauchter Refresh-Token ist kein Grund aufzugeben — er ist der
-   * Normalfall nach längerer Ausfallzeit und führt hier zur Neuanmeldung.
+   * A spent refresh token is no reason to give up: it is the normal case after a
+   * longer outage and leads to a re-login here.
    */
   private async tryRefresh(refreshToken: string): Promise<Tokens | undefined> {
     try {
@@ -195,8 +193,8 @@ export class TokenStore {
     }
 
     const json = parseJson(text, "token");
-    // Die API antwortet auf manche Fehler mit HTTP 200 und einem
-    // `error`-Feld im Body — deshalb reicht der Statuscode allein nicht.
+    // The API answers some errors with HTTP 200 and an `error` field in the
+    // body, so the status code alone is not enough.
     const oauthError = (json as OAuthErrorBody).error;
     if (oauthError !== undefined) {
       throw this.authError(response.status, text);
@@ -233,7 +231,7 @@ export class TokenStore {
       code = json.error;
       description = json.error_description;
     } catch {
-      // Kein JSON — dann bleibt es beim Statuscode.
+      // Not JSON, so the status code is all we have.
     }
 
     const permanent = code !== undefined && PERMANENT_ERRORS.has(code);

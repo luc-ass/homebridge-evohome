@@ -6,30 +6,29 @@ import {
   type BackoffOptions,
 } from "../../src/util/backoff.js";
 
-/** Ohne Jitter lässt sich die reine Kurve prüfen. */
+/** Without jitter the plain curve can be asserted. */
 const NO_JITTER: BackoffOptions = { ...DEFAULT_BACKOFF, jitter: 0 };
 
 describe("backoffDelay", () => {
-  it("wächst exponentiell", () => {
+  it("grows exponentially", () => {
     expect(backoffDelay(1, NO_JITTER)).toBe(30_000);
     expect(backoffDelay(2, NO_JITTER)).toBe(60_000);
     expect(backoffDelay(3, NO_JITTER)).toBe(120_000);
     expect(backoffDelay(4, NO_JITTER)).toBe(240_000);
   });
 
-  it("deckelt bei maxMs, statt ins Unendliche zu laufen", () => {
-    // Issue #136 warnt ausdrücklich davor, den Rate-Limiter zu treffen —
-    // ein Deckel verhindert aber auch, dass das Plugin nach einem langen
-    // Ausfall stundenlang schweigt.
+  it("caps at maxMs instead of growing without bound", () => {
+    // Issue #136 explicitly warns about hitting the rate limit, but a cap also
+    // keeps the plugin from going silent for hours after a long outage.
     expect(backoffDelay(20, NO_JITTER)).toBe(DEFAULT_BACKOFF.maxMs);
     expect(backoffDelay(100, NO_JITTER)).toBe(DEFAULT_BACKOFF.maxMs);
   });
 
-  it("behandelt den ersten Versuch wie einen Fehlschlag", () => {
+  it("treats the first attempt like a failure", () => {
     expect(backoffDelay(0, NO_JITTER)).toBe(DEFAULT_BACKOFF.initialMs);
   });
 
-  it("streut um den Basiswert, damit Instanzen nicht im Gleichtakt zurückkommen", () => {
+  it("spreads around the base value so instances do not return in lockstep", () => {
     const base = 60_000;
     const spread = base * DEFAULT_BACKOFF.jitter;
 
@@ -38,7 +37,7 @@ describe("backoffDelay", () => {
     expect(backoffDelay(2, DEFAULT_BACKOFF, () => 0.5)).toBe(base);
   });
 
-  it("wird nie negativ", () => {
+  it("never goes negative", () => {
     const wild: BackoffOptions = { ...DEFAULT_BACKOFF, jitter: 5 };
     expect(backoffDelay(1, wild, () => 0)).toBeGreaterThanOrEqual(0);
   });

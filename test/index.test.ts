@@ -5,8 +5,8 @@ import registerPlugin from "../src/index.js";
 import { EvohomePlatform } from "../src/platform.js";
 import { PLATFORM_NAME, PLUGIN_NAME } from "../src/settings.js";
 
-describe("Plugin-Einstiegspunkt", () => {
-  it("registriert die Platform unter dem erwarteten Alias", () => {
+describe("plugin entry point", () => {
+  it("registers the platform under the expected alias", () => {
     const registerPlatform = vi.fn();
     registerPlugin({ registerPlatform } as unknown as API);
 
@@ -38,7 +38,7 @@ describe("EvohomePlatform", () => {
     error: vi.fn(),
   };
 
-  it("registriert sich auf didFinishLaunching und shutdown", () => {
+  it("subscribes to didFinishLaunching and shutdown", () => {
     const { api, handlers } = makeApi();
     new EvohomePlatform(
       log as never,
@@ -49,7 +49,7 @@ describe("EvohomePlatform", () => {
     expect([...handlers.keys()]).toEqual(["didFinishLaunching", "shutdown"]);
   });
 
-  it("nimmt zwischengespeicherte Accessories entgegen (S1)", () => {
+  it("accepts cached accessories", () => {
     const { api } = makeApi();
     const platform = new EvohomePlatform(
       log as never,
@@ -61,16 +61,16 @@ describe("EvohomePlatform", () => {
 
     platform.configureAccessory({
       UUID: "uuid-a",
-      displayName: "Küche Thermostat",
+      displayName: "Kitchen Thermostat",
     } as never);
     platform.configureAccessory({
       UUID: "uuid-b",
       displayName: "Bad Thermostat",
     } as never);
-    // Dieselbe UUID darf nicht doppelt gezählt werden.
+    // The same UUID must not be counted twice.
     platform.configureAccessory({
       UUID: "uuid-a",
-      displayName: "Küche Thermostat",
+      displayName: "Kitchen Thermostat",
     } as never);
 
     expect(platform.cachedAccessoryCount).toBe(2);

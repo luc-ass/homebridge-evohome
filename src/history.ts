@@ -1,36 +1,35 @@
 import type { API, Logging, PlatformAccessory } from "homebridge";
 
 /**
- * Anbindung der Eve-App-Historie über `fakegato-history`.
+ * Eve app history, backed by `fakegato-history`.
  *
- * Das Paket wird **nur dann geladen**, wenn die Option `history` aktiv ist.
- * Der Grund ist Issue #166: `fakegato-storage.js` lädt in Zeile 11
- * unbedingt `./lib/googleDrive` und damit `googleapis` — auch bei
- * `storage: "fs"`, das dieses Plugin ausschließlich verwendet. Auf Hoobs
- * scheiterte der Start genau an diesem Import, ohne dass es etwas mit
- * Evohome zu tun hatte.
+ * The package is loaded **only** when the `history` option is on. The reason is
+ * issue #166: `fakegato-storage.js` unconditionally requires `./lib/googleDrive`
+ * on line 11, and with it `googleapis` — even for `storage: "fs"`, which is all
+ * this plugin ever uses. On Hoobs, startup failed on exactly that import,
+ * without any involvement of Evohome.
  *
- * Mit `"history": false` in der Konfiguration wird `fakegato-history` nie
- * importiert, `googleapis` folglich nie geladen — das ist der Ausweg für
- * betroffene Installationen. Wer die Abhängigkeit gar nicht erst installieren
- * will, nutzt `npm install --omit=optional`; das Plugin läuft dann ohne
- * Historie weiter, statt beim Start zu scheitern.
+ * With `"history": false` in the configuration, `fakegato-history` is never
+ * imported and `googleapis` therefore never loaded — the way out for affected
+ * installations. To avoid installing the dependency at all, use
+ * `npm install --omit=optional`; the plugin then runs without history rather
+ * than failing at startup.
  */
 
 /**
- * Ein Messpunkt im Verlauf, wie ihn der Eve-Typ `thermo` erwartet.
+ * One sample in the history, in the shape the Eve `thermo` type expects.
  *
- * Bewusst ein Type-Alias und kein Interface: nur Type-Aliase bekommen eine
- * implizite Index-Signatur und sind damit zu dem `Record<string, number>`
- * zuweisbar, das `fakegato-history` erwartet.
+ * Deliberately a type alias rather than an interface: only type aliases get an
+ * implicit index signature and are therefore assignable to the
+ * `Record<string, number>` that `fakegato-history` expects.
  */
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- siehe Kommentar oben
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- see the comment above
 export type HistoryEntry = {
-  /** Unix-Zeit in Sekunden. */
+  /** Unix time in seconds. */
   readonly time: number;
   readonly currentTemp: number;
   readonly setTemp: number;
-  /** 0 oder 100 — die API liefert keine echte Ventilstellung. */
+  /** 0 or 100 — the API reports no real valve position. */
   readonly valvePosition: number;
 };
 
@@ -38,20 +37,20 @@ export interface HistoryService {
   addEntry(entry: HistoryEntry): void;
 }
 
-/** Legt für ein Accessory einen Verlaufsdienst an. */
+/** Creates a history service for an accessory. */
 export type HistoryFactory = (
   accessory: PlatformAccessory,
 ) => HistoryService | undefined;
 
-/** Tut nichts — wird verwendet, wenn die Historie aus oder nicht verfügbar ist. */
+/** Does nothing; used when history is off or unavailable. */
 const noHistory: HistoryFactory = () => undefined;
 
 /**
- * Lädt `fakegato-history`, sofern gewünscht und installiert.
+ * Loads `fakegato-history`, if wanted and installed.
  *
- * Gibt immer eine benutzbare Fabrik zurück; fehlt das Paket, liefert sie
- * `undefined` je Accessory. Ein fehlendes optionales Paket darf den Start
- * nicht verhindern.
+ * Always returns a usable factory; if the package is missing it yields
+ * `undefined` per accessory. A missing optional package must not prevent
+ * startup.
  */
 export const loadHistoryFactory = async (
   api: API,
@@ -87,7 +86,7 @@ export const loadHistoryFactory = async (
         log,
       });
     } catch (error) {
-      // Ein kaputter Verlauf darf das Thermostat nicht mitreißen.
+      // A broken history must not take the thermostat down with it.
       log.warn(
         `Could not set up history for "${accessory.displayName}": ${String(error)}`,
       );

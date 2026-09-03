@@ -27,22 +27,21 @@ import type {
 } from "homebridge";
 
 /**
- * Die Evohome-Platform.
+ * The Evohome platform.
  *
- * Gegenüber 0.11.2 eine `DynamicPlatformPlugin` statt einer Static Platform.
- * Homebridge stellt zwischengespeicherte Accessories über
- * {@link configureAccessory} wieder her, statt sie bei jedem Start neu
- * anzulegen. Zusammen mit UUIDs, die aus der `zoneId` statt aus dem
- * Array-Index gebildet werden, bleiben Raumzuordnung, Szenen und
- * Automationen erhalten (Befund S1, Issue #61).
+ * A `DynamicPlatformPlugin` rather than the static platform of 0.11.2.
+ * Homebridge restores cached accessories through {@link configureAccessory}
+ * instead of creating them anew on every start. Together with UUIDs derived
+ * from the `zoneId` rather than the array index, room assignment, scenes and
+ * automations survive (issue #61).
  */
 export class EvohomePlatform implements DynamicPlatformPlugin {
   private readonly cachedAccessories = new Map<string, PlatformAccessory>();
 
-  /** UUIDs, die in diesem Lauf tatsächlich verwendet werden. */
+  /** UUIDs actually used during this run. */
   private readonly claimed = new Set<string>();
 
-  /** Handler, die bei jedem Statusabruf beliefert werden. */
+  /** Handlers that receive every status update. */
   private readonly zoneHandlers = new Map<string, ThermostatAccessory>();
   private readonly switchHandlers = new Set<SystemModeAccessory>();
   private dhwHandler: DomesticHotWaterAccessory | undefined;
@@ -59,7 +58,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     });
 
     this.api.on("shutdown", () => {
-      // 0.11.2 hob seine Timer-Handles nie auf (Befund S11).
+      // 0.11.2 never kept its timer handles.
       this.poller?.stop();
     });
   }
@@ -118,8 +117,8 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       await this.poller.start();
       this.removeStaleAccessories();
     } catch (error) {
-      // Anders als 0.11.2 bleiben die Accessories aus dem Cache bestehen —
-      // HomeKit meldet sie als „nicht erreichbar", statt sie zu verlieren.
+      // Unlike 0.11.2 the cached accessories stay: HomeKit shows them as
+      // unreachable instead of losing them.
       this.log.error(
         `Startup failed: ${error instanceof Error ? error.message : String(error)}`,
       );
@@ -130,11 +129,10 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Wählt die Location: bevorzugt über `locationId`, sonst über den Index.
+   * Picks the location: preferably by `locationId`, otherwise by index.
    *
-   * Der Index ist die Position in der Antwort von Honeywell — sortiert der
-   * Anbieter um, zeigt die Konfiguration plötzlich auf ein anderes Haus.
-   * Deshalb ist die ID der bessere Weg (Entscheidung F5).
+   * The index is the position in Honeywell's response: if they reorder it, the
+   * configuration suddenly points at a different home. The ID is the safer way.
    */
   private async findLocation(
     client: EvohomeClient,
@@ -232,8 +230,8 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
         continue;
       }
       if (zone.name.trim() === "") {
-        // Namenlose Zonen sind in aller Regel die Warmwasserbereitung, die
-        // ein eigenes Accessory bekommt.
+        // Unnamed zones are almost always the hot water, which gets an accessory
+        // of its own.
         this.log.debug("Skipped a zone without a name.");
         continue;
       }
@@ -271,8 +269,8 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       if (!config.showSwitches[mode]) {
         continue;
       }
-      // Nur anbieten, was das System auch kann — ein Schalter für einen nicht
-      // unterstützten Modus führt sonst zu einer Fehlermeldung beim Drücken.
+      // Only offer what the system supports; a switch for an unsupported mode
+      // would just produce an error when pressed.
       if (!location.system.allowedSystemModes.includes(mode)) {
         this.log.debug(
           `System mode ${mode} is not supported by this system; no switch created.`,
@@ -337,11 +335,11 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Holt ein Accessory aus dem Cache oder legt es an.
+   * Fetches an accessory from the cache or creates it.
    *
-   * Die UUID entsteht aus einer stabilen Kennung — nicht mehr aus
-   * `systemId + ":" + Array-Index` wie in 0.11.2, wo schon eine neue Zone bei
-   * Honeywell alle nachfolgenden IDs verschob (Befund S1).
+   * The UUID is built from a stable identifier, no longer from
+   * `systemId + ":" + array index` as in 0.11.2, where a single new zone at
+   * Honeywell shifted every following ID.
    */
   private accessoryFor(key: string, displayName: string): PlatformAccessory {
     const uuid = this.api.hap.uuid.generate(`evohome:${key}`);
@@ -364,7 +362,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     return accessory;
   }
 
-  /** Entfernt Accessories, die es bei Honeywell nicht mehr gibt. */
+  /** Removes accessories that no longer exist at Honeywell. */
   private removeStaleAccessories(): void {
     const stale = [...this.cachedAccessories.entries()].filter(
       ([uuid]) => !this.claimed.has(uuid),

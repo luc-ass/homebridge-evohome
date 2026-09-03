@@ -18,21 +18,21 @@ import type {
 } from "homebridge";
 
 /**
- * Eine Heizzone als HomeKit-Thermostat.
+ * A heating zone exposed as a HomeKit thermostat.
  *
- * Wesentliche Unterschiede zu 0.11.2:
+ * Key differences to 0.11.2:
  *
- * - Werte kommen aus dem Cache des {@link PollingCoordinator}; im
- *   HomeKit-Lesepfad findet keine API-Anfrage mehr statt.
- * - Sollwerte werden auf `setpointCapabilities` geklemmt. 0.11.2 schrieb zum
- *   Ausschalten pauschal 5 °C, was bei einer Zone mit `minHeatSetpoint: 10`
- *   die Warnung aus Issue #94 auslöste (Befund B6).
- * - „Aus" wird über `TargetHeatingCoolingState` abgebildet, nicht über einen
- *   Sollwert unterhalb des erlaubten Bereichs.
- * - `updateValue()` statt des in HAP 2.x entfernten `getValue()` (Befund B3).
+ * - Values come from the {@link PollingCoordinator} cache; the HomeKit read path
+ *   no longer performs an API request.
+ * - Setpoints are clamped to `setpointCapabilities`. 0.11.2 wrote a flat 5 °C to
+ *   turn a zone off, which triggered the warning from issue #94 on a zone with
+ *   `minHeatSetpoint: 10`.
+ * - "Off" is expressed through `TargetHeatingCoolingState`, not through a
+ *   setpoint below the allowed range.
+ * - `updateValue()` instead of `getValue()`, which HAP 2.x removed.
  */
 
-/** Klemmt einen Sollwert in den vom System erlaubten Bereich. */
+/** Clamps a setpoint into the range the system allows. */
 export const clampSetpoint = (
   value: number,
   capabilities: SetpointCapabilities,
@@ -43,9 +43,9 @@ export const clampSetpoint = (
     return bounded;
   }
   const stepped = Math.round(bounded / valueResolution) * valueResolution;
-  // Runden kann minimal über die Grenze schießen.
+  // Rounding can overshoot the bound slightly.
   const clamped = Math.min(maxHeatSetpoint, Math.max(minHeatSetpoint, stepped));
-  // Gleitkommareste wie 20.500000000000004 vermeiden.
+  // Avoid floating point residue such as 20.500000000000004.
   return Math.round(clamped * 100) / 100;
 };
 
@@ -62,9 +62,9 @@ export class ThermostatAccessory {
     private readonly poller: PollingCoordinator,
     private readonly schedules: ScheduleCache,
     private readonly config: EvohomeConfig,
-    /** Aktueller UTC-Offset der Location, für die Schaltpunkte. */
+    /** Current UTC offset of the location, used for switchpoints. */
     private readonly offsetMinutes: number,
-    /** Eve-Verlauf, falls aktiviert und verfügbar (Entscheidung F3). */
+    /** Eve history, if enabled and available. */
     private readonly history: HistoryService | undefined,
     eve: EveCharacteristics,
     log: Logging,
@@ -84,9 +84,9 @@ export class ThermostatAccessory {
 
     this.service.setCharacteristic(Characteristic.Name, this.zone.name);
 
-    // CurrentTemperature bewusst mit den HAP-Vorgaben: 0.11.2 setzte hier
-    // 1–50 °C mit der Schrittweite des Ventils, wodurch legitime Messwerte
-    // außerhalb dieses Fensters abgelehnt wurden.
+    // CurrentTemperature deliberately keeps the HAP defaults: 0.11.2 set 1–50 °C
+    // with the valve's step size here, which rejected legitimate readings
+    // outside that window.
     this.service
       .getCharacteristic(Characteristic.CurrentTemperature)
       .onGet(() => this.currentTemperature());
@@ -121,19 +121,19 @@ export class ThermostatAccessory {
       .getCharacteristic(Characteristic.TemperatureDisplayUnits)
       .onGet(() => Characteristic.TemperatureDisplayUnits.CELSIUS);
 
-    // Eve zeigt die Ventilstellung im Verlauf an. Der Wert ist abgeleitet —
-    // die API liefert keine echte Ventilposition.
+    // Eve shows the valve position in its history. The value is derived; the API
+    // reports no real valve position.
     //
-    // Erst als optional anmelden: getCharacteristic() legt eine unbekannte
-    // Characteristic zwar selbst an, schreibt dabei aber eine Warnung
-    // ("Adding anyway") ins Log jedes Nutzers.
+    // Register it as optional first: getCharacteristic() would add an unknown
+    // characteristic by itself, but writes an "Adding anyway" warning into
+    // every user's log while doing so.
     this.service.addOptionalCharacteristic(eve.ValvePosition);
     this.service
       .getCharacteristic(eve.ValvePosition)
       .onGet(() => this.valvePosition());
   }
 
-  /** Übernimmt einen frisch gelesenen Status und meldet Änderungen an HomeKit. */
+  /** Takes a freshly read status and pushes the changes to HomeKit. */
   update(status: ZoneStatus): void {
     const previous = this.status;
     this.status = status;
@@ -168,11 +168,10 @@ export class ThermostatAccessory {
   }
 
   /**
-   * Schreibt einen Messpunkt in den Eve-Verlauf.
+   * Writes a sample into the Eve history.
    *
-   * Nur mit echtem Messwert: 0.11.2 schrieb auch dann einen Eintrag, wenn die
-   * Zone gar keine Temperatur meldete, und erzeugte damit Lücken bzw. Nullen
-   * in der Kurve.
+   * Only with a real reading: 0.11.2 wrote an entry even when the zone reported no
+   * temperature at all, producing gaps or zeroes in the graph.
    */
   private recordHistory(status: ZoneStatus): void {
     const currentTemp = status.temperatureStatus.temperature;
@@ -188,11 +187,11 @@ export class ThermostatAccessory {
   }
 
   /**
-   * Protokolliert Änderungen der Ist-Temperatur, wenn gewünscht.
+   * Logs changes of the measured temperature, when asked for.
    *
-   * Issue #146: Beim Entschlacken des Logs war diese Zeile auf `debug`
-   * gerutscht. Sie ist nützlich, um im Nachhinein zu sehen, warum es morgens
-   * kalt war — aber nicht für jeden.
+   * Issue #146: while trimming the log this line was moved to `debug`. It is
+   * useful for working out after the fact why it was cold in the morning, but
+   * not for everyone.
    */
   private logTemperatureChange(
     previous: number | undefined,
@@ -210,14 +209,14 @@ export class ThermostatAccessory {
     );
   }
 
-  /** Der zuletzt bekannte Status — für die History in Phase 4. */
+  /** The last known status. */
   get lastStatus(): ZoneStatus | undefined {
     return this.status;
   }
 
   private required(): ZoneStatus {
     if (this.status === undefined) {
-      // HomeKit bekommt einen sauberen Fehler statt eines erfundenen Werts.
+      // HomeKit gets a clean error rather than an invented value.
       throw new this.api.hap.HapStatusError(
         this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE,
       );
@@ -228,8 +227,8 @@ export class ThermostatAccessory {
   private currentTemperature(): number {
     const temperature = this.required().temperatureStatus.temperature;
     if (temperature === undefined) {
-      // Zone meldet keinen Messwert, etwa bei leerer Batterie. 0.11.2 reichte
-      // hier undefined durch, woraus HomeKit "received NaN" machte (#94).
+      // The zone reports no reading, e.g. on an empty battery. 0.11.2 passed
+      // undefined through, which HomeKit turned into "received NaN" (#94).
       throw new this.api.hap.HapStatusError(
         this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE,
       );
@@ -244,7 +243,7 @@ export class ThermostatAccessory {
     );
   }
 
-  /** Heizt die Zone gerade? */
+  /** Is the zone currently calling for heat? */
   private currentState(): number {
     const { CurrentHeatingCoolingState } = this.api.hap.Characteristic;
     const status = this.required();
@@ -260,10 +259,10 @@ export class ThermostatAccessory {
   }
 
   /**
-   * Was der Nutzer eingestellt hat.
+   * What the user has selected.
    *
-   * `AUTO` steht für „folgt dem Zeitprogramm", `HEAT` für einen aktiven
-   * Override, `OFF` für einen Sollwert auf dem Minimum des Systems.
+   * `AUTO` means "follows the schedule", `HEAT` means an override is active and
+   * `OFF` means the setpoint sits at the system minimum.
    */
   private targetState(): number {
     const { TargetHeatingCoolingState } = this.api.hap.Characteristic;
@@ -280,8 +279,8 @@ export class ThermostatAccessory {
       status.setpointStatus.targetHeatTemperature <=
         status.temperatureStatus.temperature
     ) {
-      // Befund S6: In 0.11.2 wurde diese Option nie an das Accessory
-      // durchgereicht und war deshalb wirkungslos.
+      // In 0.11.2 this option was never passed to the accessory and therefore had
+      // no effect at all.
       return TargetHeatingCoolingState.OFF;
     }
 
@@ -303,9 +302,9 @@ export class ThermostatAccessory {
     const target = clampSetpoint(Number(value), this.zone.setpointCapabilities);
     const now = new Date();
 
-    // Issue #149: Läuft bereits ein befristeter Override, wird bei der
-    // Voreinstellung `keepExistingUntil` dessen Endzeit übernommen, statt sie
-    // durch den nächsten Schaltpunkt zu ersetzen.
+    // Issue #149: if a temporary override is already running, the default
+    // `keepExistingUntil` adopts its end time instead of replacing it with the
+    // next switchpoint.
     const decision = decideOverride(
       this.config.setpointMode,
       this.required().setpointStatus,
@@ -326,10 +325,10 @@ export class ThermostatAccessory {
   }
 
   /**
-   * Nächster Schaltpunkt des Zeitprogramms dieser Zone.
+   * Next switchpoint in this zone's schedule.
    *
-   * Bei `permanent` wird das Zeitprogramm gar nicht erst abgefragt — der
-   * Aufruf wäre reine Last auf den Honeywell-Servern.
+   * With `permanent` the schedule is not fetched at all; the call would be pure
+   * load on Honeywell's servers.
    */
   private async nextSwitchpoint(now: Date): Promise<Date | undefined> {
     if (this.config.setpointMode === "permanent") {
@@ -344,7 +343,7 @@ export class ThermostatAccessory {
     const { minHeatSetpoint } = this.zone.setpointCapabilities;
 
     if (value === TargetHeatingCoolingState.OFF) {
-      // Auf das Minimum des Systems statt auf feste 5 °C (Befund B6, #94).
+      // To the system minimum rather than a fixed 5 °C (#94).
       this.log.info(
         `${this.zone.name}: off (target ${String(minHeatSetpoint)} °C).`,
       );
@@ -363,8 +362,8 @@ export class ThermostatAccessory {
         undefined,
       );
     } else {
-      // HEAT bei bereits aktivem Override bedeutet: nichts ändern. Nur aus
-      // dem Aus-Zustand heraus wird der Override aufgehoben.
+      // HEAT while an override is already active means: change nothing. Only
+      // coming out of the off state cancels the override.
       if (this.targetState() !== TargetHeatingCoolingState.OFF) {
         return;
       }

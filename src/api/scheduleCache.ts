@@ -3,15 +3,14 @@ import type { DailySchedule } from "./types.js";
 import type { Logging } from "homebridge";
 
 /**
- * Hält Zeitprogramme zwischen.
+ * Caches schedules.
  *
- * 0.11.2 holte den Zeitplan bei **jeder** Temperaturänderung neu — bei einem
- * Haus mit zwölf Zonen und einer Runde durch die Räume also ein Dutzend
- * zusätzlicher Anfragen. Zeitprogramme ändern sich aber nur, wenn jemand sie
- * am Controller oder in der App bearbeitet.
+ * 0.11.2 fetched the schedule on **every** temperature change — a dozen extra
+ * requests for a walk through a twelve-zone house. Schedules only change when
+ * somebody edits them on the controller or in the app.
  *
- * Der Cache ist bewusst schlicht: eine Ablaufzeit, kein Invalidierungssignal.
- * Ändert jemand das Programm, greift es spätestens nach `ttlMs`.
+ * The cache is deliberately simple: an expiry, no invalidation signal. An edited
+ * schedule takes effect after `ttlMs` at the latest.
  */
 export class ScheduleCache {
   private readonly entries = new Map<
@@ -19,7 +18,7 @@ export class ScheduleCache {
     { schedules: readonly DailySchedule[]; expiresAt: number }
   >();
 
-  /** Laufende Abfragen, damit gleichzeitige Zugriffe sich eine teilen. */
+  /** In-flight requests, so concurrent callers share one. */
   private readonly pending = new Map<
     string,
     Promise<readonly DailySchedule[]>
@@ -41,7 +40,7 @@ export class ScheduleCache {
     return this.get(`dhw:${dhwId}`, () => this.client.getDhwSchedule(dhwId));
   }
 
-  /** Verwirft alle Einträge, etwa nach einer Änderung am Zeitprogramm. */
+  /** Drops every entry, e.g. after a schedule was edited. */
   clear(): void {
     this.entries.clear();
   }
@@ -69,8 +68,8 @@ export class ScheduleCache {
         return schedules;
       })
       .catch((error: unknown) => {
-        // Ohne Zeitprogramm lässt sich immer noch ein dauerhafter Override
-        // setzen — das ist besser, als die Bedienung ganz zu verweigern.
+        // Without a schedule a permanent override is still possible, which beats
+        // refusing to operate at all.
         this.log.debug(
           `Could not fetch the schedule for ${key}: ${String(error)}`,
         );

@@ -4,8 +4,8 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    // Der Altcode aus 0.11.2 bleibt bis Phase 5 als Referenz liegen und wird
-    // bewusst nicht gelintet. Siehe legacy/README.md.
+    // The 0.11.2 code is kept as a reference and deliberately not linted.
+    // See legacy/README.md.
     ignores: ["dist/**", "legacy/**", "node_modules/**", "coverage/**"],
   },
 
@@ -16,47 +16,48 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        // tsconfig.check.json umfasst src/, test/ und die Config-Dateien —
-        // tsconfig.json allein deckt nur src/ ab und ließe die Tests ungeprüft.
+        // tsconfig.check.json covers src/, test/ and the config files; tsconfig.json
+        // alone covers only src/ and would leave the tests unchecked.
         project: ["./tsconfig.check.json"],
         tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
-      // --- Regeln, die konkrete Befunde aus docs/MIGRATION-HB2.md absichern ---
+      // --- Rules that guard against specific bugs found in 0.11.2 ---
 
-      // S4: `if ((this.model = "HeatingZone"))` in legacy/index.cjs:982 —
-      // Zuweisung statt Vergleich, die stillschweigend jedes Modell überschrieb.
+      // `if ((this.model = "HeatingZone"))` in legacy/index.cjs:982 — an
+      // assignment where a comparison was meant, silently overwriting every
+      // model.
       "no-cond-assign": ["error", "always"],
 
-      // S3: zehnfach verschachtelte Callback-Pyramiden in legacy/index.cjs.
+      // Callback pyramids ten levels deep in legacy/index.cjs.
       "max-depth": ["error", 3],
       "max-nested-callbacks": ["error", 3],
 
       "no-restricted-syntax": [
         "error",
         {
-          // B3: Characteristic.getValue() existiert in HAP 2.x nicht mehr.
+          // Characteristic.getValue() no longer exists in HAP 2.x.
           selector: "MemberExpression[property.name='getValue']",
           message:
-            "Characteristic.getValue() wurde in HAP 2.x entfernt (Befund B3). updateValue() verwenden.",
+            "Characteristic.getValue() was removed in HAP 2.x; use updateValue() instead.",
         },
         {
-          // B7: new Buffer(...) ist seit Node 6 deprecated. Die Regel trifft
-          // gezielt den Konstruktoraufruf — Buffer.from()/alloc() bleiben erlaubt.
+          // new Buffer(...) has been deprecated since Node 6. This targets the
+          // constructor call only; Buffer.from()/alloc() stay allowed.
           selector: "NewExpression[callee.name='Buffer']",
           message:
-            "new Buffer(...) ist deprecated (Befund B7). Buffer.from() oder Buffer.alloc() verwenden.",
+            "new Buffer(...) is deprecated; use Buffer.from() or Buffer.alloc().",
         },
       ],
 
-      // S5/S12: verschluckte Fehler und vergessene awaits waren die Ursache
-      // dafür, dass Ausfälle der Honeywell-API das Plugin lahmlegten.
+      // Swallowed errors and forgotten awaits are why a Honeywell outage used to
+      // take the plugin down.
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",
       "@typescript-eslint/require-await": "error",
 
-      // Konsistenz
+      // Consistency
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { prefer: "type-imports", fixStyle: "inline-type-imports" },
@@ -65,9 +66,9 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      // API-Antworten werden als Record<string, unknown> gelesen. Der
-      // Klammerzugriff macht sichtbar, dass das Feld aus ungeprüftem JSON
-      // stammt und nicht aus einem bekannten Typ.
+      // API responses are read as Record<string, unknown>. Bracket access makes it
+      // visible that a field comes from unvalidated JSON rather than a known
+      // type.
       "@typescript-eslint/dot-notation": [
         "error",
         { allowIndexSignaturePropertyAccess: true },
@@ -81,8 +82,8 @@ export default tseslint.config(
   },
 
   {
-    // Config-Dateien im Projektwurzelverzeichnis liegen außerhalb von
-    // tsconfig.json und vertragen kein typgestütztes Linting.
+    // Config files in the repository root sit outside tsconfig.json and cannot
+    // be linted with type information.
     files: ["**/*.js"],
     ...tseslint.configs.disableTypeChecked,
   },
@@ -90,7 +91,7 @@ export default tseslint.config(
   {
     files: ["test/**/*.ts"],
     rules: {
-      // Fixtures und Mocks dürfen lockerer sein als Produktivcode.
+      // Fixtures and mocks may be looser than production code.
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
       "max-nested-callbacks": ["error", 5],

@@ -1,27 +1,26 @@
-# Altcode aus 0.11.2 — nur als Referenz
+# Legacy code from 0.11.2 — reference only
 
-Diese beiden Dateien sind der unveränderte Stand von Version 0.11.2:
+These two files are the unchanged state of version 0.11.2:
 
-| Datei | vorher |
+| File | Previously |
 | :-- | :-- |
 | `index.cjs` | `index.js` |
 | `evohome.cjs` | `lib/evohome.js` |
 
-Sie werden **nicht mehr geladen, gebaut, gelintet oder publiziert**. `package.json`
-zeigt mit `main` auf `dist/index.js`, und `files` schließt dieses Verzeichnis aus.
+They are **no longer loaded, built, linted or published**. `package.json` points
+`main` at `dist/index.js`, and `files` excludes this directory.
 
-## Warum sie noch hier liegen
+## Why they are still here
 
-Der Rewrite in `src/` orientiert sich Phase für Phase an diesem Code — vor allem an den
-Details der undokumentierten TCC-EMEA-API, die sich sonst nur durch erneutes Ausprobieren
-gegen ein echtes Konto rekonstruieren ließen. `docs/MIGRATION-HB2.md` verweist an vielen
-Stellen mit Zeilennummern hierhin.
+The rewrite in `src/` follows this code phase by phase, above all for the details
+of the undocumented TCC EMEA API, which would otherwise have to be rediscovered
+by trial and error against a real account. `docs/MIGRATION-HB2.md` refers here by
+line number in many places.
 
-Die Endung `.cjs` ist nötig, weil `package.json` seit Phase 0 `"type": "module"` setzt;
-als `.js` würde Node die Dateien als ESM parsen und an `require(...)` scheitern.
+The `.cjs` extension is required because `package.json` sets `"type": "module"`;
+as `.js` these files would be parsed as ESM and fail on `require(...)`.
 
-## Wann sie verschwinden
+## When they go away
 
-Am Ende von Phase 5, zusammen mit dem 1.0.0-Release. Bis dahin gilt: **hier wird nichts
-mehr repariert.** Jeder Befund aus `docs/MIGRATION-HB2.md` wird im neuen Code adressiert,
-nachgewiesen über die Prüfliste in Abschnitt 5.1.
+Once 1.0.0 is released. Until then: **nothing gets fixed in here.** Every finding
+is addressed in the new code instead.

@@ -1,42 +1,41 @@
 /**
- * Zentrale Konstanten des Plugins.
+ * Central constants for the plugin.
  *
- * PLATFORM_NAME muss mit `pluginAlias` in config.schema.json übereinstimmen,
- * PLUGIN_NAME mit `name` in package.json. Beides darf sich nicht ändern, ohne
- * dass Bestandsnutzer ihre config.json anpassen müssen.
+ * PLATFORM_NAME must match `pluginAlias` in config.schema.json, PLUGIN_NAME must
+ * match `name` in package.json. Neither may change without forcing existing
+ * users to edit their config.json.
  */
 
-/** Alias, unter dem die Platform in der config.json referenziert wird. */
+/** The alias the platform is referenced by in config.json. */
 export const PLATFORM_NAME = "Evohome";
 
-/** npm-Paketname, unter dem Homebridge das Plugin lädt. */
+/** The npm package name Homebridge loads the plugin under. */
 export const PLUGIN_NAME = "homebridge-evohome";
 
-/** Basis-URL der Resideo/Honeywell TCC-Umgebung (EMEA). */
+/** Base URL of the Resideo/Honeywell TCC environment (EMEA). */
 export const DEFAULT_BASE_URL = "https://tccna.resideo.com";
 
-/** Pfad der EMEA-API unterhalb der Basis-URL. */
+/** Path of the EMEA API below the base URL. */
 export const API_PATH = "/WebAPI/emea/api/v1";
 
 /**
- * Standard-Pollingintervall in Sekunden.
+ * Default polling interval in seconds.
  *
- * Der Altcode pollte alle 300 s. Der Wert bleibt als Default erhalten; das
- * Minimum schützt den Rate-Limiter der Honeywell-Server (siehe Risiko-Tabelle
- * in docs/MIGRATION-HB2.md).
+ * 0.11.2 polled every 300s and that stays the default. The minimum below keeps
+ * us clear of Honeywell's rate limit.
  */
 export const DEFAULT_POLL_INTERVAL_SECONDS = 300;
 
-/** Kleinstes zulässiges Pollingintervall in Sekunden. */
+/** Smallest polling interval we accept, in seconds. */
 export const MIN_POLL_INTERVAL_SECONDS = 60;
 
-/** Timeout für einzelne HTTP-Requests in Millisekunden. */
+/** Timeout for a single HTTP request, in milliseconds. */
 export const REQUEST_TIMEOUT_MS = 30_000;
 
 /**
- * Wartezeit vor der Nachkontrolle eines Schreibvorgangs, in Millisekunden.
+ * Delay before re-reading the status after a write, in milliseconds.
  *
- * Die Honeywell-Server übernehmen eine Änderung nicht sofort in den Status.
- * 0.11.2 wartete an dieser Stelle ebenfalls drei Sekunden.
+ * Honeywell's servers do not reflect a change in the status immediately.
+ * 0.11.2 waited three seconds here as well.
  */
 export const REFRESH_DELAY_MS = 3000;

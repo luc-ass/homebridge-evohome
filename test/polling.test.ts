@@ -26,7 +26,7 @@ const makeLog = (): Logging & { warnings: string[]; infos: string[] } => {
   } as unknown as Logging & { warnings: string[]; infos: string[] };
 };
 
-/** Client-Attrappe mit steuerbarer Antwort. */
+/** Client stub with a controllable response. */
 const makeClient = (
   impl: () => Promise<LocationStatus>,
 ): EvohomeClient & { calls: number } => {
@@ -49,7 +49,7 @@ describe("PollingCoordinator", () => {
     vi.useRealTimers();
   });
 
-  it("liefert den Status an alle Empfänger", async () => {
+  it("delivers the status to every listener", async () => {
     const client = makeClient(() => Promise.resolve(status));
     const poller = new PollingCoordinator(client, "9876543", 300, makeLog());
 
@@ -64,7 +64,7 @@ describe("PollingCoordinator", () => {
     expect(poller.status).toBe(status);
   });
 
-  it("meldet abbestellte Empfänger nicht mehr", async () => {
+  it("stops notifying unsubscribed listeners", async () => {
     const client = makeClient(() => Promise.resolve(status));
     const poller = new PollingCoordinator(client, "9876543", 300, makeLog());
 
@@ -78,10 +78,10 @@ describe("PollingCoordinator", () => {
     expect(count).toBe(1);
   });
 
-  it("startet keinen zweiten Durchlauf, während einer läuft (S5)", async () => {
-    // 0.11.2 setzte sein updating-Flag synchron am Ende der Funktion zurück,
-    // also lange vor dem Ende der Promise-Kette. Der Schutz wirkte nie und
-    // Abfragen konnten sich stapeln — wahrscheinliche Ursache von #172.
+  it("starts no second run while one is in flight", async () => {
+    // 0.11.2 reset its updating flag synchronously at the end of the function,
+    // long before the promise chain finished. The guard never worked and polls
+    // could stack up: the likely cause of #172.
     let resolve: (value: LocationStatus) => void = () => undefined;
     const client = makeClient(
       () =>
@@ -101,7 +101,7 @@ describe("PollingCoordinator", () => {
     await Promise.all([first, second, third]);
     expect(client.calls).toBe(1);
 
-    // Nach Abschluss ist der nächste Durchlauf wieder möglich.
+    // Once finished, the next run is possible again.
     const fourth = poller.refresh();
     expect(client.calls).toBe(2);
     resolve(status);
@@ -109,7 +109,7 @@ describe("PollingCoordinator", () => {
     poller.stop();
   });
 
-  it("fragt im konfigurierten Takt erneut ab", async () => {
+  it("polls again on the configured interval", async () => {
     const client = makeClient(() => Promise.resolve(status));
     const poller = new PollingCoordinator(client, "9876543", 60, makeLog());
 
@@ -125,7 +125,7 @@ describe("PollingCoordinator", () => {
     poller.stop();
   });
 
-  it("stellt nach stop() keine weiteren Anfragen (S11)", async () => {
+  it("issues no further requests after stop()", async () => {
     const client = makeClient(() => Promise.resolve(status));
     const poller = new PollingCoordinator(client, "9876543", 60, makeLog());
 
@@ -136,7 +136,7 @@ describe("PollingCoordinator", () => {
     expect(client.calls).toBe(1);
   });
 
-  it("überlebt einen Fehler und arbeitet danach weiter", async () => {
+  it("survives an error and carries on afterwards", async () => {
     let fail = true;
     const client = makeClient(() =>
       fail
@@ -157,9 +157,9 @@ describe("PollingCoordinator", () => {
     poller.stop();
   });
 
-  it("wiederholt dieselbe Fehlermeldung nicht bei jedem Versuch", async () => {
-    // Ein längerer Honeywell-Ausfall füllte in 0.11.2 das Log mit derselben
-    // Meldung samt Stacktrace — der Anlass für PR #204.
+  it("does not repeat the same error message on every attempt", async () => {
+    // In 0.11.2 a longer Honeywell outage filled the log with the same message
+    // and stack trace, which is what prompted PR #204.
     const client = makeClient(() =>
       Promise.reject(new EvohomeNetworkError("no connection")),
     );
@@ -177,7 +177,7 @@ describe("PollingCoordinator", () => {
     poller.stop();
   });
 
-  it("weist auf dauerhafte Fehler gesondert hin", async () => {
+  it("calls out permanent errors separately", async () => {
     const client = makeClient(() =>
       Promise.reject(new EvohomeApiError("not found", 404)),
     );
@@ -189,11 +189,10 @@ describe("PollingCoordinator", () => {
     poller.stop();
   });
 
-  it("vergrößert den Abstand nach wiederholten Fehlern", async () => {
-    // Der Abstand ist stets mindestens das reguläre Intervall und wächst mit
-    // der Zahl der Fehlschläge. Nach zehn Minuten Dauerausfall darf deshalb
-    // deutlich seltener angefragt worden sein als die zehn Versuche, die ein
-    // starrer 60-s-Takt ergäbe.
+  it("widens the gap after repeated failures", async () => {
+    // The gap is always at least the regular interval and grows with the number
+    // of failures. After ten minutes of continuous outage there must therefore
+    // be far fewer attempts than the ten a fixed 60s cadence would produce.
     const client = makeClient(() =>
       Promise.reject(new EvohomeNetworkError("weg")),
     );
@@ -208,13 +207,13 @@ describe("PollingCoordinator", () => {
     poller.stop();
   });
 
-  it("lässt einen fehlerhaften Empfänger die übrigen nicht mitreißen", async () => {
+  it("does not let a failing listener take the others down", async () => {
     const client = makeClient(() => Promise.resolve(status));
     const poller = new PollingCoordinator(client, "9876543", 300, makeLog());
 
     let reached = false;
     poller.subscribe(() => {
-      throw new Error("Handler kaputt");
+      throw new Error("listener is broken");
     });
     poller.subscribe(() => {
       reached = true;

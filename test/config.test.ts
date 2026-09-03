@@ -29,7 +29,7 @@ const base: PlatformConfig = {
 };
 
 describe("readConfig", () => {
-  it("liest die Pflichtfelder", () => {
+  it("reads the required fields", () => {
     const config = readConfig(base, makeLog());
 
     expect(config.username).toBe("user@example.com");
@@ -37,7 +37,7 @@ describe("readConfig", () => {
     expect(config.name).toBe("Evohome");
   });
 
-  it("bricht mit klarer Meldung ab, wenn Zugangsdaten fehlen", () => {
+  it("fails with a clear message when credentials are missing", () => {
     expect(() => readConfig({ platform: "Evohome" }, makeLog())).toThrow(
       ConfigError,
     );
@@ -46,7 +46,7 @@ describe("readConfig", () => {
     ).toThrow(/username.*password/);
   });
 
-  it("zeigt standardmäßig alle Modus-Schalter", () => {
+  it("shows every mode switch by default", () => {
     const config = readConfig(base, makeLog());
 
     expect(config.showSwitches).toEqual({
@@ -58,7 +58,7 @@ describe("readConfig", () => {
     });
   });
 
-  it("beachtet abgeschaltete Modus-Schalter", () => {
+  it("honours disabled mode switches", () => {
     const config = readConfig(
       { ...base, switchAway: false, switchEco: false },
       makeLog(),
@@ -69,9 +69,8 @@ describe("readConfig", () => {
     expect(config.showSwitches.DayOff).toBe(true);
   });
 
-  it("warnt bei einem Schalter, der kein Ja/Nein-Wert ist", () => {
-    // 0.11.2 verglich mit `!= false` — aus dem String "false" wurde damit
-    // stillschweigend „an".
+  it("warns about a switch that is not a boolean", () => {
+    // 0.11.2 compared with `!= false`, so the string "false" silently became on.
     const log = makeLog();
     const config = readConfig({ ...base, switchAway: "false" }, log);
 
@@ -79,16 +78,16 @@ describe("readConfig", () => {
     expect(log.warnings.join()).toContain("switchAway");
   });
 
-  describe("Pollingintervall", () => {
-    it("verwendet den Standardwert, wenn nichts gesetzt ist", () => {
+  describe("polling interval", () => {
+    it("uses the default when nothing is set", () => {
       expect(readConfig(base, makeLog()).pollIntervalSeconds).toBe(
         DEFAULT_POLL_INTERVAL_SECONDS,
       );
     });
 
-    it("hebt zu kurze Intervalle auf das Minimum an", () => {
-      // Sonst läuft das Plugin in den Rate-Limiter von Honeywell und trifft
-      // damit alle Nutzer desselben Kontos.
+    it("raises intervals that are too short to the minimum", () => {
+      // Otherwise the plugin runs into Honeywell's rate limit, affecting every
+      // user of the same account.
       const log = makeLog();
       const config = readConfig({ ...base, pollIntervalSeconds: 5 }, log);
 
@@ -96,7 +95,7 @@ describe("readConfig", () => {
       expect(log.warnings.join()).toContain("rate limit");
     });
 
-    it("weist unsinnige Werte zurück", () => {
+    it("rejects nonsensical values", () => {
       const log = makeLog();
       expect(
         readConfig({ ...base, pollIntervalSeconds: "bald" }, log)
@@ -106,8 +105,8 @@ describe("readConfig", () => {
     });
   });
 
-  describe("Location-Auswahl (F5)", () => {
-    it("übernimmt locationId und locationIndex", () => {
+  describe("location selection", () => {
+    it("accepts locationId and locationIndex", () => {
       const config = readConfig(
         { ...base, locationId: "9876543", locationIndex: 2 },
         makeLog(),
@@ -117,7 +116,7 @@ describe("readConfig", () => {
       expect(config.locationIndex).toBe(2);
     });
 
-    it("fällt bei einem ungültigen Index auf 0 zurück", () => {
+    it("falls back to 0 on an invalid index", () => {
       const log = makeLog();
       expect(
         readConfig({ ...base, locationIndex: -1 }, log).locationIndex,
@@ -126,8 +125,8 @@ describe("readConfig", () => {
     });
   });
 
-  describe("entfernte Optionen", () => {
-    it("warnt bei childBridge und ignoriert es (S2)", () => {
+  describe("removed options", () => {
+    it("warns about childBridge and ignores it", () => {
       const log = makeLog();
       readConfig({ ...base, childBridge: true }, log);
 
@@ -135,14 +134,14 @@ describe("readConfig", () => {
       expect(log.warnings.join()).toContain("child bridge");
     });
 
-    it("warnt bei temperatureUnit und ignoriert es", () => {
+    it("warns about temperatureUnit and ignores it", () => {
       const log = makeLog();
       readConfig({ ...base, temperatureUnit: "Fahrenheit" }, log);
 
       expect(log.warnings.join()).toContain("temperatureUnit");
     });
 
-    it("schweigt, wenn keine veralteten Optionen gesetzt sind", () => {
+    it("stays quiet when no obsolete options are set", () => {
       const log = makeLog();
       readConfig(base, log);
 
@@ -151,13 +150,13 @@ describe("readConfig", () => {
   });
 
   describe("setpointMode (#149)", () => {
-    it("verwendet keepExistingUntil als Voreinstellung", () => {
+    it("uses keepExistingUntil as the default", () => {
       expect(readConfig(base, makeLog()).setpointMode).toBe(
         "keepExistingUntil",
       );
     });
 
-    it("übernimmt die anderen erlaubten Werte", () => {
+    it("accepts the other allowed values", () => {
       for (const mode of ["untilNextSwitchpoint", "permanent"]) {
         expect(
           readConfig({ ...base, setpointMode: mode }, makeLog()).setpointMode,
@@ -165,7 +164,7 @@ describe("readConfig", () => {
       }
     });
 
-    it("weist unbekannte Werte mit Auflistung der erlaubten zurück", () => {
+    it("rejects unknown values and lists the allowed ones", () => {
       const log = makeLog();
       const config = readConfig({ ...base, setpointMode: "sofort" }, log);
 
@@ -175,7 +174,7 @@ describe("readConfig", () => {
     });
   });
 
-  it("liest logTemperatureChanges, standardmäßig aus (#146)", () => {
+  it("reads logTemperatureChanges, off by default (#146)", () => {
     expect(readConfig(base, makeLog()).logTemperatureChanges).toBe(false);
     expect(
       readConfig({ ...base, logTemperatureChanges: true }, makeLog())
@@ -183,7 +182,7 @@ describe("readConfig", () => {
     ).toBe(true);
   });
 
-  it("liest temperatureAboveAsOff, das in 0.11.2 wirkungslos war (S6)", () => {
+  it("reads temperatureAboveAsOff, which had no effect in 0.11.2", () => {
     expect(readConfig(base, makeLog()).temperatureAboveAsOff).toBe(false);
     expect(
       readConfig({ ...base, temperatureAboveAsOff: true }, makeLog())

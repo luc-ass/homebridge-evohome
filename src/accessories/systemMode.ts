@@ -13,13 +13,13 @@ import type {
 } from "homebridge";
 
 /**
- * Ein Systemmodus (Away, Day Off, Eco, …) als HomeKit-Schalter.
+ * A system mode (Away, Day Off, Eco, …) as a HomeKit switch.
  *
- * Ausschalten setzt das System zurück auf `Auto` — dasselbe Verhalten wie in
- * 0.11.2. Neu ist, dass der Schalterzustand aus dem gemeinsamen Poller kommt:
- * vorher pflegte jedes Switch-Accessory ein eigenes `active`-Feld, das nur
- * beim Durchlauf von `periodicUpdate` nachgezogen wurde und dabei über eine
- * `else if`-Kette lief, die höchstens einen Schalter pro Durchlauf traf.
+ * Switching off resets the system to `Auto`, the same behaviour as 0.11.2. What
+ * is new is that the switch state comes from the shared poller: previously each
+ * switch accessory kept its own `active` field, updated only during
+ * `periodicUpdate` and through an `else if` chain that reached at most one
+ * switch per run.
  */
 export class SystemModeAccessory {
   private readonly service: Service;
@@ -69,8 +69,8 @@ export class SystemModeAccessory {
     this.log.info(`System mode: ${target}.`);
 
     await this.client.setSystemMode(this.systemId, target, undefined);
-    // Die Honeywell-Server brauchen einen Moment, bis der neue Modus im
-    // Status auftaucht — 0.11.2 wartete dafür ebenfalls drei Sekunden.
+    // Honeywell's servers need a moment before the new mode shows up in the
+    // status; 0.11.2 waited three seconds here as well.
     this.poller.scheduleRefresh(REFRESH_DELAY_MS);
   }
 }

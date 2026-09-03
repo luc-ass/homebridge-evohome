@@ -7,17 +7,15 @@ import type { Tokens } from "./types.js";
 import type { Logging } from "homebridge";
 
 /**
- * Legt die Sitzung im Homebridge-Storage ab, damit ein Neustart nicht jedes Mal
- * eine neue Anmeldung auslöst.
+ * Stores the session in the Homebridge storage directory so a restart does not
+ * trigger a fresh login every time.
  *
- * Das spart nicht nur eine Anfrage: wer Homebridge während der Fehlersuche
- * mehrfach neu startet, läuft sonst leicht in den Rate-Limiter der
- * Honeywell-Server (siehe Risiko-Tabelle in docs/MIGRATION-HB2.md).
+ * That saves more than one request: restarting Homebridge repeatedly while
+ * debugging otherwise runs straight into Honeywell's rate limit.
  *
- * Gespeichert wird ausschließlich das Token-Paar — **niemals** Benutzername
- * oder Passwort. Der Dateiname enthält nur einen Hash des Benutzernamens,
- * damit mehrere Konten nebeneinander laufen können, ohne dass die Adresse im
- * Dateisystem steht.
+ * Only the token pair is stored, **never** the username or password. The file
+ * name contains a hash of the username so several accounts can coexist without
+ * the address appearing in the file system.
  */
 export class FileTokenCache implements TokenCache {
   private readonly file: string;
@@ -39,8 +37,8 @@ export class FileTokenCache implements TokenCache {
       const raw: unknown = JSON.parse(await readFile(this.file, "utf8"));
       return this.validate(raw);
     } catch (error) {
-      // Fehlt die Datei oder ist sie unbrauchbar, wird eben neu angemeldet —
-      // das ist kein Grund, den Start abzubrechen.
+      // A missing or unusable file just means logging in again; no reason to
+      // abort startup.
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
         this.log.debug(`Could not read the stored session: ${String(error)}`);
       }
@@ -54,7 +52,7 @@ export class FileTokenCache implements TokenCache {
         await unlink(this.file);
         return;
       }
-      // 0o600: nur der Homebridge-Benutzer darf den Token lesen.
+      // 0o600: only the Homebridge user may read the token.
       await writeFile(this.file, JSON.stringify(tokens), { mode: 0o600 });
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {

@@ -1,14 +1,14 @@
 /**
- * Minimale Typdeklaration für `fakegato-history`.
+ * Minimal type declaration for `fakegato-history`.
  *
- * Das Paket bringt keine Typen mit. Deklariert wird nur, was dieses Plugin
- * tatsächlich benutzt — nicht die vollständige API.
+ * The package ships no types. Only what this plugin actually uses is declared
+ * here, not the full API.
  */
 declare module "fakegato-history" {
   import type { API, Logging, PlatformAccessory } from "homebridge";
 
   interface FakeGatoOptions {
-    /** `"fs"` schreibt in den Homebridge-Storage, `"googleDrive"` wird nicht genutzt. */
+    /** `"fs"` writes to the Homebridge storage; `"googleDrive"` is never used. */
     storage?: "fs";
     path?: string;
     log?: Logging;
@@ -16,8 +16,8 @@ declare module "fakegato-history" {
   }
 
   interface FakeGatoHistory {
-    // Die tatsächlichen Felder hängen vom Accessory-Typ ab; für "thermo"
-    // sind es time, currentTemp, setTemp und valvePosition.
+    // The actual fields depend on the accessory type; for "thermo" they are
+    // time, currentTemp, setTemp and valvePosition.
     addEntry(entry: Readonly<Record<string, number>>): void;
   }
 
@@ -27,7 +27,7 @@ declare module "fakegato-history" {
     options?: FakeGatoOptions,
   ) => FakeGatoHistory;
 
-  /** Das Modul exportiert eine Fabrik, die mit der Homebridge-API aufgerufen wird. */
+  /** The module exports a factory that is called with the Homebridge API. */
   const factory: (api: API) => FakeGatoHistoryConstructor;
   export default factory;
 }

@@ -6,20 +6,20 @@ import type { LocationStatus } from "./api/types.js";
 import type { Logging } from "homebridge";
 
 /**
- * Holt den Status der Location und verteilt ihn an alle Accessory-Handler.
+ * Fetches the location status and hands it to every accessory handler.
  *
- * Ersetzt gleich vier Timer-Konstruktionen aus 0.11.2:
+ * Replaces four separate timer constructions from 0.11.2:
  *
- * - `periodicUpdate` alle 300 s mit drei API-Aufrufen (Befund S13)
- * - `periodicCheckSetTemperature` alle 5 s **pro Zone** (S11)
- * - `periodicCheckStatus` alle 60 s für das Warmwasser
- * - `renewSession` mit fest verdrahtetem Intervall (S12, jetzt im TokenStore)
+ * - `periodicUpdate` every 300s making three API calls
+ * - `periodicCheckSetTemperature` every 5s **per zone**
+ * - `periodicCheckStatus` every 60s for hot water
+ * - `renewSession` on a hard-wired interval (now handled by the TokenStore)
  *
- * Entscheidend ist der Reentrancy-Schutz: 0.11.2 setzte sein `updating`-Flag
- * synchron am Ende der Funktion zurück — also lange bevor die Promise-Kette
- * fertig war. Der Schutz wirkte nie, Abfragen konnten sich überlappen und
- * stapeln (Befund S5, wahrscheinliche Ursache von Issue #172). Hier hält ein
- * `await` auf den laufenden Durchlauf die Nebenläufigkeit tatsächlich auf.
+ * The reentrancy guard is the important part: 0.11.2 reset its `updating` flag
+ * synchronously at the end of the function, long before the promise chain had
+ * finished. The guard never worked, so polls could overlap and stack up — the
+ * likely cause of issue #172. Here an `await` on the in-flight run actually
+ * holds concurrency back.
  */
 
 export type StatusListener = (status: LocationStatus) => void;
@@ -33,7 +33,7 @@ export class PollingCoordinator {
 
   private readonly listeners = new Set<StatusListener>();
 
-  /** Zuletzt erfolgreich gelesener Status. */
+  /** Last status that was read successfully. */
   private lastStatus: LocationStatus | undefined;
 
   constructor(
@@ -47,13 +47,13 @@ export class PollingCoordinator {
     return this.lastStatus;
   }
 
-  /** Registriert einen Empfänger und liefert die Abmeldefunktion. */
+  /** Registers a listener and returns the unsubscribe function. */
   subscribe(listener: StatusListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
 
-  /** Startet den Zyklus und führt sofort eine erste Abfrage aus. */
+  /** Starts the cycle and performs a first request immediately. */
   async start(): Promise<void> {
     this.stopped = false;
     await this.poll();
@@ -61,10 +61,9 @@ export class PollingCoordinator {
   }
 
   /**
-   * Beendet den Zyklus.
+   * Stops the cycle.
    *
-   * 0.11.2 hob seine Timer-Handles nie auf und konnte sie daher nicht
-   * abräumen (Befund S11).
+   * 0.11.2 never kept its timer handles and therefore could not clear them.
    */
   stop(): void {
     this.stopped = true;
@@ -79,13 +78,12 @@ export class PollingCoordinator {
   }
 
   /**
-   * Stößt eine Aktualisierung an, **ohne** auf sie zu warten.
+   * Triggers a refresh **without** waiting for it.
    *
-   * Für den Schreibpfad aus HomeKit: sobald die API den Befehl quittiert hat,
-   * ist der `onSet`-Handler fertig. Würde er zusätzlich auf die Nachkontrolle
-   * warten, hinge HomeKit bei jedem Tastendruck mehrere Sekunden — und liefe
-   * bei einer langsamen Antwort in denselben Timeout, der Issue #180
-   * ausgelöst hat.
+   * For the write path from HomeKit: once the API has acknowledged the command,
+   * the `onSet` handler is done. Waiting for the follow-up read as well would
+   * stall HomeKit for several seconds on every tap, and on a slow response run
+   * into the very timeout behind issue #180.
    */
   scheduleRefresh(delayMs = 0): void {
     if (this.stopped) {
@@ -102,10 +100,10 @@ export class PollingCoordinator {
   }
 
   /**
-   * Erzwingt eine Abfrage außer der Reihe.
+   * Forces an out-of-band request.
    *
-   * Wird nach einem Schreibvorgang genutzt: die Honeywell-Server brauchen
-   * einen Moment, bis eine Änderung im Status auftaucht.
+   * Used after a write: Honeywell's servers need a moment before a change shows
+   * up in the status.
    */
   async refresh(delayMs = 0): Promise<void> {
     if (delayMs > 0) {
@@ -117,8 +115,8 @@ export class PollingCoordinator {
   }
 
   /**
-   * Führt eine Abfrage aus. Läuft bereits eine, wird auf sie gewartet, statt
-   * eine zweite zu starten.
+   * Performs a request. If one is already running, waits for it instead of
+   * starting a second.
    */
   private async poll(): Promise<LocationStatus | undefined> {
     this.inFlight ??= this.fetchOnce().finally(() => {
@@ -148,7 +146,7 @@ export class PollingCoordinator {
     this.lastStatus = status;
 
     for (const listener of this.listeners) {
-      // Ein Fehler in einem Handler darf die übrigen nicht mitreißen.
+      // A failing handler must not take the others down with it.
       try {
         listener(status);
       } catch (error) {
@@ -160,11 +158,11 @@ export class PollingCoordinator {
   }
 
   /**
-   * Protokolliert einen Fehlschlag.
+   * Logs a failure.
    *
-   * Der erste Fehler wird als Warnung gemeldet, jeder weitere nur noch im
-   * Debug-Log — sonst füllt ein längerer Honeywell-Ausfall das Log mit
-   * derselben Meldung (der Anlass für PR #204).
+   * The first failure is a warning, every later one goes to the debug log only.
+   * Otherwise a longer Honeywell outage fills the log with the same message —
+   * the reason PR #204 was opened.
    */
   private onFailure(error: unknown): void {
     this.consecutiveFailures++;
@@ -185,7 +183,7 @@ export class PollingCoordinator {
     }
   }
 
-  /** Plant den nächsten Durchlauf; nach Fehlern mit wachsendem Abstand. */
+  /** Schedules the next run, with a growing delay after failures. */
   private schedule(): void {
     if (this.stopped) {
       return;
@@ -205,7 +203,7 @@ export class PollingCoordinator {
         this.schedule();
       });
     }, delay);
-    // Ein offener Timer soll Node nicht am Beenden hindern.
+    // An open timer must not keep Node from exiting.
     this.timer.unref();
   }
 }

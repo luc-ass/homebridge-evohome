@@ -1,28 +1,26 @@
 import type { DailySchedule, Switchpoint } from "../api/types.js";
 
 /**
- * Ermittelt den nächsten Schaltpunkt eines Zeitprogramms.
+ * Finds the next switchpoint in a schedule.
  *
- * Ersetzt `getNextScheduledTime()` aus 0.11.2 (Befund S9). Der Altcode hatte
- * drei Fehler:
+ * Replaces `getNextScheduledTime()` from 0.11.2, which had three bugs:
  *
- * 1. Die Schleifenvariable `proceed` wurde zwischen den Wochentagen nicht
- *    zurückgesetzt, sodass das Ergebnis von der Reihenfolge der Tage in der
- *    Antwort abhing.
- * 2. Verglichen wurde mit `toLocaleTimeString()` — also lexikografisch über
- *    einen lokalisierten String, dessen Format je nach Systemsprache variiert.
- * 3. Gab es heute keinen späteren Schaltpunkt mehr, fiel das Ergebnis auf
- *    `"00:00:00"` zurück, statt den ersten Schaltpunkt des Folgetags zu suchen.
+ * 1. The loop variable `proceed` was not reset between weekdays, so the result
+ *    depended on the order of days in the response.
+ * 2. Comparison used `toLocaleTimeString()`, i.e. a lexicographic comparison of
+ *    a localised string whose format varies with the system language.
+ * 3. With no later switchpoint today, the result fell back to `"00:00:00"`
+ *    instead of looking for the first switchpoint of the next day.
  *
- * Diese Fassung rechnet in Sekunden seit Mitternacht, sucht bei Bedarf über
- * Tagesgrenzen hinweg und gibt einen absoluten Zeitpunkt zurück.
+ * This version works in seconds since midnight, searches across day boundaries
+ * when needed and returns an absolute point in time.
  *
- * **Zeitzonen:** Evohome-Schaltpunkte gelten in der lokalen Zeit der Location.
- * `offsetMinutes` ist deren aktueller UTC-Offset (`currentOffsetMinutes` aus
- * der API). Die Umrechnung nutzt einen festen Offset — an der Nacht der
- * Sommerzeitumstellung kann das Ergebnis daher um eine Stunde abweichen. Das
- * ist bewusst in Kauf genommen: die API liefert nur Windows-Zeitzonen-IDs
- * (z. B. `"W. Europe Standard Time"`), mit denen `Intl` nicht rechnen kann.
+ * **Time zones:** Evohome switchpoints apply in the location's local time.
+ * `offsetMinutes` is its current UTC offset (`currentOffsetMinutes` from the
+ * API). The conversion uses a fixed offset, so on the night of a daylight
+ * saving change the result can be off by an hour. That is accepted knowingly:
+ * the API only reports Windows time zone IDs (e.g. `"W. Europe Standard Time"`)
+ * which `Intl` cannot work with.
  */
 
 const WEEKDAYS = [
@@ -38,15 +36,15 @@ const WEEKDAYS = [
 const MINUTE_MS = 60_000;
 const DAY_MS = 86_400_000;
 
-/** Ein Schaltpunkt mit dem absoluten Zeitpunkt seines nächsten Eintretens. */
+/** A switchpoint together with the absolute time it next takes effect. */
 export interface UpcomingSwitchpoint extends Switchpoint {
-  /** Absoluter Zeitpunkt, zu dem der Schaltpunkt greift. */
+  /** Absolute point in time at which the switchpoint applies. */
   readonly at: Date;
 }
 
 /**
- * Wandelt `"HH:MM:SS"` in Sekunden seit Mitternacht.
- * Gibt `undefined` zurück, wenn das Format nicht stimmt.
+ * Converts `"HH:MM:SS"` into seconds since midnight.
+ * Returns `undefined` if the format does not match.
  */
 export const parseTimeOfDay = (timeOfDay: string): number | undefined => {
   const match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(timeOfDay);
@@ -62,7 +60,7 @@ export const parseTimeOfDay = (timeOfDay: string): number | undefined => {
   return hours * 3600 + minutes * 60 + seconds;
 };
 
-/** Schaltpunkte eines Tages, nach Uhrzeit sortiert und ohne kaputte Einträge. */
+/** A day's switchpoints, sorted by time and without unparsable entries. */
 const sortedSwitchpoints = (
   day: DailySchedule,
 ): { seconds: number; switchpoint: Switchpoint }[] =>
@@ -78,13 +76,13 @@ const sortedSwitchpoints = (
     .sort((a, b) => a.seconds - b.seconds);
 
 /**
- * Sucht den nächsten Schaltpunkt nach `now`.
+ * Finds the next switchpoint after `now`.
  *
- * @param schedules Wochenprogramm, wie es die API liefert.
- * @param now Bezugszeitpunkt.
- * @param offsetMinutes UTC-Offset der Location in Minuten.
- * @returns Der nächste Schaltpunkt, oder `undefined`, wenn das Programm leer
- *   ist oder keinen verwertbaren Eintrag enthält.
+ * @param schedules The weekly schedule as returned by the API.
+ * @param now Reference point in time.
+ * @param offsetMinutes UTC offset of the location, in minutes.
+ * @returns The next switchpoint, or `undefined` if the schedule is empty or
+ *   holds no usable entry.
  */
 export const nextSwitchpoint = (
   schedules: readonly DailySchedule[],
@@ -93,8 +91,8 @@ export const nextSwitchpoint = (
 ): UpcomingSwitchpoint | undefined => {
   const byDay = new Map(schedules.map((day) => [day.dayOfWeek, day]));
 
-  // In lokale Wanduhrzeit der Location umrechnen: der verschobene Zeitstempel
-  // liefert über die UTC-Getter direkt die dortige Uhrzeit.
+  // Convert to the location's wall-clock time: reading the shifted timestamp
+  // through the UTC getters yields the local time there directly.
   const local = new Date(now.getTime() + offsetMinutes * MINUTE_MS);
   const secondsNow =
     local.getUTCHours() * 3600 +
@@ -106,8 +104,8 @@ export const nextSwitchpoint = (
     local.getUTCDate(),
   );
 
-  // Heute plus die folgenden sieben Tage — so ist auch ein Programm abgedeckt,
-  // in dem nur ein einziger Wochentag Schaltpunkte hat.
+  // Today plus the following seven days, which also covers a schedule where
+  // only a single weekday has any switchpoints.
   for (let dayOffset = 0; dayOffset <= 7; dayOffset++) {
     const weekdayIndex = (local.getUTCDay() + dayOffset) % 7;
     const day = byDay.get(WEEKDAYS[weekdayIndex] ?? "");

@@ -24,16 +24,14 @@ import type {
 } from "./types.js";
 
 /**
- * HTTP-Client für die TCC-EMEA-API.
+ * HTTP client for the TCC EMEA API.
  *
- * Ersetzt `legacy/evohome.cjs`. Statt `request` und `q` (beide deprecated,
- * Befund S14) nutzt der Client das in Node 22+ eingebaute `fetch` mit
- * `AbortSignal.timeout` — das Plugin hat damit keine Laufzeitabhängigkeiten
- * mehr.
+ * Replaces `legacy/evohome.cjs`. Instead of `request` and `q` (both deprecated)
+ * it uses the `fetch` built into Node 22+ together with `AbortSignal.timeout`,
+ * which leaves the plugin without runtime dependencies.
  *
- * Jede Antwort läuft durch die Parser aus `parse.ts`, sodass eine
- * unvollständige Antwort einen benannten Fehler erzeugt statt eines
- * `TypeError` an beliebiger Stelle (Befund S8).
+ * Every response goes through the parsers in `parse.ts`, so an incomplete
+ * response produces a named error instead of a `TypeError` somewhere else.
  */
 
 export interface ClientOptions {
@@ -45,11 +43,11 @@ interface RequestOptions {
   readonly method: "GET" | "PUT" | "POST";
   readonly path: string;
   readonly body?: unknown;
-  /** Wird nur intern gesetzt, um die 401-Wiederholung zu begrenzen. */
+  /** Set internally only, to bound the retry after a 401. */
   readonly isRetry?: boolean;
 }
 
-/** Antwort der Schreiboperationen: die API quittiert mit einer Task-ID. */
+/** Response to a write: the API acknowledges with a task ID. */
 export interface TaskAcknowledgement {
   readonly id: string | undefined;
 }
@@ -73,8 +71,8 @@ export class EvohomeClient {
   }
 
   /**
-   * Liest die Installationsbeschreibung: alle Locations mit Zonen, Zeitzone und
-   * erlaubten Systemmodi.
+   * Reads the installation info: every location with its zones, time zone and
+   * allowed system modes.
    */
   async getLocations(userId: string): Promise<readonly Location[]> {
     return parseInstallationInfo(
@@ -86,11 +84,11 @@ export class EvohomeClient {
   }
 
   /**
-   * Liest den kompletten Status einer Location — Zonen, Systemmodus und
-   * Warmwasser in **einer** Anfrage.
+   * Reads the complete status of a location — zones, system mode and hot water in
+   * **one** request.
    *
-   * 0.11.2 rief denselben Endpunkt pro Zyklus zweimal auf und holte zusätzlich
-   * die Installationsbeschreibung (Befund S13).
+   * 0.11.2 called the same endpoint twice per cycle and additionally fetched the
+   * installation info.
    */
   async getLocationStatus(locationId: string): Promise<LocationStatus> {
     return parseLocationStatus(
@@ -120,11 +118,11 @@ export class EvohomeClient {
   }
 
   /**
-   * Setzt den Sollwert einer Zone.
+   * Sets the target temperature of a zone.
    *
-   * @param mode `FollowSchedule` hebt einen Override auf, `TemporaryOverride`
-   *   gilt bis `until`, `PermanentOverride` bis auf Weiteres. Issue #149 hängt
-   *   genau an dieser Wahl — 0.11.2 erzwang immer `TemporaryOverride`.
+   * @param mode `FollowSchedule` cancels an override, `TemporaryOverride` applies
+   *   until `until`, `PermanentOverride` until further notice. Issue #149 turns
+   *   on exactly this choice — 0.11.2 always forced `TemporaryOverride`.
    */
   async setHeatSetpoint(
     zoneId: string,
@@ -194,8 +192,8 @@ export class EvohomeClient {
     const response = await this.send(options);
     const text = await response.text();
 
-    // Ein abgelaufener Token äußert sich als 401. Einmal erneuern und
-    // wiederholen — danach ist es ein echter Fehler.
+    // An expired token shows up as a 401. Refresh once and retry; after that it
+    // is a real error.
     if (response.status === 401 && options.isRetry !== true) {
       await this.tokens.invalidate();
       return this.request({ ...options, isRetry: true });
@@ -217,7 +215,7 @@ export class EvohomeClient {
       );
     }
 
-    // Schreiboperationen dürfen mit leerem Body quittieren.
+    // Writes may acknowledge with an empty body.
     if (text.trim() === "" && options.method !== "GET") {
       return {};
     }
@@ -250,16 +248,16 @@ export class EvohomeClient {
 }
 
 /**
- * Formatiert einen Zeitpunkt so, wie die API ihn erwartet.
+ * Formats a point in time the way the API expects it.
  *
- * 0.11.2 übergab ein `Date`-Objekt an `JSON.stringify`, was einen
- * ISO-String mit Millisekunden und `Z` ergab. Die API akzeptiert das, aber die
- * Sekundenauflösung reicht und ist besser lesbar im Log.
+ * 0.11.2 passed a `Date` to `JSON.stringify`, producing an ISO string with
+ * milliseconds. The API accepts that, but second resolution is enough and reads
+ * better in the log.
  */
 const toApiTime = (until: Date | undefined): string | null =>
   until === undefined ? null : `${until.toISOString().slice(0, 19)}Z`;
 
-/** Liest `Retry-After` — entweder Sekunden oder ein HTTP-Datum. */
+/** Reads `Retry-After`, which is either seconds or an HTTP date. */
 const retryAfterMs = (header: string | null): number | undefined => {
   if (header === null) {
     return undefined;

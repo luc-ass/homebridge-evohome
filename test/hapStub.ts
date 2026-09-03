@@ -9,19 +9,18 @@ import { vi } from "vitest";
 import type { API, Logging, PlatformAccessory } from "homebridge";
 
 /**
- * Test-Doppel für die Homebridge-API — mit dem **echten** HAP aus
- * `@homebridge/hap-nodejs`, das Homebridge 2.x auch produktiv verwendet.
+ * Test double for the Homebridge API, backed by the **real** HAP from
+ * `@homebridge/hap-nodejs` that Homebridge 2.x uses in production.
  *
- * Das ist der Punkt: ein selbstgebautes HAP-Attrappenobjekt hätte den Absturz
- * aus Issue #205 nie gezeigt. Gegen das echte HAP schlägt eine Custom
- * Characteristic, die als Funktion statt als ES-Klasse gebaut wird, sofort
- * fehl — genau wie in Homebridge 2.
+ * That is the point: a hand-rolled HAP stub would never have surfaced the crash
+ * from issue #205. Against the real HAP, a custom characteristic built as a
+ * function instead of an ES class fails immediately, exactly as in Homebridge 2.
  *
- * Nachgebildet wird nur, was Homebridge selbst beisteuert: die
- * `PlatformAccessory`-Hülle und die Registrierungsfunktionen.
+ * Only what Homebridge itself contributes is reimplemented: the
+ * `PlatformAccessory` wrapper and the registration functions.
  */
 
-/** Homebridges PlatformAccessory, auf einem echten HAP-Accessory. */
+/** Homebridge's PlatformAccessory, backed by a real HAP accessory. */
 class TestPlatformAccessory {
   readonly context: Record<string, unknown> = {};
   private readonly accessory: hap.Accessory;
@@ -60,7 +59,7 @@ class TestPlatformAccessory {
 
 export interface TestApi {
   readonly api: API;
-  /** Löst ein Homebridge-Lebenszyklusereignis aus. */
+  /** Fires a Homebridge lifecycle event. */
   emit(event: "didFinishLaunching" | "shutdown"): void;
   readonly registered: PlatformAccessory[];
   readonly unregistered: PlatformAccessory[];
@@ -110,7 +109,7 @@ export const createTestApi = (): TestApi => {
   };
 };
 
-/** Logger, der die Ausgaben zum Nachprüfen sammelt. */
+/** Logger that collects its output for assertions. */
 export interface TestLog extends Logging {
   readonly infos: string[];
   readonly warnings: string[];

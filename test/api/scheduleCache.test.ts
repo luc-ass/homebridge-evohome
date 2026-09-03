@@ -47,9 +47,9 @@ const makeClient = (): EvohomeClient & {
 };
 
 describe("ScheduleCache", () => {
-  it("holt ein Zeitprogramm nur einmal", async () => {
-    // 0.11.2 fragte den Zeitplan bei jeder Temperaturänderung neu ab — bei
-    // zwölf Zonen also ein Dutzend zusätzlicher Anfragen pro Rundgang.
+  it("fetches a schedule only once", async () => {
+    // 0.11.2 re-fetched the schedule on every temperature change: a dozen extra
+    // requests per walk through a twelve-zone house.
     const client = makeClient();
     const cache = new ScheduleCache(client, log);
 
@@ -60,7 +60,7 @@ describe("ScheduleCache", () => {
     expect(client.zoneCalls).toBe(1);
   });
 
-  it("hält Zonen und Warmwasser getrennt", async () => {
+  it("keeps zones and hot water separate", async () => {
     const client = makeClient();
     const cache = new ScheduleCache(client, log);
 
@@ -70,7 +70,7 @@ describe("ScheduleCache", () => {
     expect(client.dhwCalls).toBe(1);
   });
 
-  it("hält verschiedene Zonen getrennt", async () => {
+  it("keeps different zones separate", async () => {
     const client = makeClient();
     const cache = new ScheduleCache(client, log);
 
@@ -80,7 +80,7 @@ describe("ScheduleCache", () => {
     expect(client.zoneCalls).toBe(2);
   });
 
-  it("bündelt gleichzeitige Abfragen derselben Zone", async () => {
+  it("coalesces concurrent requests for the same zone", async () => {
     const client = makeClient();
     const cache = new ScheduleCache(client, log);
 
@@ -93,7 +93,7 @@ describe("ScheduleCache", () => {
     expect(client.zoneCalls).toBe(1);
   });
 
-  it("holt nach Ablauf der Frist erneut", async () => {
+  it("re-fetches once the entry has expired", async () => {
     vi.useFakeTimers();
     try {
       const client = makeClient();
@@ -109,7 +109,7 @@ describe("ScheduleCache", () => {
     }
   });
 
-  it("holt nach clear() erneut", async () => {
+  it("re-fetches after clear()", async () => {
     const client = makeClient();
     const cache = new ScheduleCache(client, log);
 
@@ -120,9 +120,9 @@ describe("ScheduleCache", () => {
     expect(client.zoneCalls).toBe(2);
   });
 
-  it("liefert bei einem Fehler ein leeres Programm statt zu werfen", async () => {
-    // Ohne Zeitprogramm bleibt immer noch ein dauerhafter Override möglich —
-    // besser als die Bedienung ganz zu verweigern.
+  it("returns an empty schedule on failure instead of throwing", async () => {
+    // Without a schedule a permanent override is still possible, which beats
+    // refusing to operate at all.
     const client = makeClient();
     client.fail = true;
     const cache = new ScheduleCache(client, log);
@@ -130,7 +130,7 @@ describe("ScheduleCache", () => {
     await expect(cache.zone("3001")).resolves.toEqual([]);
   });
 
-  it("merkt sich einen Fehlschlag nicht dauerhaft", async () => {
+  it("does not remember a failure permanently", async () => {
     const client = makeClient();
     client.fail = true;
     const cache = new ScheduleCache(client, log);

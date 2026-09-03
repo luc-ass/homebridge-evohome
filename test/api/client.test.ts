@@ -12,7 +12,7 @@ import { fixture, jsonResponse } from "../helpers.js";
 
 import type { TokenStore } from "../../src/api/auth.js";
 
-/** TokenStore-Attrappe, die zählt, wie oft invalidiert wurde. */
+/** TokenStore stub that counts how often it was invalidated. */
 const stubTokens = (): TokenStore & { invalidated: number } => {
   const store = {
     invalidated: 0,
@@ -44,8 +44,8 @@ describe("EvohomeClient", () => {
     vi.unstubAllGlobals();
   });
 
-  describe("Lesen", () => {
-    it("hängt den Authorization-Header an jede Anfrage", async () => {
+  describe("reading", () => {
+    it("attaches the Authorization header to every request", async () => {
       fetchMock.mockResolvedValue(jsonResponse(fixture("userAccount.json")));
       await client.getUserAccount();
 
@@ -56,7 +56,7 @@ describe("EvohomeClient", () => {
       expect(headers["Authorization"]).toBe("bearer test-token");
     });
 
-    it("spricht die Resideo-Domain und den EMEA-Pfad an", async () => {
+    it("targets the Resideo domain and the EMEA path", async () => {
       fetchMock.mockResolvedValue(jsonResponse(fixture("userAccount.json")));
       await client.getUserAccount();
 
@@ -65,7 +65,7 @@ describe("EvohomeClient", () => {
       );
     });
 
-    it("holt Zonen, Systemmodus und Warmwasser mit einer Anfrage (S13)", async () => {
+    it("fetches zones, system mode and hot water in one request", async () => {
       fetchMock.mockResolvedValue(jsonResponse(fixture("locationStatus.json")));
       const status = await client.getLocationStatus("9876543");
 
@@ -75,7 +75,7 @@ describe("EvohomeClient", () => {
       expect(status.dhw?.state).toBe("On");
     });
 
-    it("kodiert IDs in der URL", async () => {
+    it("encodes IDs in the URL", async () => {
       fetchMock.mockResolvedValue(jsonResponse(fixture("scheduleZone.json")));
       await client.getZoneSchedule("30 01/x");
 
@@ -85,8 +85,8 @@ describe("EvohomeClient", () => {
     });
   });
 
-  describe("Schreiben", () => {
-    it("setzt einen befristeten Override mit Endzeitpunkt", async () => {
+  describe("writing", () => {
+    it("sets a temporary override with an end time", async () => {
       fetchMock.mockResolvedValue(jsonResponse({ id: "1234567890" }));
       const until = new Date("2026-09-03T18:30:00Z");
       const task = await client.setHeatSetpoint(
@@ -106,8 +106,8 @@ describe("EvohomeClient", () => {
       });
     });
 
-    it("setzt einen dauerhaften Override ohne Endzeitpunkt", async () => {
-      // Der von Issue #149 gewünschte Modus, den 0.11.2 nie erzeugte.
+    it("sets a permanent override without an end time", async () => {
+      // The mode issue #149 asks for, which 0.11.2 never produced.
       fetchMock.mockResolvedValue(jsonResponse({ id: "1" }));
       await client.setHeatSetpoint("3001", "PermanentOverride", 21, undefined);
 
@@ -120,7 +120,7 @@ describe("EvohomeClient", () => {
       });
     });
 
-    it("hebt einen Override mit FollowSchedule auf", async () => {
+    it("cancels an override with FollowSchedule", async () => {
       fetchMock.mockResolvedValue(jsonResponse({ id: "1" }));
       await client.setHeatSetpoint(
         "3001",
@@ -138,7 +138,7 @@ describe("EvohomeClient", () => {
       });
     });
 
-    it("setzt den Systemmodus dauerhaft oder befristet", async () => {
+    it("sets the system mode permanently or temporarily", async () => {
       fetchMock.mockResolvedValue(jsonResponse({ id: "1" }));
       await client.setSystemMode("444001", "Away", undefined);
       expect(
@@ -160,7 +160,7 @@ describe("EvohomeClient", () => {
       });
     });
 
-    it("schaltet Warmwasser bis zum nächsten Schaltpunkt", async () => {
+    it("switches hot water until the next switchpoint", async () => {
       fetchMock.mockResolvedValue(jsonResponse({ id: "1" }));
       await client.setDhwState(
         "2001",
@@ -178,7 +178,7 @@ describe("EvohomeClient", () => {
       });
     });
 
-    it("verträgt eine leere Quittung auf eine Schreiboperation", async () => {
+    it("tolerates an empty acknowledgement for a write", async () => {
       fetchMock.mockResolvedValue(new Response("", { status: 201 }));
       await expect(
         client.setSystemMode("444001", "Auto", undefined),
@@ -186,8 +186,8 @@ describe("EvohomeClient", () => {
     });
   });
 
-  describe("Fehlerbehandlung", () => {
-    it("erneuert den Token einmal bei HTTP 401 und wiederholt", async () => {
+  describe("error handling", () => {
+    it("refreshes the token once on HTTP 401 and retries", async () => {
       fetchMock.mockResolvedValueOnce(
         jsonResponse({ message: "Unauthorized" }, { status: 401 }),
       );
@@ -202,7 +202,7 @@ describe("EvohomeClient", () => {
       expect(status.systemId).toBe("444001");
     });
 
-    it("gibt nach dem zweiten 401 auf, statt endlos zu wiederholen", async () => {
+    it("gives up after the second 401 instead of retrying forever", async () => {
       fetchMock.mockImplementation(() =>
         Promise.resolve(
           jsonResponse({ message: "Unauthorized" }, { status: 401 }),
@@ -215,7 +215,7 @@ describe("EvohomeClient", () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    it("meldet ein Rate-Limit mit der Wartezeit aus Retry-After", async () => {
+    it("reports a rate limit together with the delay from Retry-After", async () => {
       fetchMock.mockResolvedValue(
         jsonResponse("rate limited", {
           status: 429,
@@ -225,7 +225,7 @@ describe("EvohomeClient", () => {
 
       try {
         await client.getLocationStatus("9876543");
-        expect.unreachable("hätte werfen müssen");
+        expect.unreachable("should have thrown");
       } catch (error) {
         expect(error).toBeInstanceOf(EvohomeRateLimitError);
         expect((error as EvohomeRateLimitError).retryAfterMs).toBe(120_000);
@@ -233,7 +233,7 @@ describe("EvohomeClient", () => {
       }
     });
 
-    it("kennzeichnet Serverfehler als wiederholbar, Clientfehler nicht", async () => {
+    it("marks server errors as retryable and client errors as not", async () => {
       fetchMock.mockResolvedValueOnce(jsonResponse("boom", { status: 503 }));
       const serverError = await client
         .getLocationStatus("9876543")
@@ -247,7 +247,7 @@ describe("EvohomeClient", () => {
       expect(isRetryable(clientError)).toBe(false);
     });
 
-    it("verpackt Timeouts als Netzwerkfehler", async () => {
+    it("wraps timeouts as network errors", async () => {
       fetchMock.mockRejectedValue(
         new DOMException("The operation was aborted", "TimeoutError"),
       );
@@ -259,9 +259,9 @@ describe("EvohomeClient", () => {
       expect(isRetryable(error)).toBe(true);
     });
 
-    it("meldet einen leeren Body bei einer Leseanfrage als Formatfehler", async () => {
-      // 0.11.2 lief hier in einen JSON.parse-Fehler ohne Kontext und
-      // protokollierte das komplette Response-Objekt.
+    it("reports an empty body on a read as a format error", async () => {
+      // 0.11.2 ran into a context-free JSON.parse error here and logged the whole
+      // response object.
       fetchMock.mockResolvedValue(new Response("", { status: 200 }));
 
       await expect(client.getLocationStatus("9876543")).rejects.toThrowError(
@@ -269,8 +269,8 @@ describe("EvohomeClient", () => {
       );
     });
 
-    it("meldet HTML statt JSON als Formatfehler mit Pfadangabe", async () => {
-      // Kommt vor, wenn ein Proxy oder eine Wartungsseite antwortet.
+    it("reports HTML instead of JSON as a format error naming the path", async () => {
+      // Happens when a proxy or a maintenance page answers.
       fetchMock.mockResolvedValue(
         new Response("<html><body>503</body></html>", { status: 200 }),
       );
@@ -284,7 +284,7 @@ describe("EvohomeClient", () => {
       );
     });
 
-    it("setzt AbortSignal.timeout auf jede Anfrage", async () => {
+    it("sets AbortSignal.timeout on every request", async () => {
       fetchMock.mockResolvedValue(jsonResponse(fixture("userAccount.json")));
       await client.getUserAccount();
 
@@ -294,9 +294,9 @@ describe("EvohomeClient", () => {
     });
   });
 
-  it("respektiert eine abweichende Basis-URL", async () => {
-    // Beim Wechsel von honeywell.com auf resideo.com war das der Fix, der
-    // ein Release erzwang. Konfigurierbar erspart das beim nächsten Mal.
+  it("honours a custom base URL", async () => {
+    // When honeywell.com became resideo.com this was the fix that forced a
+    // release. Making it configurable avoids that next time.
     const custom = new EvohomeClient(tokens, {
       baseUrl: "https://tccna.example.test",
     });

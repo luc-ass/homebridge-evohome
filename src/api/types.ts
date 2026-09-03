@@ -1,14 +1,13 @@
 /**
- * Domänentypen der TCC-EMEA-API.
+ * Domain types for the TCC EMEA API.
  *
- * Die API ist nicht dokumentiert; die Felder stammen aus dem Altcode
- * (`legacy/evohome.cjs`) und aus echten Antworten. Alles, was das Plugin nicht
- * auswertet, wird bewusst weggelassen — je kleiner die Fläche, desto weniger
- * bricht, wenn Resideo etwas ändert (siehe Risiko-Tabelle in
- * docs/MIGRATION-HB2.md).
+ * The API is undocumented; the fields come from the old implementation
+ * (`legacy/evohome.cjs`) and from real responses. Anything the plugin does not
+ * use is deliberately left out: the smaller the surface, the less breaks when
+ * Resideo changes something.
  */
 
-/** Betriebsart eines Temperature Control System. */
+/** Operating mode of a temperature control system. */
 export const SYSTEM_MODES = [
   "Auto",
   "AutoWithEco",
@@ -21,7 +20,7 @@ export const SYSTEM_MODES = [
 
 export type SystemMode = (typeof SYSTEM_MODES)[number];
 
-/** Art eines Sollwerts, wie ihn die API meldet und entgegennimmt. */
+/** Kind of setpoint, as reported and accepted by the API. */
 export const SETPOINT_MODES = [
   "FollowSchedule",
   "TemporaryOverride",
@@ -30,16 +29,16 @@ export const SETPOINT_MODES = [
 
 export type SetpointMode = (typeof SETPOINT_MODES)[number];
 
-/** Zustand der Warmwasserbereitung. */
+/** State of the domestic hot water. */
 export const DHW_STATES = ["On", "Off"] as const;
 
 export type DhwState = (typeof DHW_STATES)[number];
 
 /**
- * Gerätetypen, die als Heizzone auftreten.
+ * Device types that appear as a heating zone.
  *
- * 0.11.2 filterte auf genau diese drei Werte. Unbekannte Typen werden weiterhin
- * übersprungen, aber protokolliert, statt still zu verschwinden.
+ * 0.11.2 filtered on exactly these three values. Unknown types are still skipped,
+ * but they are logged instead of silently disappearing.
  */
 export const HEATING_ZONE_MODELS = [
   "HeatingZone",
@@ -56,24 +55,24 @@ export interface UserAccount {
 }
 
 export interface TimeZoneInfo {
-  /** Windows-Zeitzonen-ID, z. B. "W. Europe Standard Time" — kein IANA-Name. */
+  /** Windows time zone ID, e.g. "W. Europe Standard Time" — not an IANA name. */
   readonly timeZoneId: string;
   readonly displayName: string;
-  /** Basis-Offset in Minuten, ohne Sommerzeit. */
+  /** Base offset in minutes, excluding daylight saving. */
   readonly offsetMinutes: number;
-  /** Aktuell gültiger Offset in Minuten, inklusive Sommerzeit. */
+  /** Currently effective offset in minutes, including daylight saving. */
   readonly currentOffsetMinutes: number;
   readonly supportsDaylightSaving: boolean;
 }
 
-/** Grenzen und Schrittweite eines Sollwerts, aus `setpointCapabilities`. */
+/** Bounds and step of a setpoint, from `setpointCapabilities`. */
 export interface SetpointCapabilities {
   readonly minHeatSetpoint: number;
   readonly maxHeatSetpoint: number;
   readonly valueResolution: number;
 }
 
-/** Eine Heizzone, wie sie in der Installationsbeschreibung steht. */
+/** A heating zone as described in the installation info. */
 export interface Zone {
   readonly zoneId: string;
   readonly name: string;
@@ -82,22 +81,22 @@ export interface Zone {
   readonly setpointCapabilities: SetpointCapabilities;
 }
 
-/** Warmwasserbereitung, sofern das System eine hat. */
+/** Domestic hot water, if the system has any. */
 export interface DomesticHotWater {
   readonly dhwId: string;
 }
 
-/** Ein Temperature Control System — die Evohome-Zentrale einer Location. */
+/** A temperature control system — the Evohome controller of a location. */
 export interface TemperatureControlSystem {
   readonly systemId: string;
   readonly modelType: string;
   readonly zones: readonly Zone[];
   readonly dhw: DomesticHotWater | undefined;
-  /** Vom System unterstützte Betriebsarten, aus `allowedSystemModes`. */
+  /** Modes this system supports, from `allowedSystemModes`. */
   readonly allowedSystemModes: readonly SystemMode[];
 }
 
-/** Eine Location — in der Regel ein Haushalt. */
+/** A location — usually one household. */
 export interface Location {
   readonly locationId: string;
   readonly name: string;
@@ -105,27 +104,27 @@ export interface Location {
   readonly system: TemperatureControlSystem;
 }
 
-/** Messwert einer Zone. Nicht jede Zone liefert immer einen. */
+/** A zone's reading. Not every zone always provides one. */
 export interface TemperatureStatus {
   readonly isAvailable: boolean;
-  /** Fehlt, wenn `isAvailable` false ist — etwa bei leerer Batterie. */
+  /** Absent when `isAvailable` is false, e.g. on an empty battery. */
   readonly temperature: number | undefined;
 }
 
 export interface SetpointStatus {
   readonly targetHeatTemperature: number;
   readonly setpointMode: SetpointMode;
-  /** Endzeitpunkt eines `TemporaryOverride`, sonst undefined. */
+  /** End of a `TemporaryOverride`, otherwise undefined. */
   readonly until: Date | undefined;
 }
 
-/** Laufender Status einer Zone. */
+/** Live status of a zone. */
 export interface ZoneStatus {
   readonly zoneId: string;
   readonly name: string;
   readonly temperatureStatus: TemperatureStatus;
   readonly setpointStatus: SetpointStatus;
-  /** Aktive Störungen, z. B. `TempZoneActuatorCommunicationLost`. */
+  /** Active faults, e.g. `TempZoneActuatorCommunicationLost`. */
   readonly activeFaults: readonly string[];
 }
 
@@ -143,7 +142,7 @@ export interface SystemModeStatus {
   readonly until: Date | undefined;
 }
 
-/** Laufender Status einer kompletten Location — eine Abfrage, alle Werte. */
+/** Live status of a whole location — one request, every value. */
 export interface LocationStatus {
   readonly locationId: string;
   readonly systemId: string;
@@ -152,26 +151,26 @@ export interface LocationStatus {
   readonly dhw: DhwStatus | undefined;
 }
 
-/** Ein Schaltpunkt im Zeitprogramm. */
+/** A switchpoint in the schedule. */
 export interface Switchpoint {
-  /** Lokale Uhrzeit der Location im Format `HH:MM:SS`. */
+  /** Local time at the location, formatted `HH:MM:SS`. */
   readonly timeOfDay: string;
-  /** Bei Heizzonen gesetzt. */
+  /** Set for heating zones. */
   readonly heatSetpoint: number | undefined;
-  /** Bei Warmwasser gesetzt. */
+  /** Set for domestic hot water. */
   readonly dhwState: DhwState | undefined;
 }
 
 export interface DailySchedule {
-  /** Englischer Wochentagsname, wie ihn die API liefert: `Monday` … `Sunday`. */
+  /** Weekday name as returned by the API: `Monday` … `Sunday`. */
   readonly dayOfWeek: string;
   readonly switchpoints: readonly Switchpoint[];
 }
 
-/** Anmeldedaten einer Sitzung. */
+/** Credentials of a session. */
 export interface Tokens {
   readonly accessToken: string;
   readonly refreshToken: string;
-  /** Absoluter Ablaufzeitpunkt, aus `expires_in` berechnet. */
+  /** Absolute expiry, derived from `expires_in`. */
   readonly expiresAt: number;
 }

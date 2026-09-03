@@ -8,13 +8,12 @@ import { repoJson } from "./helpers.js";
 import type { Logging, PlatformConfig } from "homebridge";
 
 /**
- * Hält `config.schema.json` und `src/config.ts` zusammen.
+ * Keeps `config.schema.json` and `src/config.ts` in step.
  *
- * Das Formular in Config UI X und der Code, der die Werte liest, sind zwei
- * getrennte Dateien — in 0.11.2 sind sie auseinandergelaufen:
- * `temperatureAboveAsOff` stand im Schema, wurde aber nie ausgewertet
- * (Befund S6), und `childBridge` war ein Behelf, der nach dem Umbau keinen
- * Sinn mehr ergibt.
+ * The form in the Homebridge UI and the code that reads the values are two
+ * separate files, and in 0.11.2 they drifted apart: `temperatureAboveAsOff` was
+ * in the schema but never evaluated, and `childBridge` was a workaround that no
+ * longer makes sense after the rewrite.
  */
 
 interface Schema {
@@ -42,7 +41,7 @@ const silentLog = {
   log: vi.fn(),
 } as unknown as Logging;
 
-/** Alle im Layout referenzierten Feldnamen. */
+/** Every field name referenced from the layout. */
 const layoutKeys = (nodes: unknown[]): string[] =>
   nodes.flatMap((node): string[] => {
     if (typeof node === "string") {
@@ -60,51 +59,51 @@ const layoutKeys = (nodes: unknown[]): string[] =>
   });
 
 describe("config.schema.json", () => {
-  it("passt zum Plugin-Alias und bleibt mehrfach verwendbar (F5)", () => {
+  it("matches the plugin alias and stays usable more than once", () => {
     expect(schema.pluginAlias).toBe(PLATFORM_NAME);
     expect(schema.pluginType).toBe("platform");
-    // Ein Eintrag je Location — mehrere Systeme sind meist getrennte Haushalte.
+    // One entry per location; several systems are usually separate households.
     expect(schema.singular).toBe(false);
   });
 
-  it("bietet keine Optionen mehr an, die das Plugin ignoriert", () => {
+  it("no longer offers options the plugin ignores", () => {
     expect(properties).not.toHaveProperty("childBridge");
     expect(properties).not.toHaveProperty("temperatureUnit");
   });
 
-  it("zeigt jedes Feld auch im Formular an", () => {
+  it("shows every field in the form as well", () => {
     const inLayout = new Set(layoutKeys(schema.layout));
     for (const key of Object.keys(properties)) {
-      expect(inLayout, `"${key}" fehlt im layout`).toContain(key);
+      expect(inLayout, `"${key}" is missing from the layout`).toContain(key);
     }
   });
 
-  it("referenziert im Layout nur existierende Felder", () => {
+  it("only references existing fields from the layout", () => {
     for (const key of layoutKeys(schema.layout)) {
       expect(
         properties,
-        `layout verweist auf unbekanntes "${key}"`,
+        `layout references unknown field "${key}"`,
       ).toHaveProperty(key);
     }
   });
 
-  it("listet bei setpointMode genau die unterstützten Werte (#149)", () => {
+  it("lists exactly the supported values for setpointMode (#149)", () => {
     const offered = properties["setpointMode"]?.oneOf?.flatMap(
       (entry) => entry.enum,
     );
     expect(offered).toEqual([...SETPOINT_STRATEGIES]);
   });
 
-  it("erzwingt das Mindest-Abfrageintervall auch im Formular", () => {
-    // Sonst trägt jemand 10 Sekunden ein, das Plugin hebt still an und die
-    // Anzeige stimmt nicht mehr mit dem Verhalten überein.
+  it("enforces the minimum polling interval in the form too", () => {
+    // Otherwise somebody enters 10 seconds, the plugin silently raises it and the
+    // form no longer matches the behaviour.
     const poll = properties["pollIntervalSeconds"] as { minimum?: number };
     expect(poll.minimum).toBe(60);
   });
 
-  describe("Voreinstellungen", () => {
-    // Was das Formular als Standard anzeigt, muss das sein, was der Code
-    // ohne Angabe verwendet.
+  describe("defaults", () => {
+    // What the form shows as the default must be what the code uses when the
+    // value is absent.
     const fromCode = readConfig(
       {
         platform: PLATFORM_NAME,
@@ -126,13 +125,13 @@ describe("config.schema.json", () => {
       ["switchEco", fromCode.showSwitches.AutoWithEco],
       ["switchHeatingOff", fromCode.showSwitches.HeatingOff],
       ["switchCustom", fromCode.showSwitches.Custom],
-    ])("stimmt bei %s überein", (key, expected) => {
+    ])("matches for %s", (key, expected) => {
       expect(properties[key]?.default).toEqual(expected);
     });
   });
 
-  it("weist im Kopftext auf die einmalige Neuzuordnung hin", () => {
-    // Entscheidung F1/Variante A: der Bruch wird angekündigt, nicht kaschiert.
+  it("mentions the one-off reassignment in the header text", () => {
+    // The break is announced rather than glossed over.
     const header = (schema as unknown as { headerDisplay: string })
       .headerDisplay;
     expect(header).toContain("0.11.x");

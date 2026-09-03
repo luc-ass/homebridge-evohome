@@ -1,17 +1,17 @@
 import type { SetpointMode } from "../api/types.js";
 
 /**
- * Entscheidet, wie ein Sollwert aus HomeKit an Evohome geschrieben wird.
+ * Decides how a setpoint from HomeKit is written to Evohome.
  *
- * Hintergrund ist Issue #149: 0.11.2 schrieb **immer** einen
- * `TemporaryOverride` bis zum nächsten Schaltpunkt und überschrieb damit die
- * Endzeit eines bereits laufenden Overrides. Wer „19 °C bis 20:30" eingestellt
- * hatte und um 16:01 auf 20 °C erhöhte, bekam „20 °C bis 18:00".
+ * The background is issue #149: 0.11.2 **always** wrote a `TemporaryOverride`
+ * lasting until the next switchpoint, thereby overwriting the end time of an
+ * override that was already running. Someone who had set "19 °C until 20:30"
+ * and raised it to 20 °C at 16:01 ended up with "20 °C until 18:00".
  *
- * Die API kennt keinen Modus „Wert ändern, Endzeit behalten" —
- * `PUT /temperatureZone/{id}/heatSetpoint` verlangt zwingend einen der drei
- * `SetpointMode`-Werte. Die laufende Endzeit steht aber in
- * `setpointStatus.until`, sodass sie sich einfach wieder mitschicken lässt.
+ * The API has no "change the value, keep the end time" mode:
+ * `PUT /temperatureZone/{id}/heatSetpoint` requires one of the three
+ * `SetpointMode` values. The running end time is reported in
+ * `setpointStatus.until`, though, so it can simply be sent back.
  */
 
 export const SETPOINT_STRATEGIES = [
@@ -24,7 +24,7 @@ export type SetpointStrategy = (typeof SETPOINT_STRATEGIES)[number];
 
 export const DEFAULT_SETPOINT_STRATEGY: SetpointStrategy = "keepExistingUntil";
 
-/** Der aktuell gemeldete Zustand einer Zone bzw. des Warmwassers. */
+/** The currently reported state of a zone or of the hot water. */
 export interface CurrentOverride {
   readonly setpointMode: SetpointMode;
   readonly until: Date | undefined;
@@ -33,18 +33,18 @@ export interface CurrentOverride {
 export interface OverrideDecision {
   readonly mode: SetpointMode;
   readonly until: Date | undefined;
-  /** Kurze Begründung für das Log. */
+  /** Short rationale for the log. */
   readonly reason: string;
 }
 
 /**
- * Wählt Modus und Endzeit für einen neuen Sollwert.
+ * Picks the mode and end time for a new setpoint.
  *
- * @param strategy Aus der Konfiguration.
- * @param current Was die API gerade meldet.
- * @param nextSwitchpointAt Nächster Schaltpunkt des Zeitprogramms, falls
- *   ermittelbar.
- * @param now Bezugszeitpunkt.
+ * @param strategy From the configuration.
+ * @param current What the API currently reports.
+ * @param nextSwitchpointAt Next switchpoint of the schedule, if it could be
+ *   determined.
+ * @param now Reference point in time.
  */
 export const decideOverride = (
   strategy: SetpointStrategy,
@@ -72,9 +72,9 @@ export const decideOverride = (
     };
   }
 
-  // Ohne verwertbares Zeitprogramm bliebe nur ein Override ohne Endzeit.
-  // 0.11.2 setzte hier ersatzweise "00:00:00", was den Sollwert bis
-  // Mitternacht galt oder — über den Tageswechsel — sofort verfiel.
+  // Without a usable schedule the only option left is an override with no end
+  // time. 0.11.2 substituted "00:00:00" here, which meant the setpoint lasted
+  // until midnight, or expired immediately across a day boundary.
   return {
     mode: "PermanentOverride",
     until: undefined,
@@ -82,7 +82,7 @@ export const decideOverride = (
   };
 };
 
-/** Läuft gerade ein befristeter Override, dessen Ende noch bevorsteht? */
+/** Is a temporary override running whose end time is still ahead? */
 const isRunning = (current: CurrentOverride, now: Date): boolean =>
   current.setpointMode === "TemporaryOverride" &&
   current.until !== undefined &&

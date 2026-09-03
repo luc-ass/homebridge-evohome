@@ -18,23 +18,23 @@ const readJson = (relativePath: string): Record<string, unknown> =>
   ) as Record<string, unknown>;
 
 describe("settings", () => {
-  it("hält PLUGIN_NAME mit package.json synchron", () => {
+  it("keeps PLUGIN_NAME in sync with package.json", () => {
     const pkg = readJson("../package.json");
     expect(PLUGIN_NAME).toBe(pkg.name);
   });
 
-  it("hält PLATFORM_NAME mit dem pluginAlias im Config-Schema synchron", () => {
+  it("keeps PLATFORM_NAME in sync with the pluginAlias in the config schema", () => {
     const schema = readJson("../config.schema.json");
     expect(PLATFORM_NAME).toBe(schema.pluginAlias);
   });
 
-  it("zeigt auf die Resideo-Domain, nicht auf die abgelaufene Honeywell-Domain", () => {
-    // Resideo hat das Zertifikat für tccna.honeywell.com nicht erneuert.
+  it("points at the Resideo domain, not the expired Honeywell one", () => {
+    // Resideo did not renew the certificate for tccna.honeywell.com.
     expect(DEFAULT_BASE_URL).toBe("https://tccna.resideo.com");
     expect(API_PATH).toBe("/WebAPI/emea/api/v1");
   });
 
-  it("hält das Standard-Pollingintervall über dem Minimum", () => {
+  it("keeps the default polling interval above the minimum", () => {
     expect(DEFAULT_POLL_INTERVAL_SECONDS).toBeGreaterThanOrEqual(
       MIN_POLL_INTERVAL_SECONDS,
     );
@@ -44,19 +44,19 @@ describe("settings", () => {
 describe("package.json", () => {
   const pkg = readJson("../package.json");
 
-  it("deklariert Homebridge 2 und die passenden Node-Versionen (F1, F2)", () => {
+  it("declares Homebridge 2 and the matching Node versions", () => {
     const engines = pkg.engines as Record<string, string>;
     expect(engines.homebridge).toBe("^2.0.0");
     expect(engines.node).toBe("^22 || ^24 || ^26");
   });
 
-  it("ist ein ESM-Paket und zeigt auf den Build", () => {
+  it("is an ESM package and points at the build output", () => {
     expect(pkg.type).toBe("module");
     expect(pkg.main).toBe("dist/index.js");
   });
 
-  it("führt homebridge und hap-nodejs nicht als Laufzeitabhängigkeit", () => {
-    // Homebridge warnt beim Laden, wenn ein Plugin eine eigene Kopie mitbringt
+  it("does not list homebridge or hap-nodejs as a runtime dependency", () => {
+    // Homebridge warns at load time when a plugin ships its own copy
     // (homebridge/dist/plugin.js:154).
     const deps = (pkg.dependencies ?? {}) as Record<string, string>;
     expect(deps).not.toHaveProperty("homebridge");
@@ -64,14 +64,14 @@ describe("package.json", () => {
     expect(deps).not.toHaveProperty("@homebridge/hap-nodejs");
   });
 
-  it("führt keine als deprecated markierten Altlasten mehr (S14)", () => {
+  it("no longer carries the deprecated legacy dependencies", () => {
     const deps = (pkg.dependencies ?? {}) as Record<string, string>;
     for (const dead of ["request", "q", "lodash", "moment"]) {
       expect(deps).not.toHaveProperty(dead);
     }
   });
 
-  it("hält fakegato-history optional (Entscheidung F3)", () => {
+  it("keeps fakegato-history optional", () => {
     const optional = pkg.optionalDependencies as Record<string, string>;
     expect(optional).toHaveProperty("fakegato-history");
   });

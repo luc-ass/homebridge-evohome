@@ -1,14 +1,13 @@
 /**
- * Fehlertypen des Evohome-Clients.
+ * Error types raised by the Evohome client.
  *
- * In 0.11.2 gab es keine: ein Ausfall der Honeywell-Server schlug als roher
- * `TypeError` durch, weil ungeprüft auf Felder der Antwort zugegriffen wurde
- * (Befund S8), und die Fehlerpfade verschluckten den Rest (S12). Jede Ursache
- * bekommt hier einen eigenen Typ, damit der Aufrufer entscheiden kann, ob er
- * erneut versucht, neu anmeldet oder aufgibt.
+ * 0.11.2 had none: an outage surfaced as a bare `TypeError`, because response
+ * fields were read without checking, and the error paths swallowed the rest.
+ * Every cause gets its own type here so the caller can decide whether to retry,
+ * re-authenticate or give up.
  */
 
-/** Gemeinsame Basis aller Fehler, die dieser Client wirft. */
+/** Common base for every error this client throws. */
 export class EvohomeError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
@@ -17,11 +16,11 @@ export class EvohomeError extends Error {
 }
 
 /**
- * Die Anmeldung ist fehlgeschlagen oder die Sitzung lässt sich nicht erneuern.
+ * Login failed, or the session could not be refreshed.
  *
- * `retryable` unterscheidet den dauerhaften Fall (falsches Passwort — erneutes
- * Versuchen bringt nichts und läuft nur in den Rate-Limiter) vom vorübergehenden
- * (abgelaufener Refresh-Token, Serverfehler bei der Anmeldung).
+ * `retryable` separates the permanent case (wrong password: retrying achieves
+ * nothing and only runs into the rate limit) from the temporary one (expired
+ * refresh token, server error during login).
  */
 export class EvohomeAuthError extends EvohomeError {
   constructor(
@@ -33,7 +32,7 @@ export class EvohomeAuthError extends EvohomeError {
   }
 }
 
-/** Die API hat mit einem Status außerhalb von 2xx geantwortet. */
+/** The API responded with a status outside 2xx. */
 export class EvohomeApiError extends EvohomeError {
   constructor(
     message: string,
@@ -45,9 +44,9 @@ export class EvohomeApiError extends EvohomeError {
 }
 
 /**
- * Rate-Limit der Honeywell-Server erreicht (HTTP 429).
+ * Honeywell's rate limit was reached (HTTP 429).
  *
- * `retryAfterMs` stammt aus dem `Retry-After`-Header, sofern gesetzt.
+ * `retryAfterMs` comes from the `Retry-After` header, when present.
  */
 export class EvohomeRateLimitError extends EvohomeApiError {
   constructor(
@@ -59,15 +58,14 @@ export class EvohomeRateLimitError extends EvohomeApiError {
   }
 }
 
-/** Netzwerkfehler oder Timeout — die Anfrage hat den Server nicht erreicht. */
+/** Network error or timeout: the request never reached the server. */
 export class EvohomeNetworkError extends EvohomeError {}
 
 /**
- * Die Antwort war syntaktisch JSON, entsprach aber nicht der erwarteten Form.
+ * The response was valid JSON but did not match the expected shape.
  *
- * Genau der Fall, der in 0.11.2 als
- * `Cannot read properties of undefined (reading 'temperature')` durchschlug
- * (Befund S8, Issue #205).
+ * Exactly the case that surfaced in 0.11.2 as
+ * `Cannot read properties of undefined (reading 'temperature')` (issue #205).
  */
 export class EvohomeResponseError extends EvohomeError {
   constructor(
@@ -79,10 +77,10 @@ export class EvohomeResponseError extends EvohomeError {
 }
 
 /**
- * Meldet, ob ein Fehler einen erneuten Versuch rechtfertigt.
+ * Reports whether an error is worth retrying.
  *
- * Falsche Zugangsdaten und kaputte Antwortformate sind dauerhaft — dagegen hilft
- * kein Wiederholen. Netzwerk-, Server- und Rate-Limit-Fehler gehen vorüber.
+ * Bad credentials and malformed responses are permanent; retrying will not help.
+ * Network, server and rate-limit errors pass.
  */
 export const isRetryable = (error: unknown): boolean => {
   if (error instanceof EvohomeAuthError) {

@@ -28,9 +28,9 @@ node_modules
 
 .DS_Store
 
-# Build-Artefakte
+# Build output
 dist
 *.tsbuildinfo
 
-# Lokale Testumgebung (enthält Zugangsdaten und Pairing-Daten)
+# Local test instance (contains credentials and pairing data)
 test-instance/data

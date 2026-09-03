@@ -11,15 +11,15 @@ import {
 import { fixture } from "../helpers.js";
 
 describe("parseUserAccount", () => {
-  it("liest die Kontodaten", () => {
+  it("reads the account data", () => {
     expect(parseUserAccount(fixture("userAccount.json"))).toEqual({
       userId: "1234567",
       username: "user@example.com",
     });
   });
 
-  it("akzeptiert eine numerische userId", () => {
-    // Die API liefert die ID je nach Endpunkt als Zahl oder als String.
+  it("accepts a numeric userId", () => {
+    // Depending on the endpoint the API returns the ID as a number or a string.
     expect(
       parseUserAccount({ userId: 1234567, username: "a@b.c" }).userId,
     ).toBe("1234567");
@@ -27,7 +27,7 @@ describe("parseUserAccount", () => {
 });
 
 describe("parseTokens", () => {
-  it("rechnet expires_in in einen absoluten Zeitpunkt um", () => {
+  it("converts expires_in into an absolute point in time", () => {
     const tokens = parseTokens(fixture("token.json"), 1_000_000);
 
     expect(tokens.accessToken).toBe("access-token-aaa");
@@ -39,7 +39,7 @@ describe("parseTokens", () => {
 describe("parseInstallationInfo", () => {
   const locations = parseInstallationInfo(fixture("installationInfo.json"));
 
-  it("liest Location, Zeitzone und System", () => {
+  it("reads location, time zone and system", () => {
     expect(locations).toHaveLength(1);
     const location = locations[0]!;
 
@@ -49,10 +49,10 @@ describe("parseInstallationInfo", () => {
     expect(location.system.systemId).toBe("444001");
   });
 
-  it("liest die Sollwertgrenzen jeder Zone", () => {
-    // Diese Grenzen entscheiden darüber, ob HomeKit einen Wert annimmt —
-    // Zone 3002 hat minHeatSetpoint 10, dort erzeugte der 5-°C-Aus-Wert von
-    // 0.11.2 die Warnung aus Issue #94.
+  it("reads the setpoint bounds of every zone", () => {
+    // These bounds decide whether HomeKit accepts a value. Zone 3002 has
+    // minHeatSetpoint 10, where the 5 °C off value of 0.11.2 produced the
+    // warning from issue #94.
     const zones = locations[0]!.system.zones;
     expect(zones.map((zone) => zone.name)).toEqual([
       "Wohnzimmer",
@@ -67,13 +67,13 @@ describe("parseInstallationInfo", () => {
     });
   });
 
-  it("bildet unbekannte Ventilmodelle auf Unknown ab, statt zu scheitern", () => {
-    // Ein neues Modell bei Resideo darf nicht das ganze Plugin lahmlegen.
+  it("maps unknown valve models to Unknown instead of failing", () => {
+    // A new model at Resideo must not take down the whole plugin.
     expect(locations[0]!.system.zones[3]!.modelType).toBe("Unknown");
     expect(locations[0]!.system.zones[2]!.modelType).toBe("RoundWireless");
   });
 
-  it("liest allowedSystemModes als Liste von Modi", () => {
+  it("reads allowedSystemModes as a list of modes", () => {
     expect(locations[0]!.system.allowedSystemModes).toEqual([
       "Auto",
       "AutoWithEco",
@@ -84,11 +84,11 @@ describe("parseInstallationInfo", () => {
     ]);
   });
 
-  it("liest die Warmwasser-ID", () => {
+  it("reads the hot water ID", () => {
     expect(locations[0]!.system.dhw?.dhwId).toBe("2001");
   });
 
-  it("kommt ohne Warmwasser aus", () => {
+  it("copes without hot water", () => {
     const raw = fixture("installationInfo.json") as {
       gateways: { temperatureControlSystems: { dhw?: unknown }[] }[];
     }[];
@@ -101,16 +101,16 @@ describe("parseInstallationInfo", () => {
 describe("parseLocationStatus", () => {
   const status = parseLocationStatus(fixture("locationStatus.json"));
 
-  it("liest Systemmodus und Zonen aus einer einzigen Antwort", () => {
-    // 0.11.2 fragte denselben Endpunkt zweimal ab (Befund S13).
+  it("reads system mode and zones from a single response", () => {
+    // 0.11.2 queried the same endpoint twice.
     expect(status.systemModeStatus.mode).toBe("AutoWithEco");
     expect(status.systemModeStatus.isPermanent).toBe(true);
     expect(status.zones).toHaveLength(4);
   });
 
-  it("liest den Endzeitpunkt eines laufenden Overrides", () => {
-    // Genau diese Information fehlte 0.11.2, weshalb jede Änderung aus
-    // HomeKit den laufenden Override überschrieb (Issue #149).
+  it("reads the end time of a running override", () => {
+    // This is exactly the information 0.11.2 lacked, which is why every change
+    // from HomeKit overwrote the running override (issue #149).
     const bad = status.zones[1]!;
     expect(bad.setpointStatus.setpointMode).toBe("TemporaryOverride");
     expect(bad.setpointStatus.until?.toISOString()).toBe(
@@ -118,22 +118,22 @@ describe("parseLocationStatus", () => {
     );
   });
 
-  it("liefert keine Temperatur, wenn die Zone nicht verfügbar ist", () => {
-    // 0.11.2 reichte hier undefined an HomeKit durch — daraus wurde die
-    // Warnung "expected valid finite number and received NaN" (Issue #94).
+  it("reports no temperature when the zone is unavailable", () => {
+    // 0.11.2 passed undefined to HomeKit here, which became the warning
+    // "expected valid finite number and received NaN" (issue #94).
     const flur = status.zones[2]!;
     expect(flur.temperatureStatus.isAvailable).toBe(false);
     expect(flur.temperatureStatus.temperature).toBeUndefined();
   });
 
-  it("liest aktive Störungen als Liste von Fehlertypen", () => {
+  it("reads active faults as a list of fault types", () => {
     expect(status.zones[2]!.activeFaults).toEqual([
       "TempZoneActuatorLowBattery",
     ]);
     expect(status.zones[0]!.activeFaults).toEqual([]);
   });
 
-  it("liest den Warmwasserstatus", () => {
+  it("reads the hot water status", () => {
     expect(status.dhw).toEqual({
       dhwId: "2001",
       temperatureStatus: { isAvailable: true, temperature: 54.5 },
@@ -144,18 +144,18 @@ describe("parseLocationStatus", () => {
   });
 });
 
-describe("Fehlerbehandlung beim Parsen", () => {
-  it("nennt den Pfad des fehlenden Feldes", () => {
-    // Der Fall aus Issue #205: die API antwortet mit einem Fehlerkörper,
-    // 0.11.2 lief in "Cannot read properties of undefined (reading
-    // 'temperature')" ohne jeden Hinweis auf die Ursache (Befund S8).
+describe("error handling while parsing", () => {
+  it("names the path of the missing field", () => {
+    // The case from issue #205: the API answers with an error body and 0.11.2
+    // ran into "Cannot read properties of undefined (reading 'temperature')"
+    // without any hint at the cause.
     expect(() => parseLocationStatus({ error: "server unavailable" })).toThrow(
       EvohomeResponseError,
     );
 
     try {
       parseLocationStatus({ error: "server unavailable" });
-      expect.unreachable("hätte werfen müssen");
+      expect.unreachable("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(EvohomeResponseError);
       expect((error as EvohomeResponseError).path).toBe(
@@ -165,13 +165,13 @@ describe("Fehlerbehandlung beim Parsen", () => {
     }
   });
 
-  it("meldet ein leeres gateways-Array statt blind zuzugreifen", () => {
+  it("reports an empty gateways array instead of accessing it blindly", () => {
     expect(() =>
       parseLocationStatus({ locationId: "1", gateways: [] }),
     ).toThrow(/array is empty/);
   });
 
-  it("meldet einen unbekannten Systemmodus mit den erlaubten Werten", () => {
+  it("reports an unknown system mode along with the allowed values", () => {
     const raw = fixture("locationStatus.json") as {
       gateways: {
         temperatureControlSystems: { systemModeStatus: { mode: string } }[];
@@ -185,7 +185,7 @@ describe("Fehlerbehandlung beim Parsen", () => {
 });
 
 describe("parseSchedule", () => {
-  it("liest ein Wochenprogramm einer Heizzone", () => {
+  it("reads a weekly schedule of a heating zone", () => {
     const schedule = parseSchedule(fixture("scheduleZone.json"));
 
     expect(schedule).toHaveLength(7);
@@ -197,7 +197,7 @@ describe("parseSchedule", () => {
     });
   });
 
-  it("liest ein Wochenprogramm für Warmwasser", () => {
+  it("reads a weekly schedule for hot water", () => {
     const schedule = parseSchedule(fixture("scheduleDhw.json"));
 
     expect(schedule[0]!.switchpoints[0]).toEqual({

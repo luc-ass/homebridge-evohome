@@ -9,7 +9,7 @@ import type { CurrentOverride } from "../../src/util/setpoint.js";
 
 const NOW = new Date("2026-03-22T16:01:00Z");
 
-/** Der Ausgangszustand aus Issue #149: 19 °C bis 20:30. */
+/** The starting state from issue #149: 19 °C until 20:30. */
 const runningOverride: CurrentOverride = {
   setpointMode: "TemporaryOverride",
   until: new Date("2026-03-22T20:30:00Z"),
@@ -20,18 +20,18 @@ const followingSchedule: CurrentOverride = {
   until: undefined,
 };
 
-/** Nächster Schaltpunkt laut Zeitprogramm: 18:00. */
+/** Next switchpoint per the schedule: 18:00. */
 const nextSwitchpointAt = new Date("2026-03-22T18:00:00Z");
 
 describe("decideOverride", () => {
-  it("verwendet keepExistingUntil als Voreinstellung", () => {
+  it("uses keepExistingUntil as the default", () => {
     expect(DEFAULT_SETPOINT_STRATEGY).toBe("keepExistingUntil");
   });
 
   describe("keepExistingUntil", () => {
-    it("behält die Endzeit eines laufenden Overrides (#149)", () => {
-      // Der gemeldete Fall: 0.11.2 machte aus „19 °C bis 20:30" beim Erhöhen
-      // „20 °C bis 18:00" und ließ die Heizung zwei Stunden zu früh abfallen.
+    it("keeps the end time of a running override (#149)", () => {
+      // The reported case: raising the temperature turned "19 °C until 20:30" into
+      // "20 °C until 18:00", dropping the heating two hours early.
       const decision = decideOverride(
         "keepExistingUntil",
         runningOverride,
@@ -44,9 +44,8 @@ describe("decideOverride", () => {
       expect(decision.reason).toContain("end time of the running override");
     });
 
-    it("nimmt den nächsten Schaltpunkt, wenn kein Override läuft", () => {
-      // Für alle, die #149 nie erlebt haben, bleibt das Verhalten identisch
-      // zu 0.11.2.
+    it("uses the next switchpoint when no override is running", () => {
+      // For anyone who never hit #149 the behaviour is identical to 0.11.2.
       const decision = decideOverride(
         "keepExistingUntil",
         followingSchedule,
@@ -59,7 +58,7 @@ describe("decideOverride", () => {
       expect(decision.reason).toContain("next switchpoint");
     });
 
-    it("ignoriert einen bereits abgelaufenen Override", () => {
+    it("ignores an override that has already expired", () => {
       const expired: CurrentOverride = {
         setpointMode: "TemporaryOverride",
         until: new Date("2026-03-22T15:00:00Z"),
@@ -74,7 +73,7 @@ describe("decideOverride", () => {
       expect(decision.until).toEqual(nextSwitchpointAt);
     });
 
-    it("ignoriert einen dauerhaften Override", () => {
+    it("ignores a permanent override", () => {
       const permanent: CurrentOverride = {
         setpointMode: "PermanentOverride",
         until: undefined,
@@ -90,9 +89,9 @@ describe("decideOverride", () => {
       expect(decision.until).toEqual(nextSwitchpointAt);
     });
 
-    it("ignoriert einen TemporaryOverride ohne Endzeit", () => {
-      // Die API liefert `until` nur bei manchen Modi — fehlt es, bleibt nur
-      // der nächste Schaltpunkt.
+    it("ignores a TemporaryOverride without an end time", () => {
+      // The API reports `until` only for some modes; without it the next
+      // switchpoint is all that is left.
       const decision = decideOverride(
         "keepExistingUntil",
         { setpointMode: "TemporaryOverride", until: undefined },
@@ -105,8 +104,8 @@ describe("decideOverride", () => {
   });
 
   describe("untilNextSwitchpoint", () => {
-    it("überschreibt die Endzeit eines laufenden Overrides", () => {
-      // Das Verhalten von 0.11.2 — bleibt als Option erhalten.
+    it("overwrites the end time of a running override", () => {
+      // The behaviour of 0.11.2, kept as an option.
       const decision = decideOverride(
         "untilNextSwitchpoint",
         runningOverride,
@@ -120,7 +119,7 @@ describe("decideOverride", () => {
   });
 
   describe("permanent", () => {
-    it("setzt dauerhaft, unabhängig vom Zeitprogramm", () => {
+    it("sets permanently, regardless of the schedule", () => {
       const decision = decideOverride(
         "permanent",
         runningOverride,
@@ -133,10 +132,10 @@ describe("decideOverride", () => {
     });
   });
 
-  describe("ohne verwertbares Zeitprogramm", () => {
-    it("weicht auf einen dauerhaften Override aus", () => {
-      // 0.11.2 setzte hier ersatzweise "00:00:00" — der Sollwert galt dann
-      // bis Mitternacht oder verfiel über den Tageswechsel sofort.
+  describe("without a usable schedule", () => {
+    it("falls back to a permanent override", () => {
+      // 0.11.2 substituted "00:00:00" here, so the setpoint lasted until midnight
+      // or expired immediately across a day boundary.
       const decision = decideOverride(
         "untilNextSwitchpoint",
         followingSchedule,
@@ -148,7 +147,7 @@ describe("decideOverride", () => {
       expect(decision.reason).toContain("no switchpoint found");
     });
 
-    it("nimmt keinen Schaltpunkt in der Vergangenheit", () => {
+    it("does not take a switchpoint in the past", () => {
       const decision = decideOverride(
         "untilNextSwitchpoint",
         followingSchedule,
@@ -159,7 +158,7 @@ describe("decideOverride", () => {
       expect(decision.mode).toBe("PermanentOverride");
     });
 
-    it("behält auch dann eine laufende Endzeit bei", () => {
+    it("still keeps a running end time", () => {
       const decision = decideOverride(
         "keepExistingUntil",
         runningOverride,

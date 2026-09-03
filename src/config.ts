@@ -13,15 +13,14 @@ import type { SystemMode } from "./api/types.js";
 import type { Logging, PlatformConfig } from "homebridge";
 
 /**
- * Liest und prüft die Platform-Konfiguration.
+ * Reads and validates the platform configuration.
  *
- * 0.11.2 las die Werte direkt aus `config["..."]` und verglich Schalter mit
- * `!= false`, sodass ein Tippfehler stillschweigend als `true` durchging.
- * Hier wird jeder Wert geprüft, fehlerhafte Angaben werden mit Hinweis auf den
- * verwendeten Ersatzwert protokolliert.
+ * 0.11.2 read values straight out of `config["..."]` and compared switches with
+ * `!= false`, so a typo silently became `true`. Here every value is checked and
+ * a bad entry is logged together with the fallback that was used instead.
  */
 
-/** Systemmodi, für die das Plugin einen Schalter anbieten kann. */
+/** System modes the plugin can offer a switch for. */
 export const SWITCHABLE_MODES = [
   "Away",
   "DayOff",
@@ -32,7 +31,7 @@ export const SWITCHABLE_MODES = [
 
 export type SwitchableMode = (typeof SWITCHABLE_MODES)[number];
 
-/** Zuordnung der Config-Schlüssel zu den Systemmodi. */
+/** Maps configuration keys to system modes. */
 const SWITCH_KEYS: Record<SwitchableMode, string> = {
   Away: "switchAway",
   DayOff: "switchDayOff",
@@ -41,7 +40,7 @@ const SWITCH_KEYS: Record<SwitchableMode, string> = {
   Custom: "switchCustom",
 };
 
-/** Anzeigename je Schalter, an 0.11.2 angelehnt. */
+/** Display name per switch, following 0.11.2. */
 export const SWITCH_LABELS: Record<SwitchableMode, string> = {
   Away: "Away Mode",
   DayOff: "Day Off Mode",
@@ -55,22 +54,22 @@ export interface EvohomeConfig {
   readonly username: string;
   readonly password: string;
   /**
-   * Bevorzugte Adressierung der Location. Stabil gegenüber Umsortierungen bei
-   * Honeywell — anders als der Index (Entscheidung F5).
+   * Preferred way to address the location. Stable against reordering at
+   * Honeywell, unlike the index.
    */
   readonly locationId: string | undefined;
-  /** Rückfallebene, wenn keine `locationId` gesetzt ist. */
+  /** Fallback when no `locationId` is set. */
   readonly locationIndex: number;
   readonly pollIntervalSeconds: number;
   readonly temperatureAboveAsOff: boolean;
   readonly showSwitches: Readonly<Record<SwitchableMode, boolean>>;
   readonly history: boolean;
   /**
-   * Wie ein Sollwert aus HomeKit geschrieben wird (Issue #149).
-   * Siehe {@link SetpointStrategy}.
+   * How a setpoint from HomeKit is written (issue #149).
+   * See {@link SetpointStrategy}.
    */
   readonly setpointMode: SetpointStrategy;
-  /** Jede Änderung der Ist-Temperatur ins Log schreiben (Issue #146). */
+  /** Log every change of a measured room temperature (issue #146). */
   readonly logTemperatureChanges: boolean;
 }
 
@@ -126,8 +125,8 @@ const readPollInterval = (value: unknown, log: Logging): number => {
     return DEFAULT_POLL_INTERVAL_SECONDS;
   }
   if (seconds < MIN_POLL_INTERVAL_SECONDS) {
-    // Ein zu kurzes Intervall führt in den Rate-Limiter der Honeywell-Server
-    // und trifft dann alle Nutzer desselben Kontos.
+    // Too short an interval runs into Honeywell's rate limit, which then affects
+    // every user of the same account.
     log.warn(
       `A polling interval of ${String(seconds)}s is too short and would hit Honeywell’s rate limit. Using ${String(MIN_POLL_INTERVAL_SECONDS)}s.`,
     );
@@ -150,19 +149,18 @@ const readLocationIndex = (value: unknown, log: Logging): number => {
   return index;
 };
 
-/** Meldet Config-Schlüssel, die es nicht mehr gibt. */
+/** Reports configuration keys that no longer exist. */
 const warnAboutRemovedKeys = (config: PlatformConfig, log: Logging): void => {
   if (config["childBridge"] !== undefined) {
-    // Der Schalter unterdrückte in 0.11.2 nur ein `callback([])` im
-    // Fehlerfall. Eine dynamische Platform verliert ihre Accessories bei
-    // einem Fehler ohnehin nicht mehr (Befund S2).
+    // In 0.11.2 this only suppressed a `callback([])` on failure. A dynamic
+    // platform no longer loses its accessories on an error anyway.
     log.warn(
       'The "childBridge" option no longer exists and is ignored. Accessories now survive errors without a child bridge, so the entry can be removed from your config.json.',
     );
   }
   if (config["temperatureUnit"] !== undefined) {
-    // HomeKit zeigt Temperaturen immer in der Einheit des iOS-Geräts an; die
-    // Option hatte in 0.11.2 keine Wirkung auf die Anzeige.
+    // HomeKit always shows temperatures in the unit of the iOS device; the
+    // option never affected the display in 0.11.2 either.
     log.warn(
       'The "temperatureUnit" option no longer exists and is ignored. HomeKit picks the display unit from the iOS device settings.',
     );
@@ -170,7 +168,7 @@ const warnAboutRemovedKeys = (config: PlatformConfig, log: Logging): void => {
 };
 
 /**
- * Fehler in der Konfiguration, die einen sinnvollen Betrieb unmöglich machen.
+ * A configuration error that makes sensible operation impossible.
  */
 export class ConfigError extends Error {}
 
@@ -220,6 +218,6 @@ export const readConfig = (
   };
 };
 
-/** Ist `mode` ein Modus, für den ein Schalter angeboten wird? */
+/** Is `mode` one of the modes we offer a switch for? */
 export const isSwitchableMode = (mode: SystemMode): mode is SwitchableMode =>
   (SWITCHABLE_MODES as readonly SystemMode[]).includes(mode);
