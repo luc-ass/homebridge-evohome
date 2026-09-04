@@ -132,6 +132,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       this.log.info(
         `Location "${location.name}" with ${String(location.system.zones.length)} zone(s).`,
       );
+      this.warnAboutExtraSystems(location);
 
       this.poller = new PollingCoordinator(
         client,
@@ -184,6 +185,24 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       .join(", ");
     this.log.warn(
       `Another Evohome block (${names}) runs on the same bridge. Homebridge hands the cached accessories to only one platform of the same name, so every other block recreates its accessories on each start and loses their rooms. Give each block its own child bridge: Homebridge UI, the plugin's menu, "Bridge Settings". Accessories belonging to another location are left untouched in the meantime.`,
+    );
+  }
+
+  /**
+   * Names the gateways and controllers that are not read.
+   *
+   * Like 0.11.2 the plugin uses `gateways[0].temperatureControlSystems[0]`. No
+   * response with more than one of either was ever available, so rather than
+   * guessing at the shape it says what it ignores: a zone or a hot water tank
+   * missing for this reason is then one line in the log instead of a support
+   * thread (issue #205).
+   */
+  private warnAboutExtraSystems(location: Location): void {
+    if (location.gatewayCount <= 1 && location.systemCount <= 1) {
+      return;
+    }
+    this.log.warn(
+      `Location "${location.name}" reports ${String(location.gatewayCount)} gateway(s) with ${String(location.systemCount)} controller(s) in total. Only the first controller of the first gateway is used, so zones or hot water on the others are missing. Please open an issue with this line — no system of this kind was available while the plugin was written.`,
     );
   }
 

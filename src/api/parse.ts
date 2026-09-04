@@ -192,12 +192,34 @@ const firstSystem = (json: Record<string, unknown>, path: string): unknown => {
   );
 };
 
+/**
+ * Counts the gateways of a location and the controllers on them.
+ *
+ * Lenient on purpose: only the first gateway is actually read, so a malformed
+ * second one must not stop the plugin — it simply adds nothing to the count.
+ */
+const countSystems = (
+  json: Record<string, unknown>,
+  path: string,
+): { readonly gateways: number; readonly systems: number } => {
+  const gateways = asArray(json["gateways"], `${path}.gateways`);
+  const systems = gateways.reduce<number>((total, gateway) => {
+    const list =
+      typeof gateway === "object" && gateway !== null
+        ? (gateway as Record<string, unknown>)["temperatureControlSystems"]
+        : undefined;
+    return total + (Array.isArray(list) ? list.length : 0);
+  }, 0);
+  return { gateways: gateways.length, systems };
+};
+
 export const parseInstallationInfo = (raw: unknown): readonly Location[] => {
   const locations = asArray(raw, "installationInfo");
   return locations.map((entry, index) => {
     const path = `installationInfo[${String(index)}]`;
     const json = asRecord(entry, path);
     const info = asRecord(json["locationInfo"], `${path}.locationInfo`);
+    const counts = countSystems(json, path);
     return {
       locationId: asId(info["locationId"], `${path}.locationInfo.locationId`),
       name: asString(info["name"], `${path}.locationInfo.name`),
@@ -209,6 +231,8 @@ export const parseInstallationInfo = (raw: unknown): readonly Location[] => {
         firstSystem(json, path),
         `${path}.gateways[0].temperatureControlSystems[0]`,
       ),
+      gatewayCount: counts.gateways,
+      systemCount: counts.systems,
     } satisfies Location;
   });
 };

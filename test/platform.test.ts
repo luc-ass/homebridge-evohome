@@ -621,6 +621,39 @@ describe("EvohomePlatform", () => {
     });
   });
 
+  describe("extra gateways and controllers", () => {
+    /** The fixture with a second gateway carrying a second controller. */
+    const twoGateways = (): unknown => {
+      const raw = fixture("installationInfo.json") as { gateways: unknown[] }[];
+      raw[0]!.gateways.push({
+        gatewayId: "555002",
+        temperatureControlSystems: [{ systemId: "444002" }],
+      });
+      return raw;
+    };
+
+    it("names what it does not read", async () => {
+      fetchMock = routedFetch({
+        "/location/installationInfo": () => jsonResponse(twoGateways()),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await startPlatform();
+
+      expect(log.warnings.join()).toContain(
+        "2 gateway(s) with 2 controller(s)",
+      );
+      // The first controller still works as before.
+      expect(test.registered.map(nameOf)).toContain("Wohnzimmer Thermostat");
+    });
+
+    it("stays quiet for a single gateway with a single controller", async () => {
+      await startPlatform();
+
+      expect(log.warnings.join()).not.toContain("gateway(s)");
+    });
+  });
+
   describe("several blocks on one bridge", () => {
     /** A cached accessory that belongs to a different location. */
     const foreignAccessory = (): PlatformAccessory => {

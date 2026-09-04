@@ -12,6 +12,13 @@
   treated as a fault: the valve still measures and still heats. No charge
   percentage is reported, because the API does not provide one.
 
+- **Gateways and controllers the plugin does not read are named in the log.**
+  It uses `gateways[0].temperatureControlSystems[0]`, exactly as 0.11.2 did, and
+  said nothing about the rest — a zone or a hot water tank on a second
+  controller simply did not exist. A location that reports more than one of
+  either now warns, so the cause is one line in the log rather than a support
+  thread. Reading them is still not implemented; no response with a second
+  gateway has ever been available. ([#205](../../issues/205))
 - **Every location is named at startup.** Accounts with several homes now get
   the full list with IDs — `The account has 2 locations: Home (locationId
 1234567), Cottage (locationId 7654321).` Until now only the location that was

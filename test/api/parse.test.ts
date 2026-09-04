@@ -47,6 +47,40 @@ describe("parseInstallationInfo", () => {
     expect(location.name).toBe("Zuhause");
     expect(location.timeZone.currentOffsetMinutes).toBe(120);
     expect(location.system.systemId).toBe("444001");
+    expect(location.gatewayCount).toBe(1);
+    expect(location.systemCount).toBe(1);
+  });
+
+  /** The fixture with `extra` appended to its list of gateways. */
+  const withGateway = (extra: unknown): unknown => {
+    const raw = fixture("installationInfo.json") as { gateways: unknown[] }[];
+    raw[0]!.gateways.push(extra);
+    return raw;
+  };
+
+  it("counts the gateways and controllers it does not read", () => {
+    const location = parseInstallationInfo(
+      withGateway({
+        gatewayId: "555002",
+        temperatureControlSystems: [
+          { systemId: "444002" },
+          { systemId: "444003" },
+        ],
+      }),
+    )[0]!;
+
+    expect(location.gatewayCount).toBe(2);
+    expect(location.systemCount).toBe(3);
+    // Reading still stops at the first controller of the first gateway.
+    expect(location.system.systemId).toBe("444001");
+  });
+
+  it("counts a malformed extra gateway as empty instead of failing", () => {
+    // Its contents are never read, so it must not be able to stop startup.
+    const location = parseInstallationInfo(withGateway(null))[0]!;
+
+    expect(location.gatewayCount).toBe(2);
+    expect(location.systemCount).toBe(1);
   });
 
   it("reads the setpoint bounds of every zone", () => {

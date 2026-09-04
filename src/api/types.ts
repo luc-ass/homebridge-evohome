@@ -101,7 +101,20 @@ export interface Location {
   readonly locationId: string;
   readonly name: string;
   readonly timeZone: TimeZoneInfo;
+  /**
+   * The controller the plugin works with:
+   * `gateways[0].temperatureControlSystems[0]`, as in 0.11.2.
+   */
   readonly system: TemperatureControlSystem;
+  /**
+   * How many gateways and controllers the location reports in total.
+   *
+   * Only the counts, not the contents: anything beyond the first controller of
+   * the first gateway is not read. They exist so such a system is named in the
+   * log instead of silently losing its zones (issue #205).
+   */
+  readonly gatewayCount: number;
+  readonly systemCount: number;
 }
 
 /** A zone's reading. Not every zone always provides one. */
