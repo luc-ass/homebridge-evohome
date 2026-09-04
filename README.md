@@ -58,27 +58,60 @@ Minimal configuration:
 ]
 ```
 
-| Option                  | Default             | Description                                                                                          |
-| :---------------------- | :------------------ | :--------------------------------------------------------------------------------------------------- |
-| `platform`              | —                   | Must be `Evohome`                                                                                    |
-| `name`                  | `Evohome`           | Shown in the log, used as the prefix for switch names                                                |
-| `username`              | —                   | Your Honeywell email address                                                                         |
-| `password`              | —                   | Your Honeywell password                                                                              |
-| `locationId`            | —                   | Only for accounts with several homes. Printed in the log at startup and **stable**, unlike the index |
-| `locationIndex`         | `0`                 | Fallback when no `locationId` is set                                                                 |
-| `pollIntervalSeconds`   | `300`               | How often the status is fetched. Values below 60 are raised to 60                                    |
-| `setpointMode`          | `keepExistingUntil` | How long a temperature change applies — see below                                                    |
-| `temperatureAboveAsOff` | `false`             | Show a zone as off when the room is warmer than the target. Display only                             |
-| `logTemperatureChanges` | `false`             | Log every change of a room temperature                                                               |
-| `history`               | `true`              | Record history for the Elgato Eve app                                                                |
-| `switchAway`            | `true`              | Show an "Away" switch                                                                                |
-| `switchDayOff`          | `true`              | Show a "Day Off" switch                                                                              |
-| `switchEco`             | `true`              | Show an "Eco" switch                                                                                 |
-| `switchHeatingOff`      | `true`              | Show a "Heating Off" switch                                                                          |
-| `switchCustom`          | `true`              | Show a "Custom" switch                                                                               |
+| Option                  | Default             | Description                                                                                                                       |
+| :---------------------- | :------------------ | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `platform`              | —                   | Must be `Evohome`                                                                                                                 |
+| `name`                  | `Evohome`           | Shown in the log, used as the prefix for switch names                                                                             |
+| `username`              | —                   | Your Honeywell email address                                                                                                      |
+| `password`              | —                   | Your Honeywell password                                                                                                           |
+| `locationId`            | —                   | Only for accounts with several homes. Every location is printed in the log at startup, and the ID is **stable**, unlike the index |
+| `locationIndex`         | `0`                 | Fallback when no `locationId` is set                                                                                              |
+| `pollIntervalSeconds`   | `300`               | How often the status is fetched. Values below 60 are raised to 60                                                                 |
+| `setpointMode`          | `keepExistingUntil` | How long a temperature change applies — see below                                                                                 |
+| `temperatureAboveAsOff` | `false`             | Show a zone as off when the room is warmer than the target. Display only                                                          |
+| `logTemperatureChanges` | `false`             | Log every change of a room temperature                                                                                            |
+| `history`               | `true`              | Record history for the Elgato Eve app                                                                                             |
+| `switchAway`            | `true`              | Show an "Away" switch                                                                                                             |
+| `switchDayOff`          | `true`              | Show a "Day Off" switch                                                                                                           |
+| `switchEco`             | `true`              | Show an "Eco" switch                                                                                                              |
+| `switchHeatingOff`      | `true`              | Show a "Heating Off" switch                                                                                                       |
+| `switchCustom`          | `true`              | Show a "Custom" switch                                                                                                            |
 
-Add one platform block per home. Several systems on one account are usually
-separate households, so they get separate entries.
+### Several homes on one account
+
+One platform block covers one location — `locationIndex` names a single
+position, and `"locationIndex": 0,1` is not valid JSON. A second home needs a
+second block, **and each block needs its own child bridge**: Homebridge hands
+the cached accessories to only one platform of a given name, so two `Evohome`
+blocks on the same bridge would recreate each other's accessories on every
+start. In the Homebridge UI: the plugin's menu → _Bridge Settings_, once per
+block. The plugin says so in the log if you forget.
+
+Every location is listed at startup with its ID, which is what belongs in
+`locationId`:
+
+```
+[Evohome] The account has 2 locations: Home (locationId 1234567), Cottage (locationId 7654321). Using "Home" …
+```
+
+```json
+{
+  "platform": "Evohome",
+  "name": "Evohome Home",
+  "username": "you@example.com",
+  "password": "your-password",
+  "locationId": "1234567",
+  "_bridge": { "username": "0E:11:22:33:44:55", "port": 51820 }
+},
+{
+  "platform": "Evohome",
+  "name": "Evohome Cottage",
+  "username": "you@example.com",
+  "password": "your-password",
+  "locationId": "7654321",
+  "_bridge": { "username": "0E:11:22:33:44:66", "port": 51821 }
+}
+```
 
 ### How long a temperature change applies (`setpointMode`)
 

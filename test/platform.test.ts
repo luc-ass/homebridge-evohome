@@ -58,6 +58,19 @@ const serviceOf = (
 
 const nameOf = (accessory: PlatformAccessory): string => accessory.displayName;
 
+/** The fixture as an account with a second home. */
+const twoLocations = (): unknown[] => {
+  const locations = fixture("installationInfo.json") as {
+    locationInfo: { locationId: string; name: string };
+  }[];
+  const first = locations[0]!;
+  first.locationInfo.name = "Zuhause";
+  const second = JSON.parse(JSON.stringify(first)) as typeof first;
+  second.locationInfo.locationId = "1234567";
+  second.locationInfo.name = "Ferienhaus";
+  return [first, second];
+};
+
 describe("EvohomePlatform", () => {
   let test: TestApi;
   let log: ReturnType<typeof createTestLog>;
@@ -577,7 +590,9 @@ describe("EvohomePlatform", () => {
       expect(platform.cachedAccessoryCount).toBe(1);
       expect(log.infos.join()).toContain("Known accessories are kept");
     });
+  });
 
+  describe("locations", () => {
     it("warns about an unknown locationId and falls back", async () => {
       await startPlatform({ ...baseConfig, locationId: "nicht-vorhanden" });
 
@@ -590,6 +605,56 @@ describe("EvohomePlatform", () => {
 
       expect(log.warnings.join()).not.toContain("9876543");
       expect(test.registered.map(nameOf)).toContain("Wohnzimmer Thermostat");
+    });
+
+    it("names every location with its ID", async () => {
+      fetchMock = routedFetch({
+        "/location/installationInfo": () => jsonResponse(twoLocations()),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await startPlatform();
+
+      // Without the second ID in the log there is no way to configure it.
+      expect(log.infos.join()).toContain("Zuhause (locationId 9876543)");
+      expect(log.infos.join()).toContain("Ferienhaus (locationId 1234567)");
+    });
+  });
+
+  describe("several blocks on one bridge", () => {
+    /** A cached accessory that belongs to a different location. */
+    const foreignAccessory = (): PlatformAccessory => {
+      const accessory = new test.api.platformAccessory(
+        "Ferienhaus Thermostat",
+        hap.uuid.generate("evohome:zone:4001"),
+      );
+      accessory.context["locationId"] = "1234567";
+      return accessory;
+    };
+
+    it("keeps the accessories of the other block and says why", async () => {
+      // Homebridge hands the whole cache to a single instance of a platform
+      // name, so without this the two blocks delete each other's accessories.
+      const other = new EvohomePlatform(
+        log,
+        { ...baseConfig, name: "Evohome Ferienhaus", locationId: "1234567" },
+        test.api,
+      );
+      expect(other.cachedAccessoryCount).toBe(0);
+
+      await startPlatform(baseConfig, [foreignAccessory()]);
+
+      expect(test.unregistered).toHaveLength(0);
+      expect(log.warnings.join()).toContain("same bridge");
+      expect(log.warnings.join()).toContain("Evohome Ferienhaus");
+    });
+
+    it("still removes a foreign accessory when it is the only block", async () => {
+      // A single block that was repointed at another location must not keep a
+      // ghost accessory forever.
+      await startPlatform(baseConfig, [foreignAccessory()]);
+
+      expect(test.unregistered.map(nameOf)).toEqual(["Ferienhaus Thermostat"]);
     });
   });
 

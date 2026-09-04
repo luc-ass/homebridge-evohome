@@ -12,8 +12,21 @@
   treated as a fault: the valve still measures and still heats. No charge
   percentage is reported, because the API does not provide one.
 
+- **Every location is named at startup.** Accounts with several homes now get
+  the full list with IDs — `The account has 2 locations: Home (locationId
+1234567), Cottage (locationId 7654321).` Until now only the location that was
+  picked appeared in the log, so the ID of the second one, the one you need for
+  `locationId`, could not be found anywhere. ([#205](../../issues/205))
+
 ### Fixed
 
+- **Two platform blocks on one bridge no longer delete each other's
+  accessories.** Homebridge hands the cached accessories to only one platform
+  instance of a given name, so with two `Evohome` blocks the instance that
+  received the cache retired the other one's accessories on every start.
+  Accessories now record which location they belong to and are left alone by a
+  block that does not own them, and the log says that each block needs its own
+  child bridge. ([#205](../../issues/205))
 - **A fault that was already present when Homebridge started was never logged.**
   The check compared against the previous status, which does not exist on the
   first update, so a flat battery at start stayed silent forever. Faults are now
