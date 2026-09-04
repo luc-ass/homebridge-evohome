@@ -221,9 +221,10 @@ have offered to help.
       from HomeKit reads `/temperatureZone/{id}/schedule`, writes
       `PUT …/heatSetpoint` and processes the acknowledgement — the `setpointMode`
       rule applies as intended (#149)
-- [ ] **Open:** the hot water status (`dhw` in `/location/{id}/status` and
-      `PUT /domesticHotWater/{id}/state`) is still unverified — only relevant for
-      systems with domestic hot water
+- [x] Hot water confirmed on a real system (2026-09-04, @ssdbrown1-cloud on
+      `1.0.0-beta.0`): `dhw` in `/location/{id}/status` is read and
+      `PUT /domesticHotWater/{id}/state` switches the cylinder on and off from
+      both Homebridge and the Home app
 
 ### Phase 2 — Dynamic platform and accessories (3–4 days)
 
@@ -339,11 +340,12 @@ could be added later.
       and CHANGELOG
 - [x] Version set to `1.0.0-beta.0`; the publish workflow releases pre-releases
       under the npm tag `beta` automatically
-- [ ] **Open (maintainer's call):** trigger `npm publish` or a GitHub release,
-      call for testers in #205, close PRs #207 and #204 with a pointer to how
-      their work was used
-- [ ] **Open:** have the hot water path confirmed by a beta tester with DHW
-- [ ] 1.0.0
+- [x] `1.0.0-beta.0` (2026-09-03) and `1.0.0-beta.1` (2026-09-04) published
+      under the npm tag `beta`, testers called for in #205, PRs #207 and #204
+      closed with a pointer to how their work was used
+- [x] Hot water path confirmed by a beta tester with DHW (2026-09-04)
+- [ ] **Open:** 1.0.0 — waiting on feedback for `beta.1` and on #208, the only
+      issue still open
 
 **Total effort estimate:** roughly 10.5–14 person-days.
 
