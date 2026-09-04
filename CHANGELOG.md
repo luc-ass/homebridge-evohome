@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-beta.1
 
 ### Added
 
@@ -11,7 +11,10 @@
   written to the log, where nobody looks. A low battery is deliberately _not_
   treated as a fault: the valve still measures and still heats. No charge
   percentage is reported, because the API does not provide one.
-
+- **Every location is named at startup.** An account with several homes now
+  sees all of them with their IDs, not only the one that was picked. Until now
+  the ID needed for `locationId` appeared nowhere at all.
+  ([#205](../../issues/205))
 - **Gateways and controllers the plugin does not read are named in the log.**
   It uses `gateways[0].temperatureControlSystems[0]`, exactly as 0.11.2 did, and
   said nothing about the rest — a zone or a hot water tank on a second
@@ -19,11 +22,6 @@
   either now warns, so the cause is one line in the log rather than a support
   thread. Reading them is still not implemented; no response with a second
   gateway has ever been available. ([#205](../../issues/205))
-- **Every location is named at startup.** Accounts with several homes now get
-  the full list with IDs — `The account has 2 locations: Home (locationId
-1234567), Cottage (locationId 7654321).` Until now only the location that was
-  picked appeared in the log, so the ID of the second one, the one you need for
-  `locationId`, could not be found anywhere. ([#205](../../issues/205))
 
 ### Fixed
 
