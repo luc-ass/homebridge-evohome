@@ -28,6 +28,12 @@
   The accessory is now kept and marked as faulty, because nothing updates it
   any more. A zone that never had one still does not get one.
   ([#216](../../issues/216))
+- **The UTC offset follows the daylight-saving change.** It was read once at
+  startup, and the status the poller fetches carries no time zone at all — so
+  from the March or October switch onwards every switchpoint time, and every
+  end time an override was written with, was 60 minutes off until somebody
+  restarted Homebridge. The offset is now re-read once a day, one request
+  against roughly 288 status polls. ([#217](../../issues/217))
 
 ## 1.0.0-beta.2
 

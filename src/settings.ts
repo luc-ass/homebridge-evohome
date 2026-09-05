@@ -39,3 +39,13 @@ export const REQUEST_TIMEOUT_MS = 30_000;
  * 0.11.2 waited three seconds here as well.
  */
 export const REFRESH_DELAY_MS = 3000;
+
+/**
+ * How often the location's UTC offset is re-read, in milliseconds.
+ *
+ * The status the poller fetches carries no timezone, so the offset comes from
+ * the installation info. Once a day is one request against roughly 288 status
+ * polls, and it catches a daylight saving change within a day of it happening
+ * (issue #217).
+ */
+export const TIMEZONE_REFRESH_MS = 24 * 60 * 60 * 1000;

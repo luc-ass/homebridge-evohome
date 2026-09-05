@@ -185,9 +185,11 @@ Two options were removed and are ignored with a note in the log:
   in the plugin can change this ([#130](../../issues/130)).
 - **Domestic hot water has no history graph.** The API exposes no target
   temperature for hot water, and inventing one produces a misleading curve.
-- **Schedules use the location's UTC offset** as reported by the API. Around a
-  daylight-saving change, a switchpoint may be off by an hour. The API only
-  provides Windows time zone identifiers, which cannot be resolved properly.
+- **Schedules use the location's UTC offset** as reported by the API, re-read
+  once a day. The API only provides Windows time zone identifiers, which cannot
+  be resolved properly, so the offset cannot be computed locally — between a
+  daylight-saving change and the next refresh, a switchpoint may be off by an
+  hour.
 - The Evohome security system (Total Connect 2.0E) is a different product and is
   not supported ([#83](../../issues/83)).
 

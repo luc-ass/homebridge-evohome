@@ -65,8 +65,14 @@ export class ThermostatAccessory {
     private readonly poller: PollingCoordinator,
     private readonly schedules: ScheduleCache,
     private readonly config: EvohomeConfig,
-    /** Current UTC offset of the location, used for switchpoints. */
-    private readonly offsetMinutes: number,
+    /**
+     * Current UTC offset of the location, asked for on every use.
+     *
+     * A number captured at startup was an hour wrong from the next daylight
+     * saving change until Homebridge restarted, and every override end time
+     * with it (issue #217).
+     */
+    private readonly offsetMinutes: () => number,
     /** Eve history, if enabled and available. */
     private readonly history: HistoryService | undefined,
     eve: EveCharacteristics,
@@ -432,7 +438,7 @@ export class ThermostatAccessory {
       return undefined;
     }
     const schedule = await this.schedules.zone(this.zone.zoneId);
-    return nextSwitchpoint(schedule, now, this.offsetMinutes)?.at;
+    return nextSwitchpoint(schedule, now, this.offsetMinutes())?.at;
   }
 
   private async setTargetState(value: CharacteristicValue): Promise<void> {

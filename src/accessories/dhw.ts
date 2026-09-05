@@ -45,8 +45,8 @@ export class DomesticHotWaterAccessory {
     private readonly poller: PollingCoordinator,
     private readonly schedules: ScheduleCache,
     private readonly config: EvohomeConfig,
-    /** Current UTC offset of the location, used for switchpoints. */
-    private readonly offsetMinutes: number,
+    /** Current UTC offset of the location; see the thermostat (issue #217). */
+    private readonly offsetMinutes: () => number,
     private readonly log: Logging,
   ) {
     const { Service, Characteristic } = this.api.hap;
@@ -225,6 +225,6 @@ export class DomesticHotWaterAccessory {
       return undefined;
     }
     const schedule = await this.schedules.dhw(this.dhwId);
-    return nextSwitchpoint(schedule, now, this.offsetMinutes)?.at;
+    return nextSwitchpoint(schedule, now, this.offsetMinutes())?.at;
   }
 }

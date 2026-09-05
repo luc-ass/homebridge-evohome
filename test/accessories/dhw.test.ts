@@ -62,7 +62,10 @@ describe("DomesticHotWaterAccessory", () => {
   let scheduleRefresh: ReturnType<typeof vi.fn>;
   let dhwSchedule: ReturnType<typeof vi.fn>;
 
-  const build = (cfg: EvohomeConfig = config()): DomesticHotWaterAccessory =>
+  const build = (
+    cfg: EvohomeConfig = config(),
+    offsetMinutes: () => number = () => 0,
+  ): DomesticHotWaterAccessory =>
     new DomesticHotWaterAccessory(
       test.api,
       accessory,
@@ -72,7 +75,7 @@ describe("DomesticHotWaterAccessory", () => {
       { scheduleRefresh } as unknown as PollingCoordinator,
       { dhw: dhwSchedule } as unknown as ScheduleCache,
       cfg,
-      0,
+      offsetMinutes,
       log,
     );
 
@@ -313,6 +316,32 @@ describe("DomesticHotWaterAccessory", () => {
         "TemporaryOverride",
         "Off",
         new Date("2026-09-07T09:00:00Z"),
+      );
+    });
+
+    it("follows a changed UTC offset without being rebuilt", async () => {
+      // #217: the offset used to be copied in at construction, so from the
+      // October switch every override ended an hour off until a restart.
+      let offsetMinutes = 0;
+      const dhw = build(config(), () => offsetMinutes);
+      dhw.update(status({ mode: "FollowSchedule" }));
+
+      await setOn(false);
+      expect(setDhwState).toHaveBeenLastCalledWith(
+        DHW_ID,
+        "TemporaryOverride",
+        "Off",
+        new Date("2026-09-07T09:00:00Z"),
+      );
+
+      // Same local switchpoint, an hour earlier in UTC.
+      offsetMinutes = 60;
+      await setOn(false);
+      expect(setDhwState).toHaveBeenLastCalledWith(
+        DHW_ID,
+        "TemporaryOverride",
+        "Off",
+        new Date("2026-09-07T08:00:00Z"),
       );
     });
 

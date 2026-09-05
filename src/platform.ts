@@ -16,7 +16,7 @@ import {
 } from "./config.js";
 import { ThermostatAccessory } from "./accessories/thermostat.js";
 import { PollingCoordinator } from "./polling.js";
-import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
+import { PLATFORM_NAME, PLUGIN_NAME, TIMEZONE_REFRESH_MS } from "./settings.js";
 import { backoffDelay, DEFAULT_BACKOFF } from "./util/backoff.js";
 
 import type { Location, LocationStatus } from "./api/types.js";
@@ -83,6 +83,18 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
   private startTimer: NodeJS.Timeout | undefined;
   private shuttingDown = false;
 
+  /**
+   * Current UTC offset of the location, in minutes, refreshed once a day.
+   *
+   * The accessories read it through a function rather than receiving a copy,
+   * so a daylight saving change reaches them without a restart (issue #217).
+   */
+  private offsetMinutes = 0;
+  private timezoneTimer: NodeJS.Timeout | undefined;
+
+  /** The account the locations belong to, kept for the timezone refresh. */
+  private userId: string | undefined;
+
   constructor(
     private readonly log: Logging,
     private readonly platformConfig: PlatformConfig,
@@ -98,6 +110,10 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       // 0.11.2 never kept its timer handles.
       this.shuttingDown = true;
       this.clearStartTimer();
+      if (this.timezoneTimer !== undefined) {
+        clearTimeout(this.timezoneTimer);
+        this.timezoneTimer = undefined;
+      }
       this.poller?.stop();
     });
   }
@@ -185,9 +201,11 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
         this.log,
         config.history,
       );
+      this.offsetMinutes = location.timeZone.currentOffsetMinutes;
       this.register(location, client, this.poller, config, history);
       await this.poller.start();
       this.removeStaleAccessories(location.locationId);
+      this.scheduleTimezoneRefresh(client, location.locationId);
 
       if (this.startFailures > 0) {
         this.log.info(
@@ -246,6 +264,69 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     }, delay);
     // An open timer must not keep Node from exiting.
     this.startTimer.unref();
+  }
+
+  /**
+   * Re-reads the location's UTC offset once a day.
+   *
+   * `currentOffsetMinutes` includes daylight saving, and the status the poller
+   * fetches carries no timezone at all — the installation info is the only
+   * place that has it. Read once at startup, the value was an hour wrong from
+   * the March or October switch until somebody restarted Homebridge, and with
+   * it every switchpoint time and every `TimeUntil` an override is written
+   * with (issue #217). `src/util/schedule.ts` accepts an hour of error on the
+   * night of the change itself; this is about the months afterwards.
+   */
+  private scheduleTimezoneRefresh(
+    client: EvohomeClient,
+    locationId: string,
+  ): void {
+    if (this.shuttingDown || this.timezoneTimer !== undefined) {
+      return;
+    }
+    this.timezoneTimer = setTimeout(() => {
+      this.timezoneTimer = undefined;
+      void this.refreshOffset(client, locationId);
+    }, TIMEZONE_REFRESH_MS);
+    // An open timer must not keep Node from exiting.
+    this.timezoneTimer.unref();
+  }
+
+  private async refreshOffset(
+    client: EvohomeClient,
+    locationId: string,
+  ): Promise<void> {
+    if (this.shuttingDown || this.userId === undefined) {
+      return;
+    }
+
+    try {
+      const locations = await client.getLocations(this.userId);
+      const match = locations.find(
+        (location) => location.locationId === locationId,
+      );
+      if (match === undefined) {
+        // The location is gone from the account. The poller reports that far
+        // more clearly than a note about a timezone would.
+        return;
+      }
+
+      const current = match.timeZone.currentOffsetMinutes;
+      if (current !== this.offsetMinutes) {
+        this.log.info(
+          `UTC offset of "${match.name}" changed from ${String(this.offsetMinutes)} to ${String(current)} minutes. Switchpoint times follow it from now on.`,
+        );
+        this.offsetMinutes = current;
+      }
+    } catch (error) {
+      // Not worth a warning: the offset from yesterday is still right on all
+      // but two days of the year, and the poller already reports an outage.
+      this.log.debug(
+        `Could not re-read the UTC offset: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    } finally {
+      this.scheduleTimezoneRefresh(client, locationId);
+    }
   }
 
   /**
@@ -329,6 +410,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     config: EvohomeConfig,
   ): Promise<Location> {
     const account = await client.getUserAccount();
+    this.userId = account.userId;
     const locations = await client.getLocations(account.userId);
 
     if (locations.length === 0) {
@@ -461,7 +543,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
           poller,
           schedules,
           config,
-          location.timeZone.currentOffsetMinutes,
+          () => this.offsetMinutes,
           history(accessory),
           eve,
           this.log,
@@ -533,7 +615,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       poller,
       schedules,
       config,
-      location.timeZone.currentOffsetMinutes,
+      () => this.offsetMinutes,
       this.log,
     );
   }

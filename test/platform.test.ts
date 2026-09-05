@@ -648,6 +648,111 @@ describe("EvohomePlatform", () => {
     });
   });
 
+  describe("time zone", () => {
+    it("re-reads the UTC offset once a day", async () => {
+      // #217: the status carries no timezone, so a value read at startup stayed
+      // in place across the daylight saving change.
+      vi.useFakeTimers();
+      let offsetMinutes = 60;
+      fetchMock = routedFetch({
+        "/location/installationInfo": () => {
+          const locations = fixture("installationInfo.json") as {
+            locationInfo: { timeZone: { currentOffsetMinutes: number } };
+          }[];
+          locations[0]!.locationInfo.timeZone.currentOffsetMinutes =
+            offsetMinutes;
+          return jsonResponse(locations);
+        },
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      new EvohomePlatform(
+        log,
+        { ...baseConfig, history: false, pollIntervalSeconds: 3600 },
+        test.api,
+      );
+      test.emit("didFinishLaunching");
+      await vi.waitFor(() => {
+        expect(test.registered.length).toBeGreaterThan(0);
+      });
+
+      offsetMinutes = 120;
+      await vi.advanceTimersByTimeAsync(25 * 60 * 60 * 1000);
+      // The refresh is running now; the rest of it is plain promise work.
+      vi.useRealTimers();
+      await vi.waitFor(() => {
+        expect(log.infos.join()).toContain("changed from 60 to 120 minutes");
+      });
+    });
+
+    it("keeps re-reading it after a failed attempt", async () => {
+      // The refresh must not stop at the first outage: it would then be as
+      // stale as before, only less obviously so.
+      vi.useFakeTimers();
+      let reads = 0;
+      let offsetMinutes = 60;
+      fetchMock = routedFetch({
+        "/location/installationInfo": () => {
+          reads++;
+          if (reads === 2) {
+            return jsonResponse("service unavailable", { status: 503 });
+          }
+          const locations = fixture("installationInfo.json") as {
+            locationInfo: { timeZone: { currentOffsetMinutes: number } };
+          }[];
+          locations[0]!.locationInfo.timeZone.currentOffsetMinutes =
+            offsetMinutes;
+          return jsonResponse(locations);
+        },
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      new EvohomePlatform(
+        log,
+        { ...baseConfig, history: false, pollIntervalSeconds: 3600 },
+        test.api,
+      );
+      test.emit("didFinishLaunching");
+      await vi.waitFor(() => {
+        expect(test.registered.length).toBeGreaterThan(0);
+      });
+
+      // Day one fails.
+      await vi.advanceTimersByTimeAsync(25 * 60 * 60 * 1000);
+      await vi.waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      expect(log.infos.join()).not.toContain("UTC offset");
+
+      // Day two works, and the change arrives after all.
+      offsetMinutes = 120;
+      await vi.advanceTimersByTimeAsync(25 * 60 * 60 * 1000);
+      vi.useRealTimers();
+      await vi.waitFor(() => {
+        expect(log.infos.join()).toContain("changed from 60 to 120 minutes");
+      });
+    });
+
+    it("stops re-reading it on shutdown", async () => {
+      vi.useFakeTimers();
+      new EvohomePlatform(
+        log,
+        { ...baseConfig, history: false, pollIntervalSeconds: 3600 },
+        test.api,
+      );
+      test.emit("didFinishLaunching");
+      await vi.waitFor(() => {
+        expect(test.registered.length).toBeGreaterThan(0);
+      });
+
+      test.emit("shutdown");
+      const callsAtShutdown = fetchMock.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(25 * 60 * 60 * 1000);
+
+      expect(fetchMock.mock.calls).toHaveLength(callsAtShutdown);
+    });
+  });
+
   describe("failure cases", () => {
     it("aborts with a clear message when credentials are missing", async () => {
       const platform = new EvohomePlatform(
