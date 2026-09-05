@@ -20,6 +20,14 @@
   night" that turns off Eco while the system is in Away — silently dropped the
   mode the user was actually in. Only the active mode's switch returns the
   system to `Auto` now. ([#215](../../issues/215))
+- **A zone with an unknown model keeps its accessory.** The parser deliberately
+  degrades a valve model it does not recognise instead of throwing, so that a
+  new model at Resideo cannot take the plugin down. Skipping the zone deleted
+  its accessory on the next start, though, taking its room, scenes and
+  automations with it — the damage issue #61 is about, through another door.
+  The accessory is now kept and marked as faulty, because nothing updates it
+  any more. A zone that never had one still does not get one.
+  ([#216](../../issues/216))
 
 ## 1.0.0-beta.2
 

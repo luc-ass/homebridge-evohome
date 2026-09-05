@@ -179,6 +179,40 @@ describe("EvohomePlatform", () => {
       expect(test.registered.map((a) => a.UUID)).not.toContain(uuid);
     });
 
+    it("keeps the accessory of a zone whose model it no longer knows", async () => {
+      // Fixture zone 3004 has modelType "NeuesVentilModell2027". Deleting its
+      // accessory would cost the room, the scenes and the automations — the
+      // damage #61 is about. It is kept and marked faulty instead.
+      const uuid = hap.uuid.generate("evohome:zone:3004");
+      const cached = new test.api.platformAccessory(
+        "Wintergarten Thermostat",
+        uuid,
+      );
+      cached.addService(hap.Service.Thermostat, "Wintergarten Thermostat");
+
+      const platform = await startPlatform(baseConfig, [cached]);
+
+      expect(test.unregistered).toHaveLength(0);
+      expect(platform.cachedAccessoryCount).toBeGreaterThan(0);
+      expect(
+        cached
+          .getService(hap.Service.Thermostat)!
+          .getCharacteristic(hap.Characteristic.StatusFault).value,
+      ).toBe(hap.Characteristic.StatusFault.GENERAL_FAULT);
+      expect(log.warnings.join()).toContain("Wintergarten");
+    });
+
+    it("creates nothing for an unknown model it has never seen", async () => {
+      // Without a cached accessory there is nothing to keep, and inventing one
+      // that never updates would be worse than none.
+      await startPlatform();
+
+      expect(test.registered.map(nameOf)).not.toContain(
+        "Wintergarten Thermostat",
+      );
+      expect(test.unregistered).toHaveLength(0);
+    });
+
     it("removes accessories that no longer exist", async () => {
       const stale = new test.api.platformAccessory(
         "Abgerissene Zone",

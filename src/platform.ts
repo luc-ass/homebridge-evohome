@@ -425,8 +425,17 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
   ): void {
     for (const zone of location.system.zones) {
       if (zone.modelType === "Unknown") {
+        // parse.ts degrades an unrecognised model to "Unknown" instead of
+        // throwing, so that a new valve model at Resideo cannot take the whole
+        // plugin down. Skipping past `claimed` made that graceful degradation
+        // destructive: removeStaleAccessories() then deleted the accessory of
+        // the very next start, taking its room, scenes and automations with it
+        // — the damage issue #61 is about, through another door.
+        const kept = this.keepAccessory(`zone:${zone.zoneId}`);
         this.log.warn(
-          `Zone "${zone.name}" reports an unknown model and is skipped.`,
+          kept
+            ? `Zone "${zone.name}" reports an unknown model and is not read any more. Its accessory is kept with the values it last had, marked as faulty. Please open an issue with this line.`
+            : `Zone "${zone.name}" reports an unknown model and is skipped. Please open an issue with this line.`,
         );
         continue;
       }
@@ -575,6 +584,40 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     ]);
     this.cachedAccessories.set(uuid, accessory);
     return accessory;
+  }
+
+  /**
+   * Keeps the cached accessory of a zone the plugin cannot drive.
+   *
+   * Claiming the UUID is what saves it from removeStaleAccessories(). Nothing
+   * is created here: a zone that never had an accessory does not get one it
+   * would only fail to update.
+   *
+   * The accessory is marked faulty, because nothing will update it any more.
+   * Without that it would answer with the values from its last working run
+   * forever, and HomeKit would show a temperature from weeks ago as current.
+   */
+  private keepAccessory(key: string): boolean {
+    const uuid = this.api.hap.uuid.generate(`evohome:${key}`);
+    const cached = this.cachedAccessories.get(uuid);
+    if (cached === undefined) {
+      return false;
+    }
+
+    this.claimed.add(uuid);
+
+    const { Characteristic, Service } = this.api.hap;
+    const service = cached.getService(Service.Thermostat);
+    if (service !== undefined) {
+      // StatusFault is not one of the thermostat's optional characteristics,
+      // so it has to be registered before it can be written; see the
+      // thermostat accessory.
+      service.addOptionalCharacteristic(Characteristic.StatusFault);
+      service
+        .getCharacteristic(Characteristic.StatusFault)
+        .updateValue(Characteristic.StatusFault.GENERAL_FAULT);
+    }
+    return true;
   }
 
   /**
