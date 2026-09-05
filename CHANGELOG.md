@@ -13,6 +13,13 @@
   fix itself, such as a wrong password. What the log says about the kept
   accessories is also correct now: they keep answering with their last known
   values, they are not marked unavailable. ([#214](../../issues/214))
+- **A scene no longer cancels the system mode by accident.** Turning a mode
+  switch off sent `SystemMode: Auto` regardless of whether that mode was the
+  active one. HomeKit delivers a SET even when the value does not change, so a
+  scene or a Siri group command that switches several modes off — a "Good
+  night" that turns off Eco while the system is in Away — silently dropped the
+  mode the user was actually in. Only the active mode's switch returns the
+  system to `Auto` now. ([#215](../../issues/215))
 
 ## 1.0.0-beta.2
 

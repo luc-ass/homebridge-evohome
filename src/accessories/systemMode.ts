@@ -15,7 +15,8 @@ import type {
 /**
  * A system mode (Away, Day Off, Eco, …) as a HomeKit switch.
  *
- * Switching off resets the system to `Auto`, the same behaviour as 0.11.2. What
+ * Switching off resets the system to `Auto`, the same behaviour as 0.11.2 —
+ * but only from the mode that is actually active, see {@link setActive}. What
  * is new is that the switch state comes from the shared poller: previously each
  * switch accessory kept its own `active` field, updated only during
  * `periodicUpdate` and through an `else if` chain that reached at most one
@@ -64,7 +65,22 @@ export class SystemModeAccessory {
       .updateValue(this.active);
   }
 
+  /**
+   * Switching a mode on selects it, switching it off returns to `Auto`.
+   *
+   * The off case belongs to the active mode alone. HomeKit delivers a SET even
+   * when the value does not change, so a scene or a Siri group command that
+   * turns several mode switches off would otherwise send `Auto` from a switch
+   * that was already off — a "Good night" scene silently cancelling Away.
+   */
   private async setActive(value: CharacteristicValue): Promise<void> {
+    if (value !== true && !this.active) {
+      this.log.debug(
+        `${this.name} is already off; the system mode is left alone.`,
+      );
+      return;
+    }
+
     const target = value === true ? this.mode : "Auto";
     this.log.info(`System mode: ${target}.`);
 

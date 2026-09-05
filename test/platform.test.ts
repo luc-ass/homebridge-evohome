@@ -575,6 +575,43 @@ describe("EvohomePlatform", () => {
         JSON.parse((write?.[1] as { body: string }).body) as unknown,
       ).toMatchObject({ SystemMode: "Auto" });
     });
+
+    it("ignores switching off a mode that is not the active one", async () => {
+      // The fixture is in AutoWithEco, so the Away switch is already off. A
+      // scene writing On = false to every mode switch must not send Auto from
+      // this one and cancel the mode the user is actually in.
+      await startPlatform();
+      const away = test.registered.find(
+        (a) => nameOf(a) === "Evohome Away Mode",
+      );
+
+      await serviceOf(away!, hap.Service.Switch)
+        .getCharacteristic(hap.Characteristic.On)
+        .handleSetRequest(false);
+
+      expect(
+        fetchMock.mock.calls.filter((call) =>
+          String(call[0]).includes("/mode"),
+        ),
+      ).toHaveLength(0);
+    });
+
+    it("still switches off the mode that is active", async () => {
+      // The guard must not swallow the case it is not about: Eco is active in
+      // the fixture, so turning it off is a real request.
+      await startPlatform();
+      const eco = test.registered.find((a) => nameOf(a) === "Evohome Eco Mode");
+
+      await serviceOf(eco!, hap.Service.Switch)
+        .getCharacteristic(hap.Characteristic.On)
+        .handleSetRequest(false);
+
+      expect(
+        fetchMock.mock.calls.filter((call) =>
+          String(call[0]).includes("/mode"),
+        ),
+      ).toHaveLength(1);
+    });
   });
 
   describe("failure cases", () => {
