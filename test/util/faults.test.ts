@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  batteryLevel,
   faultKey,
   isLowBattery,
   summarizeFaults,
@@ -66,5 +67,19 @@ describe("faultKey", () => {
   it("distinguishes different sets", () => {
     expect(faultKey(["a"])).not.toBe(faultKey(["a", "b"]));
     expect(faultKey([])).not.toBe(faultKey(["a"]));
+  });
+});
+
+describe("batteryLevel", () => {
+  it("stays below the threshold clients warn at", () => {
+    // The API never gives a percentage. What matters is that the low value is
+    // low enough for a client to show it as low, not the number itself.
+    expect(batteryLevel(true)).toBeLessThan(20);
+  });
+
+  it("reports a full battery when nothing is wrong", () => {
+    // Not zero: beta.1 published no BatteryLevel at all and clients rendered
+    // the missing value as "0 %", which looked like a dead battery (#205).
+    expect(batteryLevel(false)).toBe(100);
   });
 });

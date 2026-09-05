@@ -421,6 +421,34 @@ describe("EvohomePlatform", () => {
       ).resolves.toBe(hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
     });
 
+    it("gives every zone a battery level instead of an empty tile", async () => {
+      // beta.1 published StatusLowBattery alone, and clients filled the two
+      // missing characteristics in with "0 %, Charged" (#205).
+      await startPlatform();
+      const flur = serviceOf(
+        accessoryNamed("Flur Thermostat"),
+        hap.Service.Battery,
+      );
+      const wohnzimmer = serviceOf(
+        accessoryNamed("Wohnzimmer Thermostat"),
+        hap.Service.Battery,
+      );
+
+      await expect(
+        flur
+          .getCharacteristic(hap.Characteristic.BatteryLevel)
+          .handleGetRequest(),
+      ).resolves.toBeLessThan(20);
+      await expect(
+        wohnzimmer
+          .getCharacteristic(hap.Characteristic.BatteryLevel)
+          .handleGetRequest(),
+      ).resolves.toBe(100);
+      expect(
+        wohnzimmer.getCharacteristic(hap.Characteristic.ChargingState).value,
+      ).toBe(hap.Characteristic.ChargingState.NOT_CHARGEABLE);
+    });
+
     it("does not declare a zone faulty just because its battery is low", async () => {
       await startPlatform();
       const service = serviceOf(

@@ -148,8 +148,13 @@ A low battery deliberately does **not** count as a fault: an HR92 with a weak
 battery still measures and still heats. Only a real failure — radio link lost,
 sensor defective — makes the values untrustworthy.
 
-The battery status carries no percentage. The API reports whether a battery is
-low, never how full it is, and an invented percentage would be worse than none.
+The battery level knows only two values. The API reports whether a battery is
+low, never how full it is, so a zone shows 100 % while nothing is reported and
+10 % once Evohome says the battery is low — below the threshold at which clients
+warn. Publishing no level at all was worse: apps render the missing value as
+0 %, which looks like a dead battery on hardware that is fine. The charging
+state is "not chargeable", which is what an HR92 on AA cells is.
+
 Every zone gets a battery status, including mains-powered ones such as a zone
 valve; those simply never report a battery fault.
 

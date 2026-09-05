@@ -1,5 +1,5 @@
 import { REFRESH_DELAY_MS } from "../settings.js";
-import { faultKey, summarizeFaults } from "../util/faults.js";
+import { batteryLevel, faultKey, summarizeFaults } from "../util/faults.js";
 import { nextSwitchpoint } from "../util/schedule.js";
 import { decideOverride, needsSwitchpoint } from "../util/setpoint.js";
 
@@ -76,12 +76,20 @@ export class DomesticHotWaterAccessory {
       .getCharacteristic(Characteristic.StatusFault)
       .onGet(() => this.statusFault());
 
+    // `BatteryLevel` and `ChargingState` as on the thermostat: the CS92A runs
+    // on batteries the API never quantifies, and a missing level reads as 0 %.
     this.battery =
       this.accessory.getService(Service.Battery) ??
       this.accessory.addService(Service.Battery, `${this.name} Battery`);
     this.battery
       .getCharacteristic(Characteristic.StatusLowBattery)
       .onGet(() => this.statusLowBattery());
+    this.battery
+      .getCharacteristic(Characteristic.BatteryLevel)
+      .onGet(() => this.batteryLevel());
+    this.battery
+      .getCharacteristic(Characteristic.ChargingState)
+      .updateValue(Characteristic.ChargingState.NOT_CHARGEABLE);
 
     this.toggle =
       this.accessory.getService(Service.Switch) ??
@@ -114,6 +122,9 @@ export class DomesticHotWaterAccessory {
     this.battery
       .getCharacteristic(Characteristic.StatusLowBattery)
       .updateValue(this.statusLowBattery());
+    this.battery
+      .getCharacteristic(Characteristic.BatteryLevel)
+      .updateValue(this.batteryLevel());
   }
 
   /** Logs faults whenever the set of them changes; see the thermostat. */
@@ -144,6 +155,12 @@ export class DomesticHotWaterAccessory {
     return summarizeFaults(this.status?.activeFaults ?? []).lowBattery
       ? StatusLowBattery.BATTERY_LEVEL_LOW
       : StatusLowBattery.BATTERY_LEVEL_NORMAL;
+  }
+
+  private batteryLevel(): number {
+    return batteryLevel(
+      summarizeFaults(this.status?.activeFaults ?? []).lowBattery,
+    );
   }
 
   get lastStatus(): DhwStatus | undefined {

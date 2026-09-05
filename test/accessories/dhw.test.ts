@@ -168,6 +168,24 @@ describe("DomesticHotWaterAccessory", () => {
       expect(
         sensor().getCharacteristic(hap.Characteristic.StatusFault).value,
       ).toBe(hap.Characteristic.StatusFault.NO_FAULT);
+      expect(
+        battery().getCharacteristic(hap.Characteristic.BatteryLevel).value,
+      ).toBeLessThan(20);
+    });
+
+    it("publishes a battery level and a charging state at all", () => {
+      const dhw = build();
+
+      dhw.update(status({ activeFaults: [] }));
+
+      // Without these two, a client renders the battery as "0 %, Charged"
+      // (#205) — the cylinder sensor runs on cells that cannot be charged.
+      expect(
+        battery().getCharacteristic(hap.Characteristic.BatteryLevel).value,
+      ).toBe(100);
+      expect(
+        battery().getCharacteristic(hap.Characteristic.ChargingState).value,
+      ).toBe(hap.Characteristic.ChargingState.NOT_CHARGEABLE);
     });
 
     it("raises a fault for anything that is not a battery", () => {

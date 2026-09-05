@@ -46,3 +46,18 @@ export const summarizeFaults = (faults: readonly string[]): FaultSummary => ({
  */
 export const faultKey = (faults: readonly string[]): string =>
   [...faults].sort().join(", ");
+
+/**
+ * Percentage for the `BatteryLevel` characteristic.
+ *
+ * The API only ever says *that* a battery is low, never how full it is, so
+ * beta.1 published a battery service with `StatusLowBattery` alone — a made-up
+ * percentage seemed worse than none. It is not: a client renders the missing
+ * characteristic as zero, and the Homebridge UI showed every zone as "0 %,
+ * Charged" (#205), which reads as a dead battery on hardware that is fine.
+ *
+ * Two coarse values are the smaller fiction. 10 is below the threshold every
+ * client warns at, 100 is the "nothing reported" case.
+ */
+export const batteryLevel = (lowBattery: boolean): number =>
+  lowBattery ? 10 : 100;

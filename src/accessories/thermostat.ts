@@ -1,5 +1,5 @@
 import { REFRESH_DELAY_MS } from "../settings.js";
-import { faultKey, summarizeFaults } from "../util/faults.js";
+import { batteryLevel, faultKey, summarizeFaults } from "../util/faults.js";
 import { nextSwitchpoint } from "../util/schedule.js";
 import { decideOverride, needsSwitchpoint } from "../util/setpoint.js";
 
@@ -136,20 +136,26 @@ export class ThermostatAccessory {
       .getCharacteristic(Characteristic.StatusFault)
       .onGet(() => this.statusFault());
 
-    // A battery service without `BatteryLevel`: the API reports whether a
-    // battery is low, never how full it is, and a made-up percentage would be
-    // worse than none — the same reasoning as for the hot water history.
+    // Every zone gets a battery service, including the mains-powered ones
+    // (`ZoneValves`, `ElectricHeat`). Those simply never report a battery
+    // fault, which costs nothing; leaving out the service would need a
+    // zone-type allowlist that goes stale the moment Resideo adds a model.
     //
-    // Every zone gets one, including the mains-powered ones (`ZoneValves`,
-    // `ElectricHeat`). Those simply never report a battery fault, which costs
-    // nothing; leaving out the service would need a zone-type allowlist that
-    // goes stale the moment Resideo adds a model.
+    // `BatteryLevel` carries the two levels from batteryLevel(): beta.1 left it
+    // out, and clients showed the missing value as "0 %, Charged" (#205).
+    // `ChargingState` never changes — an HR92 runs on AA cells.
     this.battery =
       this.accessory.getService(Service.Battery) ??
       this.accessory.addService(Service.Battery, `${this.zone.name} Battery`);
     this.battery
       .getCharacteristic(Characteristic.StatusLowBattery)
       .onGet(() => this.statusLowBattery());
+    this.battery
+      .getCharacteristic(Characteristic.BatteryLevel)
+      .onGet(() => this.batteryLevel());
+    this.battery
+      .getCharacteristic(Characteristic.ChargingState)
+      .updateValue(Characteristic.ChargingState.NOT_CHARGEABLE);
 
     // Eve shows the valve position in its history. The value is derived; the API
     // reports no real valve position.
@@ -197,6 +203,9 @@ export class ThermostatAccessory {
     this.battery
       .getCharacteristic(Characteristic.StatusLowBattery)
       .updateValue(this.statusLowBattery());
+    this.battery
+      .getCharacteristic(Characteristic.BatteryLevel)
+      .updateValue(this.batteryLevel());
 
     this.recordHistory(status);
   }
@@ -243,6 +252,12 @@ export class ThermostatAccessory {
     return summarizeFaults(this.status?.activeFaults ?? []).lowBattery
       ? StatusLowBattery.BATTERY_LEVEL_LOW
       : StatusLowBattery.BATTERY_LEVEL_NORMAL;
+  }
+
+  private batteryLevel(): number {
+    return batteryLevel(
+      summarizeFaults(this.status?.activeFaults ?? []).lowBattery,
+    );
   }
 
   /**

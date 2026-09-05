@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0-beta.2
+
+### Fixed
+
+- **A battery no longer reads as empty.** `beta.1` published the battery status
+  with `StatusLowBattery` alone, on the grounds that the API reports no charge
+  percentage and an invented one would be worse than none. It is not: a client
+  renders the missing `BatteryLevel` as 0 %, so every zone showed "0 %, Charged"
+  in the Homebridge UI while the batteries were fine. The level now carries the
+  two values the API actually supports — 100 % while nothing is reported, 10 %
+  once Evohome reports a low battery — and the charging state says "not
+  chargeable". ([#205](../../issues/205))
+
 ## 1.0.0-beta.1
 
 ### Added
