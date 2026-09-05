@@ -2,6 +2,7 @@ import { DomesticHotWaterAccessory } from "./accessories/dhw.js";
 import { SystemModeAccessory } from "./accessories/systemMode.js";
 import { TokenStore } from "./api/auth.js";
 import { EvohomeClient } from "./api/client.js";
+import { isRetryable } from "./api/errors.js";
 import { ScheduleCache } from "./api/scheduleCache.js";
 import { FileTokenCache } from "./api/tokenCache.js";
 import { createEveCharacteristics } from "./characteristics/eve.js";
@@ -16,6 +17,7 @@ import {
 import { ThermostatAccessory } from "./accessories/thermostat.js";
 import { PollingCoordinator } from "./polling.js";
 import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
+import { backoffDelay, DEFAULT_BACKOFF } from "./util/backoff.js";
 
 import type { Location, LocationStatus } from "./api/types.js";
 import type {
@@ -76,6 +78,11 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
 
   private poller: PollingCoordinator | undefined;
 
+  /** Failed startup attempts so far; drives the delay before the next one. */
+  private startFailures = 0;
+  private startTimer: NodeJS.Timeout | undefined;
+  private shuttingDown = false;
+
   constructor(
     private readonly log: Logging,
     private readonly platformConfig: PlatformConfig,
@@ -89,6 +96,8 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
 
     this.api.on("shutdown", () => {
       // 0.11.2 never kept its timer handles.
+      this.shuttingDown = true;
+      this.clearStartTimer();
       this.poller?.stop();
     });
   }
@@ -127,12 +136,42 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     );
     const client = new EvohomeClient(tokens);
 
+    await this.attemptStart(client, config);
+  }
+
+  /**
+   * One startup attempt, repeated with a growing delay while it keeps failing.
+   *
+   * Up to 1.0.0-beta.2 this ran exactly once. Everything in here talks to
+   * Honeywell, so a Raspberry Pi whose network is not up yet when Homebridge
+   * starts (issue #145) left the plugin dead until somebody restarted it by
+   * hand — while the log claimed it would pick up again on its own. The retry
+   * uses the same backoff as the poller, for the same reason: issue #136 asks
+   * for an automatic retry and warns against running into the rate limit while
+   * doing so.
+   */
+  private async attemptStart(
+    client: EvohomeClient,
+    config: EvohomeConfig,
+  ): Promise<void> {
+    if (this.shuttingDown) {
+      return;
+    }
+
     try {
       const location = await this.findLocation(client, config);
       this.log.info(
         `Location "${location.name}" with ${String(location.system.zones.length)} zone(s).`,
       );
       this.warnAboutExtraSystems(location);
+
+      // A second attempt must not leave the handlers of the first one behind.
+      // Only a failed attempt is repeated, so there is never a working set to
+      // discard here.
+      this.poller?.stop();
+      this.zoneHandlers.clear();
+      this.switchHandlers.clear();
+      this.dhwHandler = undefined;
 
       this.poller = new PollingCoordinator(
         client,
@@ -149,15 +188,88 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
       this.register(location, client, this.poller, config, history);
       await this.poller.start();
       this.removeStaleAccessories(location.locationId);
+
+      if (this.startFailures > 0) {
+        this.log.info(
+          `Startup succeeded after ${String(this.startFailures)} failed attempt(s).`,
+        );
+        this.startFailures = 0;
+      }
     } catch (error) {
-      // Unlike 0.11.2 the cached accessories stay: HomeKit shows them as
-      // unreachable instead of losing them.
+      this.handleStartFailure(client, config, error);
+    }
+  }
+
+  /**
+   * Decides whether a failed startup is worth another attempt.
+   *
+   * A wrong password or a locationIndex that does not exist will not fix
+   * itself, and retrying it only burns requests against the rate limit.
+   * Everything network- or server-shaped is retried.
+   */
+  private handleStartFailure(
+    client: EvohomeClient,
+    config: EvohomeConfig,
+    error: unknown,
+  ): void {
+    this.startFailures++;
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (!isRetryable(error)) {
+      this.log.error(`Startup failed: ${message}`);
       this.log.error(
-        `Startup failed: ${error instanceof Error ? error.message : String(error)}`,
+        "This will not resolve on its own, so no further attempt is made. Check the log above and your config.json, then restart Homebridge.",
       );
-      this.log.info(
-        "Known accessories are kept. The plugin will pick up again on the next successful request.",
+      this.reportKeptAccessories();
+      return;
+    }
+
+    const delay = backoffDelay(this.startFailures, DEFAULT_BACKOFF);
+    const retryIn = `Retrying in ${String(Math.round(delay / 1000))}s.`;
+
+    // As in the poller: the first failure is a warning, every later one goes to
+    // the debug log. A longer Honeywell outage must not fill the log with the
+    // same line over and over (PR #204).
+    if (this.startFailures === 1) {
+      this.log.warn(`Startup failed: ${message} ${retryIn}`);
+      this.reportKeptAccessories();
+    } else {
+      this.log.debug(
+        `Startup failed again (${String(this.startFailures)} consecutive failures): ${message} ${retryIn}`,
       );
+    }
+
+    this.clearStartTimer();
+    this.startTimer = setTimeout(() => {
+      this.startTimer = undefined;
+      void this.attemptStart(client, config);
+    }, delay);
+    // An open timer must not keep Node from exiting.
+    this.startTimer.unref();
+  }
+
+  /**
+   * Says what happens to the accessories while the plugin is not up.
+   *
+   * 0.11.2 called `callback([])` here and HomeKit lost every accessory, so
+   * keeping them is the point. What the log used to claim about them was wrong
+   * though: a restored accessory has no handler attached until the startup
+   * succeeds, so HAP answers reads from the value stored in the accessory
+   * instead of reporting the accessory as unavailable.
+   */
+  private reportKeptAccessories(): void {
+    if (this.cachedAccessories.size === 0) {
+      return;
+    }
+    this.log.info(
+      "Known accessories are kept. Until the plugin is up they keep answering with their last known values, so HomeKit shows those rather than marking them unavailable.",
+    );
+  }
+
+  private clearStartTimer(): void {
+    if (this.startTimer !== undefined) {
+      clearTimeout(this.startTimer);
+      this.startTimer = undefined;
     }
   }
 

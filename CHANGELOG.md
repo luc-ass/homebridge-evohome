@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **A failed startup is retried instead of being final.** Discovery ran exactly
+  once. If the first request failed — a Raspberry Pi whose network is not up yet
+  when Homebridge starts, a Honeywell outage of a few seconds — the plugin
+  stayed dead until somebody restarted Homebridge by hand, while the log
+  promised it would pick up again on its own. It now retries with the same
+  growing delay the poller uses, and gives up only on an error that will not
+  fix itself, such as a wrong password. What the log says about the kept
+  accessories is also correct now: they keep answering with their last known
+  values, they are not marked unavailable. ([#214](../../issues/214))
+
 ## 1.0.0-beta.2
 
 ### Fixed

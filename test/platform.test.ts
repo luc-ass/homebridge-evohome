@@ -611,12 +611,86 @@ describe("EvohomePlatform", () => {
       test.emit("didFinishLaunching");
 
       await vi.waitFor(() => {
-        expect(log.errors.length).toBeGreaterThan(0);
+        expect(log.warnings.join()).toContain("Startup failed");
       });
 
       expect(test.unregistered).toHaveLength(0);
       expect(platform.cachedAccessoryCount).toBe(1);
       expect(log.infos.join()).toContain("Known accessories are kept");
+    });
+
+    it("retries a failed startup and comes up on its own", async () => {
+      // The Raspberry Pi case from issue #145: Homebridge starts before the
+      // network does. Up to beta.2 the plugin stayed dead until a restart.
+      vi.useFakeTimers();
+      let attempts = 0;
+      fetchMock = routedFetch({
+        "/location/installationInfo": () => {
+          attempts++;
+          return attempts === 1
+            ? jsonResponse("service unavailable", { status: 503 })
+            : jsonResponse(fixture("installationInfo.json"));
+        },
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      new EvohomePlatform(log, baseConfig, test.api);
+      test.emit("didFinishLaunching");
+      await vi.waitFor(() => {
+        expect(log.warnings.join()).toContain("Retrying in");
+      });
+      expect(test.registered).toHaveLength(0);
+
+      // The first backoff step is 30s plus or minus the jitter.
+      await vi.advanceTimersByTimeAsync(40_000);
+      // The retry is running now; the rest of it is plain promise work.
+      vi.useRealTimers();
+      await vi.waitFor(() => {
+        expect(test.registered.length).toBeGreaterThan(0);
+      });
+
+      expect(test.registered.map(nameOf)).toContain("Wohnzimmer Thermostat");
+      expect(log.infos.join()).toContain("after 1 failed attempt");
+    });
+
+    it("does not retry what will not fix itself", async () => {
+      // Wrong password: a retry only burns requests against the rate limit,
+      // which is exactly what issue #136 warns about.
+      fetchMock = routedFetch({
+        "/Auth/OAuth/Token": () =>
+          jsonResponse({ error: "invalid_grant" }, { status: 400 }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      new EvohomePlatform(log, baseConfig, test.api);
+      test.emit("didFinishLaunching");
+      await vi.waitFor(() => {
+        expect(log.errors.length).toBeGreaterThan(0);
+      });
+
+      expect(log.errors.join()).toContain("no further attempt");
+      expect(log.warnings.join()).not.toContain("Retrying in");
+    });
+
+    it("gives up the pending retry when Homebridge shuts down", async () => {
+      vi.useFakeTimers();
+      fetchMock = routedFetch({
+        "/location/installationInfo": () =>
+          jsonResponse("service unavailable", { status: 503 }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      new EvohomePlatform(log, baseConfig, test.api);
+      test.emit("didFinishLaunching");
+      await vi.waitFor(() => {
+        expect(log.warnings.join()).toContain("Retrying in");
+      });
+
+      test.emit("shutdown");
+      const callsAtShutdown = fetchMock.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+      expect(fetchMock.mock.calls).toHaveLength(callsAtShutdown);
     });
   });
 
