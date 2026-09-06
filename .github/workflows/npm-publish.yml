@@ -18,15 +18,15 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           # Not the lowest supported version: trusted publishing needs npm
           # 11.5.1 or newer, and Node 22 still ships npm 10.9.
           node-version: 24
           registry-url: https://registry.npmjs.org
-          # setup-node caches by default in v6. Its own docs advise turning
+          # setup-node caches by default since v6. Its own docs advise turning
           # that off in publishing workflows, because a poisoned cache could
           # expose credentials — including the OIDC token.
           package-manager-cache: false
