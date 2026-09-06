@@ -4,9 +4,11 @@ As of 2026-09-03, base commit `7a583c8` (master).
 This document describes the **state before** the Homebridge 2.0 migration.
 The plan for the rewrite lives in [MIGRATION-HB2.md](MIGRATION-HB2.md).
 
-> Since phase 0 the code described here lives in `legacy/index.cjs` and
-> `legacy/evohome.cjs`. All paths and line numbers in this document still refer
-> to the original names `index.js` and `lib/evohome.js`.
+> The code described here was kept under `legacy/` during the rewrite and
+> removed when 1.0.0 shipped. To read along, check out the tag
+> [`v1.0.0-beta.3`](../../releases/tag/v1.0.0-beta.3), where it lives as
+> `legacy/index.cjs` and `legacy/evohome.cjs`. All paths and line numbers in
+> this document refer to the original names `index.js` and `lib/evohome.js`.
 
 ---
 

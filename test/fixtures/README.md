@@ -3,8 +3,8 @@
 Anonymised responses from the TCC EMEA API, in the shape `src/api/parse.ts`
 expects.
 
-The data is made up; the **structure** comes from `legacy/evohome.cjs` and from
-log excerpts in the issues. IDs are consistent across all fixtures (location
+The data is made up; the **structure** comes from 0.11.2's `lib/evohome.js` and
+from log excerpts in the issues. IDs are consistent across all fixtures (location
 `9876543`, system `444001`, zones `3001`–`3004`, DHW `2001`) so that mapping
 tests work.
 

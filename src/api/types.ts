@@ -2,7 +2,7 @@
  * Domain types for the TCC EMEA API.
  *
  * The API is undocumented; the fields come from the old implementation
- * (`legacy/evohome.cjs`) and from real responses. Anything the plugin does not
+ * (0.11.2's `lib/evohome.js`) and from real responses. Anything the plugin does not
  * use is deliberately left out: the smaller the surface, the less breaks when
  * Resideo changes something.
  */
