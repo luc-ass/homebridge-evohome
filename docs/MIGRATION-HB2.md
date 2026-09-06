@@ -344,8 +344,12 @@ could be added later.
       under the npm tag `beta`, testers called for in #205, PRs #207 and #204
       closed with a pointer to how their work was used
 - [x] Hot water path confirmed by a beta tester with DHW (2026-09-04)
-- [ ] **Open:** 1.0.0 — waiting on feedback for `beta.1` and on #208, the only
-      issue still open
+- [x] `1.0.0-beta.2` and `1.0.0-beta.3` (2026-09-05) with the battery tiles and
+      the review findings #214–#218; battery tiles confirmed by the same tester
+      on `beta.3` (2026-09-06)
+- [x] 1.0.0 released (2026-09-06): #208 closed as an Umbrel environment
+      problem, #219 closed after the tester confirmed the shared hot water name
+      is no issue in practice
 
 **Total effort estimate:** roughly 10.5–14 person-days.
 

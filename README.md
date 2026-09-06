@@ -215,8 +215,7 @@ npm install -g homebridge-evohome@beta
 
 Pre-releases are published under the `beta` tag, so a plain
 `npm install homebridge-evohome` keeps giving you the stable version. Reports
-are very welcome, especially from systems with domestic hot water — that path
-could not be verified during development.
+are very welcome.
 
 ## 🤝 Contributing
 
