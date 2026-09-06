@@ -1,33 +1,67 @@
 {
   "displayName": "Homebridge Evohome",
   "name": "homebridge-evohome",
-  "version": "0.11.2",
-  "description": "Honeywell Evohome support for Homebridge: https://github.com/nfarina/homebridge",
+  "version": "1.0.0",
+  "description": "Honeywell Evohome support for Homebridge 2",
   "license": "ISC",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": "./dist/index.js",
   "keywords": [
     "homebridge-plugin",
     "evohome",
-    "honeywell"
+    "honeywell",
+    "resideo"
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/luc-ass/homebridge-evohome.git"
+    "url": "git+https://github.com/luc-ass/homebridge-evohome.git"
   },
   "bugs": {
     "url": "https://github.com/luc-ass/homebridge-evohome/issues"
   },
+  "homepage": "https://github.com/luc-ass/homebridge-evohome#readme",
   "engines": {
-    "node": ">=0.12.0",
-    "homebridge": ">=0.3.1"
+    "node": "^22 || ^24 || ^26",
+    "homebridge": "^2.0.0"
   },
-  "dependencies": {
-    "lodash": ">=4.17.13",
-    "moment": "^2.18.1",
-    "q": "~1.5.1",
-    "request": ">=2.68.0",
-    "fakegato-history": ">=0.6.1"
+  "files": [
+    "dist",
+    "config.schema.json",
+    "assets",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
+    "watch": "tsc --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"docs/**/*.md\" \"*.md\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"docs/**/*.md\" \"*.md\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit -p tsconfig.check.json",
+    "check": "npm run lint && npm run typecheck && npm run test:coverage",
+    "prepublishOnly": "npm run check && npm run build",
+    "dev": "npm run build && homebridge -U ./test-instance/data -P . --strict-plugin-resolution -I",
+    "dev:debug": "npm run build && homebridge -U ./test-instance/data -P . --strict-plugin-resolution -I -D",
+    "dev:ui": "npm run build && homebridge -U ./test-instance/data -P . -I"
+  },
+  "optionalDependencies": {
+    "fakegato-history": "^0.6.7"
   },
   "devDependencies": {
-    "prettier": "3.6.2"
+    "@eslint/js": "^9.34.0",
+    "@types/node": "^24.3.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.34.0",
+    "homebridge": "^2.4.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.41.0",
+    "vitest": "^3.2.4"
   }
 }

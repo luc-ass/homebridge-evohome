@@ -1,0 +1,125 @@
+[
+  {
+    "locationInfo": {
+      "locationId": "9876543",
+      "name": "Zuhause",
+      "streetAddress": "Musterstrasse 1",
+      "city": "Musterstadt",
+      "country": "Germany",
+      "postcode": "12345",
+      "locationType": "Residential",
+      "useDaylightSaveSwitching": true,
+      "timeZone": {
+        "timeZoneId": "WEuropeStandardTime",
+        "displayName": "(UTC+01:00) Amsterdam, Berlin, Bern, Rom, Stockholm, Wien",
+        "offsetMinutes": 60,
+        "currentOffsetMinutes": 120,
+        "supportsDaylightSaving": true
+      }
+    },
+    "gateways": [
+      {
+        "gatewayInfo": {
+          "gatewayId": "555001",
+          "mac": "00AABBCCDDEE",
+          "isWiFi": false
+        },
+        "temperatureControlSystems": [
+          {
+            "systemId": "444001",
+            "modelType": "EvoTouch",
+            "allowedSystemModes": [
+              { "systemMode": "Auto", "canBePermanent": true, "canBeTemporary": false },
+              { "systemMode": "AutoWithEco", "canBePermanent": true, "canBeTemporary": true },
+              { "systemMode": "Away", "canBePermanent": true, "canBeTemporary": true },
+              { "systemMode": "DayOff", "canBePermanent": true, "canBeTemporary": true },
+              { "systemMode": "HeatingOff", "canBePermanent": true, "canBeTemporary": false },
+              { "systemMode": "Custom", "canBePermanent": true, "canBeTemporary": true }
+            ],
+            "zones": [
+              {
+                "zoneId": "3001",
+                "name": "Wohnzimmer",
+                "zoneType": "RadiatorZone",
+                "modelType": "HeatingZone",
+                "setpointCapabilities": {
+                  "maxHeatSetpoint": 35,
+                  "minHeatSetpoint": 5,
+                  "valueResolution": 0.5,
+                  "canControlHeat": true,
+                  "canControlCool": false,
+                  "allowedSetpointModes": [
+                    "PermanentOverride",
+                    "FollowSchedule",
+                    "TemporaryOverride"
+                  ]
+                }
+              },
+              {
+                "zoneId": "3002",
+                "name": "Bad",
+                "zoneType": "RadiatorZone",
+                "modelType": "HeatingZone",
+                "setpointCapabilities": {
+                  "maxHeatSetpoint": 35,
+                  "minHeatSetpoint": 10,
+                  "valueResolution": 0.5,
+                  "canControlHeat": true,
+                  "canControlCool": false,
+                  "allowedSetpointModes": [
+                    "PermanentOverride",
+                    "FollowSchedule",
+                    "TemporaryOverride"
+                  ]
+                }
+              },
+              {
+                "zoneId": "3003",
+                "name": "Flur",
+                "zoneType": "ThermostatZone",
+                "modelType": "RoundWireless",
+                "setpointCapabilities": {
+                  "maxHeatSetpoint": 35,
+                  "minHeatSetpoint": 5,
+                  "valueResolution": 0.5,
+                  "canControlHeat": true,
+                  "canControlCool": false,
+                  "allowedSetpointModes": [
+                    "PermanentOverride",
+                    "FollowSchedule",
+                    "TemporaryOverride"
+                  ]
+                }
+              },
+              {
+                "zoneId": "3004",
+                "name": "Wintergarten",
+                "zoneType": "ZoneValves",
+                "modelType": "NeuesVentilModell2027",
+                "setpointCapabilities": {
+                  "maxHeatSetpoint": 35,
+                  "minHeatSetpoint": 5,
+                  "valueResolution": 0.5,
+                  "canControlHeat": true,
+                  "canControlCool": false,
+                  "allowedSetpointModes": ["FollowSchedule"]
+                }
+              }
+            ],
+            "dhw": {
+              "dhwId": "2001",
+              "dhwStateCapabilitiesResponse": {
+                "allowedStates": ["On", "Off"],
+                "allowedModes": [
+                  "FollowSchedule",
+                  "PermanentOverride",
+                  "TemporaryOverride"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

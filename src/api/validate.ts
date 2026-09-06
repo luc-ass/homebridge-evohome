@@ -1,0 +1,123 @@
+import { EvohomeResponseError } from "./errors.js";
+
+/**
+ * Minimal validation for API responses.
+ *
+ * Hand-written rather than zod or similar, because the plugin is meant to have
+ * no runtime dependencies. The scope is enough for the flat, well-known shapes
+ * of the TCC EMEA API.
+ *
+ * Every error names the path inside the response, so the log says *which* field
+ * was missing instead of producing a bare `TypeError` like 0.11.2 did.
+ */
+
+const describe = (value: unknown): string => {
+  if (value === null) {
+    return "null";
+  }
+  if (Array.isArray(value)) {
+    return "an array";
+  }
+  return typeof value;
+};
+
+const fail = (path: string, expected: string, value: unknown): never => {
+  throw new EvohomeResponseError(
+    `Unexpected API response at "${path}": expected ${expected}, got ${describe(value)}.`,
+    path,
+  );
+};
+
+export const asRecord = (
+  value: unknown,
+  path: string,
+): Record<string, unknown> => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return fail(path, "an object", value);
+  }
+  return value as Record<string, unknown>;
+};
+
+export const asArray = (value: unknown, path: string): unknown[] =>
+  Array.isArray(value) ? value : fail(path, "an array", value);
+
+export const asString = (value: unknown, path: string): string =>
+  typeof value === "string" ? value : fail(path, "a string", value);
+
+export const asNumber = (value: unknown, path: string): number =>
+  typeof value === "number" && Number.isFinite(value)
+    ? value
+    : fail(path, "a finite number", value);
+
+export const asBoolean = (value: unknown, path: string): boolean =>
+  typeof value === "boolean" ? value : fail(path, "a boolean", value);
+
+/** Like {@link asString}, but also accepts numbers and converts them. */
+export const asId = (value: unknown, path: string): string => {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return fail(path, "a string or number", value);
+};
+
+/** Reads a field that is allowed to be absent. */
+export const optional = <T>(
+  value: unknown,
+  path: string,
+  read: (value: unknown, path: string) => T,
+): T | undefined =>
+  value === undefined || value === null ? undefined : read(value, path);
+
+/**
+ * Reads the first element of an array.
+ *
+ * The TCC API nests everything under `gateways[0].temperatureControlSystems[0]`.
+ * 0.11.2 accessed that blindly; here it produces an error naming the path.
+ */
+export const first = (value: unknown, path: string): unknown => {
+  const items = asArray(value, path);
+  if (items.length === 0) {
+    throw new EvohomeResponseError(
+      `Unexpected API response at "${path}": array is empty.`,
+      path,
+    );
+  }
+  return items[0];
+};
+
+/** Narrows an unknown value to one of the allowed string literals. */
+export const asEnum = <T extends string>(
+  value: unknown,
+  path: string,
+  allowed: readonly T[],
+): T => {
+  const text = asString(value, path);
+  if ((allowed as readonly string[]).includes(text)) {
+    return text as T;
+  }
+  throw new EvohomeResponseError(
+    `Unexpected API response at "${path}": expected one of ${allowed.join(", ")}, got "${text}".`,
+    path,
+  );
+};
+
+/** Parses JSON text and reports syntax errors with context. */
+export const parseJson = (text: string, path: string): unknown => {
+  if (text.trim() === "") {
+    throw new EvohomeResponseError(
+      `Unexpected API response at "${path}": empty body.`,
+      path,
+    );
+  }
+  try {
+    return JSON.parse(text);
+  } catch (cause) {
+    throw new EvohomeResponseError(
+      `Unexpected API response at "${path}": not valid JSON (${String(cause)}).`,
+      path,
+    );
+  }
+};

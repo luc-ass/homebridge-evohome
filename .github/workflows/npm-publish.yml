@@ -1,17 +1,67 @@
+name: Publish to npm
+
 on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required for npm trusted publishing: lets the job mint a short-lived
+      # OIDC token that npm verifies against the trusted publisher configured
+      # for this package. No NPM_TOKEN secret is involved.
+      id-token: write
+
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+
+      - uses: actions/setup-node@v6
         with:
-          node-version: 12
-      - run: npm install
-      - run: npm test
-      - uses: JS-DevTools/npm-publish@v3
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
+          # Not the lowest supported version: trusted publishing needs npm
+          # 11.5.1 or newer, and Node 22 still ships npm 10.9.
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          # setup-node caches by default in v6. Its own docs advise turning
+          # that off in publishing workflows, because a poisoned cache could
+          # expose credentials — including the OIDC token.
+          package-manager-cache: false
+
+      # Belt and braces — the bundled npm of a given Node release moves over
+      # time, and a publish workflow is the worst place to find out it is too
+      # old.
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm install -g npm@^11.5.1
+          npm --version
+
+      - run: npm ci
+
+      # `prepublishOnly` repeats both of these during `npm publish`. The
+      # duplication is deliberate: named steps say which check failed, while
+      # the hook protects a manual publish from a laptop just as well.
+      - name: Lint, typecheck and test
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+      # Pre-releases (1.0.0-beta.x) go out under the "beta" tag so that
+      # `npm install homebridge-evohome` still yields the stable version.
+      - name: Determine npm tag
+        id: tag
+        run: |
+          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+            echo "value=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Authentication happens through OIDC; provenance attestations are
+      # generated automatically, so no --provenance flag is needed.
+      - name: Publish
+        run: npm publish --tag "${{ steps.tag.outputs.value }}"

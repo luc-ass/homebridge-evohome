@@ -27,3 +27,10 @@ build/Release
 node_modules
 
 .DS_Store
+
+# Build output
+dist
+*.tsbuildinfo
+
+# Local test instance (contains credentials and pairing data)
+test-instance/data
