@@ -26,7 +26,7 @@ import type {
 /**
  * HTTP client for the TCC EMEA API.
  *
- * Replaces `legacy/evohome.cjs`. Instead of `request` and `q` (both deprecated)
+ * Replaces 0.11.2's `lib/evohome.js`. Instead of `request` and `q` (both deprecated)
  * it uses the `fetch` built into Node 22+ together with `AbortSignal.timeout`,
  * which leaves the plugin without runtime dependencies.
  *

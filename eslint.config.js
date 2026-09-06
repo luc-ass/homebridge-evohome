@@ -4,9 +4,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    // The 0.11.2 code is kept as a reference and deliberately not linted.
-    // See legacy/README.md.
-    ignores: ["dist/**", "legacy/**", "node_modules/**", "coverage/**"],
+    ignores: ["dist/**", "node_modules/**", "coverage/**"],
   },
 
   eslint.configs.recommended,
@@ -25,12 +23,12 @@ export default tseslint.config(
     rules: {
       // --- Rules that guard against specific bugs found in 0.11.2 ---
 
-      // `if ((this.model = "HeatingZone"))` in legacy/index.cjs:982 — an
+      // `if ((this.model = "HeatingZone"))` in 0.11.2's index.js:982 — an
       // assignment where a comparison was meant, silently overwriting every
       // model.
       "no-cond-assign": ["error", "always"],
 
-      // Callback pyramids ten levels deep in legacy/index.cjs.
+      // Callback pyramids ten levels deep in 0.11.2's index.js.
       "max-depth": ["error", 3],
       "max-nested-callbacks": ["error", 3],
 

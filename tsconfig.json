@@ -35,5 +35,5 @@
     // @typescript-eslint/consistent-type-imports instead.
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "legacy", "test"]
+  "exclude": ["node_modules", "dist", "test"]
 }

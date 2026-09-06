@@ -184,7 +184,8 @@ have offered to help.
 - [x] `package.json`: `files`, `engines` (F2), no runtime dependencies — B4/B5
 - [x] Commit `package-lock.json` — S16
 - [x] Legacy code moved to `legacy/*.cjs` (required by `"type": "module"`),
-      excluded from build, lint and `files`
+      excluded from build, lint and `files`; deleted after the 1.0.0 release,
+      readable at the tag `v1.0.0-beta.3`
 - [x] Platform skeleton: `EvohomePlatform implements DynamicPlatformPlugin` with
       `configureAccessory()` — loads under Homebridge 2.x, creates no accessories
       yet
