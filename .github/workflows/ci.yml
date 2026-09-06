@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master, homebridge-v2]
+    branches: [master]
   pull_request:
-    branches: [master, homebridge-v2]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
