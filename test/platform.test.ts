@@ -280,6 +280,19 @@ describe("EvohomePlatform", () => {
       await expect(valve?.handleGetRequest()).resolves.toBe(0);
     });
 
+    it("pushes the valve position on every update (#218)", async () => {
+      // ValvePosition is declared NOTIFY, but update() never wrote to it: Eve
+      // learned nothing when a zone started or stopped calling for heat, the
+      // value only moved on an explicit read.
+      const service = await thermostatFor("Bad Thermostat");
+      const valve = service.characteristics.find(
+        (c) => c.UUID === "E863F12E-079E-48FF-8F27-9C2605A29F52",
+      );
+
+      // Bad: 19 °C against a 22 °C target, so the valve is open.
+      expect(valve?.value).toBe(100);
+    });
+
     it("writes a clamped setpoint to the API", async () => {
       const service = await thermostatFor("Bad Thermostat");
 

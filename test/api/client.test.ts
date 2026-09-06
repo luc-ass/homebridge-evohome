@@ -12,17 +12,25 @@ import { fixture, jsonResponse } from "../helpers.js";
 
 import type { TokenStore } from "../../src/api/auth.js";
 
-/** TokenStore stub that counts how often it was invalidated. */
-const stubTokens = (): TokenStore & { invalidated: number } => {
+/** TokenStore stub that records how it was invalidated. */
+const stubTokens = (): TokenStore & {
+  invalidated: number;
+  invalidatedWith: (string | undefined)[];
+} => {
   const store = {
     invalidated: 0,
+    invalidatedWith: [] as (string | undefined)[],
     authorization: () => Promise.resolve("bearer test-token"),
-    invalidate() {
+    invalidate(authorization?: string) {
       store.invalidated++;
+      store.invalidatedWith.push(authorization);
       return Promise.resolve();
     },
   };
-  return store as unknown as TokenStore & { invalidated: number };
+  return store as unknown as TokenStore & {
+    invalidated: number;
+    invalidatedWith: (string | undefined)[];
+  };
 };
 
 const urlOf = (call: unknown[]): string => String(call[0]);
@@ -30,7 +38,10 @@ const initOf = (call: unknown[]): RequestInit => call[1] as RequestInit;
 
 describe("EvohomeClient", () => {
   const fetchMock = vi.fn<typeof fetch>();
-  let tokens: TokenStore & { invalidated: number };
+  let tokens: TokenStore & {
+    invalidated: number;
+    invalidatedWith: (string | undefined)[];
+  };
   let client: EvohomeClient;
 
   beforeEach(() => {
@@ -200,6 +211,21 @@ describe("EvohomeClient", () => {
       expect(tokens.invalidated).toBe(1);
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(status.systemId).toBe("444001");
+    });
+
+    it("names the token that failed when invalidating (#218)", async () => {
+      // Without the header a concurrent request's fresh token would be thrown
+      // away here; the TokenStore compares it and keeps the newer one.
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ message: "Unauthorized" }, { status: 401 }),
+      );
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(fixture("locationStatus.json")),
+      );
+
+      await client.getLocationStatus("9876543");
+
+      expect(tokens.invalidatedWith).toEqual(["bearer test-token"]);
     });
 
     it("gives up after the second 401 instead of retrying forever", async () => {

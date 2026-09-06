@@ -75,7 +75,7 @@ export class ThermostatAccessory {
     private readonly offsetMinutes: () => number,
     /** Eve history, if enabled and available. */
     private readonly history: HistoryService | undefined,
-    eve: EveCharacteristics,
+    private readonly eve: EveCharacteristics,
     log: Logging,
   ) {
     this.log = log;
@@ -169,9 +169,9 @@ export class ThermostatAccessory {
     // Register it as optional first: getCharacteristic() would add an unknown
     // characteristic by itself, but writes an "Adding anyway" warning into
     // every user's log while doing so.
-    this.service.addOptionalCharacteristic(eve.ValvePosition);
+    this.service.addOptionalCharacteristic(this.eve.ValvePosition);
     this.service
-      .getCharacteristic(eve.ValvePosition)
+      .getCharacteristic(this.eve.ValvePosition)
       .onGet(() => this.valvePosition());
   }
 
@@ -212,6 +212,12 @@ export class ThermostatAccessory {
     this.battery
       .getCharacteristic(Characteristic.BatteryLevel)
       .updateValue(this.batteryLevel());
+    // ValvePosition is declared NOTIFY, so Eve only learns that a zone started
+    // or stopped calling for heat if the value is pushed here. Without this the
+    // characteristic changed on an explicit read only (#218).
+    this.service
+      .getCharacteristic(this.eve.ValvePosition)
+      .updateValue(this.valvePosition());
 
     this.recordHistory(status);
   }

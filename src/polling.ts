@@ -1,4 +1,4 @@
-import { isRetryable } from "./api/errors.js";
+import { EvohomeRateLimitError, isRetryable } from "./api/errors.js";
 import { backoffDelay, DEFAULT_BACKOFF } from "./util/backoff.js";
 
 import type { EvohomeClient } from "./api/client.js";
@@ -24,12 +24,31 @@ import type { Logging } from "homebridge";
 
 export type StatusListener = (status: LocationStatus) => void;
 
+/**
+ * Upper bound for a `Retry-After` we honour, in milliseconds.
+ *
+ * A header saying "come back in a week" would otherwise stop the plugin
+ * silently until Homebridge restarts. An hour covers Honeywell's actual
+ * lockout.
+ */
+const MAX_RETRY_AFTER_MS = 60 * 60_000;
+
 export class PollingCoordinator {
   private timer: NodeJS.Timeout | undefined;
   private refreshTimer: NodeJS.Timeout | undefined;
   private inFlight: Promise<LocationStatus | undefined> | undefined;
   private stopped = false;
   private consecutiveFailures = 0;
+
+  /**
+   * Wait Honeywell asked for in a `Retry-After` header, in milliseconds.
+   *
+   * Consumed by the next {@link schedule}: the header was parsed and then
+   * ignored, so a 429 with `Retry-After: 3600` kept us polling every few
+   * minutes and prolonged the lockout for every device on the account
+   * (issue #218).
+   */
+  private retryAfterMs: number | undefined;
 
   private readonly listeners = new Set<StatusListener>();
 
@@ -143,6 +162,7 @@ export class PollingCoordinator {
       );
     }
     this.consecutiveFailures = 0;
+    this.retryAfterMs = undefined;
     this.lastStatus = status;
 
     for (const listener of this.listeners) {
@@ -168,6 +188,10 @@ export class PollingCoordinator {
     this.consecutiveFailures++;
     const message = error instanceof Error ? error.message : String(error);
 
+    if (error instanceof EvohomeRateLimitError) {
+      this.retryAfterMs = error.retryAfterMs;
+    }
+
     if (this.consecutiveFailures === 1) {
       this.log.warn(`Failed to fetch status from Evohome: ${message}`);
     } else {
@@ -190,13 +214,25 @@ export class PollingCoordinator {
     }
 
     const regular = this.intervalSeconds * 1000;
-    const delay =
+    const backoff =
       this.consecutiveFailures === 0
         ? regular
         : Math.max(
             regular,
             backoffDelay(this.consecutiveFailures, DEFAULT_BACKOFF),
           );
+
+    // A wait Honeywell asked for beats our own: polling before it elapses only
+    // extends the lockout. The cap keeps a wrong or hostile header from parking
+    // the poller for good.
+    const requested = Math.min(this.retryAfterMs ?? 0, MAX_RETRY_AFTER_MS);
+    const delay = Math.max(backoff, requested);
+    if (requested > backoff) {
+      this.log.warn(
+        `Evohome asked us to wait ${String(Math.round(requested / 1000))}s before the next request. Pausing until then.`,
+      );
+    }
+    this.retryAfterMs = undefined;
 
     this.timer = setTimeout(() => {
       void this.poll().finally(() => {

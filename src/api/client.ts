@@ -47,6 +47,12 @@ interface RequestOptions {
   readonly isRetry?: boolean;
 }
 
+/** A response together with the `Authorization` header it was sent with. */
+interface SentRequest {
+  readonly response: Response;
+  readonly authorization: string;
+}
+
 /** Response to a write: the API acknowledges with a task ID. */
 export interface TaskAcknowledgement {
   readonly id: string | undefined;
@@ -189,13 +195,18 @@ export class EvohomeClient {
   }
 
   private async request(options: RequestOptions): Promise<unknown> {
-    const response = await this.send(options);
+    const { response, authorization } = await this.send(options);
     const text = await response.text();
 
     // An expired token shows up as a 401. Refresh once and retry; after that it
     // is a real error.
+    //
+    // The header this request used goes along: with a poll and a write in
+    // flight at the same time, the other one may already have logged in again,
+    // and invalidating unconditionally would throw its fresh token away
+    // (issue #218).
     if (response.status === 401 && options.isRetry !== true) {
-      await this.tokens.invalidate();
+      await this.tokens.invalidate(authorization);
       return this.request({ ...options, isRetry: true });
     }
 
@@ -222,7 +233,7 @@ export class EvohomeClient {
     return parseJson(text, options.path);
   }
 
-  private async send(options: RequestOptions): Promise<Response> {
+  private async send(options: RequestOptions): Promise<SentRequest> {
     const authorization = await this.tokens.authorization();
     const headers: Record<string, string> = { Authorization: authorization };
     if (options.body !== undefined) {
@@ -230,7 +241,7 @@ export class EvohomeClient {
     }
 
     try {
-      return await fetch(`${this.baseUrl}${options.path}`, {
+      const response = await fetch(`${this.baseUrl}${options.path}`, {
         method: options.method,
         headers,
         ...(options.body === undefined
@@ -238,6 +249,7 @@ export class EvohomeClient {
           : { body: JSON.stringify(options.body) }),
         signal: AbortSignal.timeout(this.timeoutMs),
       });
+      return { response, authorization };
     } catch (cause) {
       throw new EvohomeNetworkError(
         `Evohome API unreachable (${options.method} ${options.path}): ${String(cause)}`,

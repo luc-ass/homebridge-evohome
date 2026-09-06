@@ -216,6 +216,28 @@ describe("TokenStore", () => {
     expect(await store.authorization()).toBe("bearer neu");
   });
 
+  it("keeps a token another request obtained in the meantime (#218)", async () => {
+    // A poll and a write can be in flight at once. If the write's 401 comes in
+    // after the poll has already logged in again, invalidating unconditionally
+    // throws that fresh token away and forces a second full password login —
+    // exactly the rate-limit pressure the backoff exists to avoid.
+    fetchMock.mockResolvedValueOnce(jsonResponse(tokenBody("alt", "bbb")));
+    const cache = memoryCache();
+    const store = new TokenStore("u", "p", cache);
+    await store.authorization();
+
+    // The other request notices the 401 first and logs in again.
+    await store.invalidate("bearer alt");
+    fetchMock.mockResolvedValueOnce(jsonResponse(tokenBody("neu", "frisch")));
+    expect(await store.authorization()).toBe("bearer neu");
+
+    // The late 401 carries the old header and must change nothing.
+    await store.invalidate("bearer alt");
+    expect(store.current?.accessToken).toBe("neu");
+    expect(cache.value?.accessToken).toBe("neu");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("does not expose the credentials", async () => {
     // 0.11.2 kept username and password in a module-level map that was never
     // read and never cleared. Here they live in ES private fields and so appear

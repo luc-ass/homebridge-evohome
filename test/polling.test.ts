@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { parseLocationStatus } from "../src/api/parse.js";
-import { EvohomeApiError, EvohomeNetworkError } from "../src/api/errors.js";
+import {
+  EvohomeApiError,
+  EvohomeNetworkError,
+  EvohomeRateLimitError,
+} from "../src/api/errors.js";
 import { PollingCoordinator } from "../src/polling.js";
 import { fixture } from "./helpers.js";
 
@@ -177,6 +181,51 @@ describe("PollingCoordinator", () => {
     poller.stop();
   });
 
+  it("waits as long as Retry-After asks (#218)", async () => {
+    // The header was parsed into the error and then never read: a 429 with
+    // Retry-After: 3600 kept us polling every few minutes and prolonged the
+    // lockout for every device on the account.
+    let fail = true;
+    const client = makeClient(() =>
+      fail
+        ? Promise.reject(new EvohomeRateLimitError("rate limited", 30 * 60_000))
+        : Promise.resolve(status),
+    );
+    const log = makeLog();
+    const poller = new PollingCoordinator(client, "9876543", 60, log);
+
+    await poller.start();
+    expect(client.calls).toBe(1);
+    expect(log.warnings.join()).toContain("wait 1800s");
+
+    // Well past the regular interval and the first backoff steps, but inside
+    // the window Honeywell asked for.
+    fail = false;
+    await vi.advanceTimersByTimeAsync(20 * 60_000);
+    expect(client.calls).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(10 * 60_000 + 30_000);
+    expect(client.calls).toBe(2);
+    poller.stop();
+  });
+
+  it("caps an absurd Retry-After instead of stopping for good", async () => {
+    // A wrong or hostile header must not park the poller until Homebridge
+    // restarts.
+    const client = makeClient(() =>
+      Promise.reject(
+        new EvohomeRateLimitError("rate limited", 7 * 24 * 60 * 60_000),
+      ),
+    );
+    const poller = new PollingCoordinator(client, "9876543", 60, makeLog());
+
+    await poller.start();
+    await vi.advanceTimersByTimeAsync(61 * 60_000);
+
+    expect(client.calls).toBe(2);
+    poller.stop();
+  });
+
   it("calls out permanent errors separately", async () => {
     const client = makeClient(() =>
       Promise.reject(new EvohomeApiError("not found", 404)),
@@ -194,7 +243,7 @@ describe("PollingCoordinator", () => {
     // of failures. After ten minutes of continuous outage there must therefore
     // be far fewer attempts than the ten a fixed 60s cadence would produce.
     const client = makeClient(() =>
-      Promise.reject(new EvohomeNetworkError("weg")),
+      Promise.reject(new EvohomeNetworkError("gone")),
     );
     const poller = new PollingCoordinator(client, "9876543", 60, makeLog());
 

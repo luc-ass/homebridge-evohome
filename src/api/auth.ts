@@ -100,8 +100,23 @@ export class TokenStore {
     return `bearer ${tokens.accessToken}`;
   }
 
-  /** Forces a refresh, e.g. after the API answered with 401. */
-  async invalidate(): Promise<void> {
+  /**
+   * Forces a refresh, e.g. after the API answered with 401.
+   *
+   * @param authorization The header the failed request actually sent. While
+   *   that request was in flight a concurrent one may already have logged in
+   *   again; dropping *that* token would force a second full password login
+   *   and is exactly the rate-limit pressure the backoff exists to avoid
+   *   (issue #218). Without the argument the token is dropped unconditionally.
+   */
+  async invalidate(authorization?: string): Promise<void> {
+    if (
+      authorization !== undefined &&
+      this.tokens !== undefined &&
+      `bearer ${this.tokens.accessToken}` !== authorization
+    ) {
+      return;
+    }
     this.tokens = undefined;
     await this.cache?.write(undefined);
   }
