@@ -235,7 +235,7 @@ describe("EvohomeClient", () => {
         ),
       );
 
-      await expect(client.getLocationStatus("9876543")).rejects.toThrowError(
+      await expect(client.getLocationStatus("9876543")).rejects.toThrow(
         EvohomeApiError,
       );
       expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -290,7 +290,7 @@ describe("EvohomeClient", () => {
       // response object.
       fetchMock.mockResolvedValue(new Response("", { status: 200 }));
 
-      await expect(client.getLocationStatus("9876543")).rejects.toThrowError(
+      await expect(client.getLocationStatus("9876543")).rejects.toThrow(
         EvohomeResponseError,
       );
     });
