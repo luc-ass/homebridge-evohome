@@ -128,7 +128,7 @@ describe("TokenStore", () => {
     );
 
     const store = new TokenStore("u", "falsch", undefined);
-    await expect(store.authorization()).rejects.toThrowError(EvohomeAuthError);
+    await expect(store.authorization()).rejects.toThrow(EvohomeAuthError);
 
     try {
       await store.authorization();
@@ -146,7 +146,7 @@ describe("TokenStore", () => {
     fetchMock.mockResolvedValue(jsonResponse({ error: "invalid_grant" }));
 
     const store = new TokenStore("u", "p", undefined);
-    await expect(store.authorization()).rejects.toThrowError(EvohomeAuthError);
+    await expect(store.authorization()).rejects.toThrow(EvohomeAuthError);
   });
 
   it("treats server errors as temporary", async () => {
@@ -164,9 +164,7 @@ describe("TokenStore", () => {
     fetchMock.mockRejectedValue(new Error("getaddrinfo ENOTFOUND"));
 
     const store = new TokenStore("u", "p", undefined);
-    await expect(store.authorization()).rejects.toThrowError(
-      EvohomeNetworkError,
-    );
+    await expect(store.authorization()).rejects.toThrow(EvohomeNetworkError);
   });
 
   it("coalesces concurrent calls into a single login", async () => {
