@@ -116,6 +116,76 @@ describe("TokenStore", () => {
     expect(bodyOf(fetchMock.mock.calls[1]!).get("grant_type")).toBe("password");
   });
 
+  it("logs in again when the refresh is refused without invalid_grant", async () => {
+    // @PuzzledUser on #136: "Renewing Honeywell API authentication token
+    // failed: HTTP error 400" every half hour for weeks, on 0.11.2. A 400 is
+    // the endpoint judging this refresh token, whatever code it carries, so
+    // repeating it is pointless — only a login gets out of that loop.
+    const cache = memoryCache();
+    cache.value = {
+      accessToken: "alt",
+      refreshToken: "abgelehnt",
+      expiresAt: Date.now() - 1000,
+    };
+
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse("Bad Request", { status: 400 }),
+    );
+    fetchMock.mockResolvedValueOnce(jsonResponse(tokenBody("neu", "frisch")));
+
+    const store = new TokenStore("u", "p", cache);
+    expect(await store.authorization()).toBe("bearer neu");
+
+    expect(bodyOf(fetchMock.mock.calls[0]!).get("grant_type")).toBe(
+      "refresh_token",
+    );
+    expect(bodyOf(fetchMock.mock.calls[1]!).get("grant_type")).toBe("password");
+  });
+
+  it("logs in again when the refresh error arrives with HTTP 200", async () => {
+    const cache = memoryCache();
+    cache.value = {
+      accessToken: "alt",
+      refreshToken: "abgelehnt",
+      expiresAt: Date.now() - 1000,
+    };
+
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "invalid_request" }));
+    fetchMock.mockResolvedValueOnce(jsonResponse(tokenBody("neu", "frisch")));
+
+    const store = new TokenStore("u", "p", cache);
+    expect(await store.authorization()).toBe("bearer neu");
+    expect(bodyOf(fetchMock.mock.calls[1]!).get("grant_type")).toBe("password");
+  });
+
+  it("keeps the refresh token when the endpoint is merely down", async () => {
+    // The other half of the rule: a 5xx or a 429 says nothing about the token,
+    // so spending a password login on it would only add rate-limit pressure.
+    // The poller retries with backoff instead.
+    const cache = memoryCache();
+    const tokens = {
+      accessToken: "alt",
+      refreshToken: "gueltig",
+      expiresAt: Date.now() - 1000,
+    };
+    cache.value = { ...tokens };
+
+    fetchMock.mockResolvedValue(
+      jsonResponse("<html>503</html>", { status: 503 }),
+    );
+
+    const store = new TokenStore("u", "p", cache);
+    await expect(store.authorization()).rejects.toSatisfy(
+      (error: unknown) => error instanceof EvohomeAuthError && error.retryable,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(bodyOf(fetchMock.mock.calls[0]!).get("grant_type")).toBe(
+      "refresh_token",
+    );
+    expect(cache.value).toEqual(tokens);
+  });
+
   it("gives up on bad credentials instead of running into the rate limit", async () => {
     // A Response body can only be read once, so build a fresh one per call.
     fetchMock.mockImplementation(() =>

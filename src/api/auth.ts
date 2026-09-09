@@ -62,6 +62,24 @@ interface OAuthErrorBody {
  */
 const PERMANENT_ERRORS = new Set(["invalid_grant", "unauthorized_client"]);
 
+/**
+ * Is repeating an identical `refresh_token` request the right answer?
+ *
+ * Only when the server never judged the token: it was overloaded (5xx) or it
+ * turned us away for volume (429). Everything else — any 4xx, and the 200 with
+ * an `error` field the TCC API also uses — is a verdict on *this* refresh
+ * token, and sending it again cannot produce a different one. Such a refusal
+ * has to fall through to a full login.
+ *
+ * Only `invalid_grant` used to take that route, so a 400 carrying any other
+ * code, or none at all, was classified retryable and repeated for as long as
+ * Homebridge ran. That is the "Renewing Honeywell API authentication token
+ * failed: HTTP error 400 / every half hour / for weeks" of 0.11.2 (issue
+ * #136) rebuilt behind a backoff.
+ */
+const refreshWorthRepeating = (error: EvohomeAuthError): boolean =>
+  error.status === 429 || (error.status ?? 0) >= 500;
+
 export class TokenStore {
   private tokens: Tokens | undefined;
 
@@ -176,7 +194,7 @@ export class TokenStore {
         refresh_token: refreshToken,
       });
     } catch (error) {
-      if (error instanceof EvohomeAuthError && !error.retryable) {
+      if (error instanceof EvohomeAuthError && !refreshWorthRepeating(error)) {
         return undefined;
       }
       throw error;
@@ -258,6 +276,7 @@ export class TokenStore {
     return new EvohomeAuthError(
       `Evohome login failed (HTTP ${String(status)}): ${detail}.${hint}`,
       !permanent,
+      status,
     );
   }
 }
