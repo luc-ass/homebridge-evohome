@@ -21,11 +21,16 @@ export class EvohomeError extends Error {
  * `retryable` separates the permanent case (wrong password: retrying achieves
  * nothing and only runs into the rate limit) from the temporary one (expired
  * refresh token, server error during login).
+ *
+ * `status` is the HTTP status the token endpoint answered with. `TokenStore`
+ * needs it to tell a rejected refresh token from an endpoint that was simply
+ * unreachable, because only the first is worth a re-login (issue #136).
  */
 export class EvohomeAuthError extends EvohomeError {
   constructor(
     message: string,
     readonly retryable: boolean,
+    readonly status?: number,
     options?: { cause?: unknown },
   ) {
     super(message, options);
