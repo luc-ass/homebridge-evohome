@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1
+
+### Fixed
+
+- The session could get stuck when Honeywell refused a token refresh with a
+  bare HTTP 400: the same spent refresh token was sent again on every poll
+  instead of falling back to a full login. Only a rate limit (429) or a server
+  error (5xx) is retried now — every other answer judges the token and leads to
+  a login. ([#136](../../issues/136))
+
 ## 1.0.0
 
 The first stable release after 0.11.2, and a rewrite for **Homebridge 2**: the
