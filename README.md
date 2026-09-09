@@ -19,6 +19,21 @@ system modes and domestic hot water into Apple HomeKit.
 Version 1.0 is a rewrite for **Homebridge 2**. Please read
 [Upgrading from 0.11.x](#-upgrading-from-011x) before you install it.
 
+## 📖 Contents
+
+- [Requirements](#-requirements)
+- [Getting started](#-getting-started)
+- [Configuration](#-configuration)
+  - [Several homes on one account](#several-homes-on-one-account)
+  - [How long a temperature change applies (`setpointMode`)](#how-long-a-temperature-change-applies-setpointmode)
+  - [What HomeKit shows](#what-homekit-shows)
+  - [Faults and batteries](#faults-and-batteries)
+- [Upgrading from 0.11.x](#-upgrading-from-011x)
+- [Known limitations](#-known-limitations)
+- [Troubleshooting](#-troubleshooting)
+- [Testing a pre-release](#-testing-a-pre-release)
+- [Contributing](#-contributing)
+
 ## 📋 Requirements
 
 |            |                                                                             |
@@ -43,7 +58,7 @@ npm install -g homebridge-evohome@latest
 
 Then add a platform block to your `config.json` — see below.
 
-## ⚙️ Configuration
+## 🔧 Configuration
 
 Minimal configuration:
 
@@ -177,7 +192,7 @@ Two options were removed and are ignored with a note in the log:
   this.
 - **`temperatureUnit`** — HomeKit takes the display unit from the iOS device.
 
-## ⚠️ Known limitations
+## 🚧 Known limitations
 
 - **Thermostats appear under "Humidity" in the Home app.** The HomeKit
   thermostat service declares humidity as an optional characteristic, and the
