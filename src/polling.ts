@@ -72,9 +72,20 @@ export class PollingCoordinator {
     return () => this.listeners.delete(listener);
   }
 
-  /** Starts the cycle and performs a first request immediately. */
+  /**
+   * Starts the cycle and performs a first request immediately.
+   *
+   * A coordinator that was stopped stays stopped. `stop()` can land before
+   * `start()` does — Homebridge emits `shutdown` while startup is still
+   * awaiting the installation info or the history factory — and clearing the
+   * flag here would undo it, leaving the poll loop hitting Honeywell for a
+   * plugin that was told to stop. Every startup attempt builds a fresh
+   * coordinator, so there is never one to restart.
+   */
   async start(): Promise<void> {
-    this.stopped = false;
+    if (this.stopped) {
+      return;
+    }
     await this.poll();
     this.schedule();
   }

@@ -84,6 +84,18 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
   private shuttingDown = false;
 
   /**
+   * Whether Homebridge has asked us to stop.
+   *
+   * A method rather than a bare field read: the flag is set from the
+   * `shutdown` handler, so it can flip during any `await`. TypeScript narrows
+   * a property it has already tested to `false` and keeps that across awaits,
+   * which would make a re-check dead code. A call is re-evaluated.
+   */
+  private isShuttingDown(): boolean {
+    return this.shuttingDown;
+  }
+
+  /**
    * Current UTC offset of the location, in minutes, refreshed once a day.
    *
    * The accessories read it through a function rather than receiving a copy,
@@ -170,7 +182,7 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
     client: EvohomeClient,
     config: EvohomeConfig,
   ): Promise<void> {
-    if (this.shuttingDown) {
+    if (this.isShuttingDown()) {
       return;
     }
 
@@ -201,6 +213,16 @@ export class EvohomePlatform implements DynamicPlatformPlugin {
         this.log,
         config.history,
       );
+
+      // Homebridge can emit `shutdown` while we are still awaiting the
+      // installation info or the history factory. The guard at the top of this
+      // method was passed long before that, so re-check: publishing accessories
+      // and starting the poll loop afterwards leaves timers running against
+      // Honeywell for a plugin that was told to stop.
+      if (this.isShuttingDown()) {
+        return;
+      }
+
       this.offsetMinutes = location.timeZone.currentOffsetMinutes;
       this.register(location, client, this.poller, config, history);
       await this.poller.start();
