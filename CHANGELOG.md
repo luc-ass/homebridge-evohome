@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.2
+
+### Fixed
+
+- A shutdown that arrived while the plugin was still starting up was ignored.
+  Startup checked for it only before it began talking to Honeywell, and the
+  poll coordinator cleared the flag again when it was started, so an attempt
+  still waiting for the API went on to publish its accessories and start the
+  poll loop while Homebridge was already stopping. Restarts that land in that
+  window no longer cost extra Evohome requests.
+
 ## 1.0.1
 
 ### Fixed
