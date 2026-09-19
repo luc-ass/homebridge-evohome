@@ -21,11 +21,19 @@ export default defineConfig({
       // the same thing. No test was lost and no code became uncovered — the
       // meter changed, and these are the first reading on the new one. From
       // here the ratchet applies as before.
+      //
+      // Raised after 1.0.2 to the integer floor of what the suite reaches
+      // (95.22 / 87.01 / 95.78 / 95.29), with one exception: branches stay at
+      // 86 although they measure 87.01. Branch coverage is not perfectly
+      // deterministic here — runs of the same commit were seen at both 429 and
+      // 430 of 493 — and 87 would demand all 429, leaving no slack at all. A
+      // threshold that a re-run can miss is a flaky build, and the ratchet only
+      // ever rises, so there would be no way back down.
       thresholds: {
-        lines: 94,
+        lines: 95,
         functions: 95,
         branches: 86,
-        statements: 94,
+        statements: 95,
       },
     },
   },
