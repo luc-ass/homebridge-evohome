@@ -140,6 +140,21 @@ describe("PollingCoordinator", () => {
     expect(client.calls).toBe(1);
   });
 
+  it("stays stopped when stop() came before start()", async () => {
+    // Homebridge emits `shutdown` while the platform is still awaiting the
+    // installation info, so stop() reaches the coordinator before start() does.
+    // start() used to clear the flag again and poll on regardless.
+    const client = makeClient(() => Promise.resolve(status));
+    const poller = new PollingCoordinator(client, "9876543", 60, makeLog());
+
+    poller.stop();
+    await poller.start();
+
+    expect(client.calls).toBe(0);
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(client.calls).toBe(0);
+  });
+
   it("survives an error and carries on afterwards", async () => {
     let fail = true;
     const client = makeClient(() =>

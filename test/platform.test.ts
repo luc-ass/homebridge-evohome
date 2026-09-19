@@ -772,6 +772,55 @@ describe("EvohomePlatform", () => {
     });
   });
 
+  describe("shutdown during startup", () => {
+    it("registers nothing and never polls", async () => {
+      // Homebridge can emit `shutdown` while startup is still awaiting
+      // Honeywell. Publishing accessories and starting the poll loop after
+      // that left timers running for a plugin that was told to stop.
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      // routedFetch() is typed as a bare mock, so name the shape we call.
+      const routed = routedFetch() as unknown as (
+        input: string | URL,
+        init?: RequestInit,
+      ) => Promise<Response>;
+      const gated = vi.fn(async (input: string | URL, init?: RequestInit) => {
+        if (String(input).includes("/location/installationInfo")) {
+          await gate;
+        }
+        return routed(input, init);
+      });
+      vi.stubGlobal("fetch", gated);
+      vi.useFakeTimers();
+
+      new EvohomePlatform(
+        log,
+        { ...baseConfig, history: false, pollIntervalSeconds: 3600 },
+        test.api,
+      );
+      test.emit("didFinishLaunching");
+
+      // Startup is parked on the installation info when Homebridge stops us.
+      await vi.waitFor(() => {
+        expect(
+          gated.mock.calls.some((call) =>
+            String(call[0]).includes("/location/installationInfo"),
+          ),
+        ).toBe(true);
+      });
+      test.emit("shutdown");
+      release();
+
+      await vi.advanceTimersByTimeAsync(25 * 60 * 60 * 1000);
+      expect(test.registered).toHaveLength(0);
+      expect(
+        gated.mock.calls.filter((call) => String(call[0]).includes("/status")),
+      ).toHaveLength(0);
+    });
+  });
+
   describe("failure cases", () => {
     it("aborts with a clear message when credentials are missing", async () => {
       const platform = new EvohomePlatform(
