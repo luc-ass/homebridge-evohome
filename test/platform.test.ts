@@ -100,6 +100,12 @@ describe("EvohomePlatform", () => {
   });
 
   afterEach(() => {
+    // Every test leaves its platform running, and a running platform keeps a
+    // live poll timer. Since `fetch` is re-stubbed per test, that timer's next
+    // poll is counted by the *next* test's mock: "stops re-reading it on
+    // shutdown" saw 30 requests instead of 5 once Node 26.9 scheduled the
+    // leaked timer onto its fake clock. Shutting down keeps tests independent.
+    test.emit("shutdown");
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
